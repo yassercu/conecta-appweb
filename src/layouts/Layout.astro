@@ -20,11 +20,37 @@ import '../styles/global.css';
 		<meta name="description" content={description} />
 		<title>{title}</title>
 		<link rel="manifest" href="/manifest.json" />
-		<meta name="theme-color" content="#2563eb" />
+		<meta name="theme-color" content="#10b981" />
 		<link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+		
+		<!-- Meta para accesibilidad -->
+		<meta name="color-scheme" content="light dark">
+		<meta name="format-detection" content="telephone=yes, date=no, address=no, email=yes">
+		
+		<!-- Precargar fuentes para mejor rendimiento -->
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
 	</head>
 	<body class="min-h-screen bg-gray-50">
 		<slot />
+		
+		<!-- Footer accesible con navegación rápida -->
+		<footer class="bg-gray-800 text-white py-8 mt-12">
+			<div class="container mx-auto px-4">
+				<div class="flex flex-col md:flex-row justify-between items-center">
+					<div class="mb-4 md:mb-0">
+						<p class="text-gray-400">&copy; {new Date().getFullYear()} Conecta. Todos los derechos reservados.</p>
+					</div>
+					<div class="flex space-x-6">
+						<a href="/accesibilidad" class="text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-emerald-400 rounded-md px-2 py-1">Accesibilidad</a>
+						<a href="/privacidad" class="text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-emerald-400 rounded-md px-2 py-1">Privacidad</a>
+						<a href="/contacto" class="text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-emerald-400 rounded-md px-2 py-1">Contacto</a>
+					</div>
+				</div>
+			</div>
+		</footer>
+		
 		<script>
 			// Registro del Service Worker para PWA
 			if ('serviceWorker' in navigator) {
@@ -34,15 +60,65 @@ import '../styles/global.css';
 						.catch(err => console.error('Error al registrar service worker:', err));
 				});
 			}
+			
+			// Soporte para atajos de teclado globales
+			document.addEventListener('keydown', (e) => {
+				// Alt+1: Ir a inicio
+				if (e.altKey && e.key === '1') {
+					window.location.href = '/';
+				}
+				// Alt+2: Ir a servicios
+				else if (e.altKey && e.key === '2') {
+					window.location.href = '/servicios';
+				}
+				// Alt+3: Ir a mapa
+				else if (e.altKey && e.key === '3') {
+					window.location.href = '/mapa';
+				}
+				// Alt+s: Ir a la búsqueda
+				else if (e.altKey && e.key === 's') {
+					window.location.href = '/buscar';
+				}
+				// Alt+h: Mostrar ayuda (atajos)
+				else if (e.altKey && e.key === 'h') {
+					alert('Atajos disponibles:\nAlt+1: Inicio\nAlt+2: Servicios\nAlt+3: Mapa\nAlt+S: Búsqueda\nAlt+H: Esta ayuda');
+				}
+			});
+			
+			// Mejorar accesibilidad de imágenes
+			window.addEventListener('load', () => {
+				const images = document.querySelectorAll('img:not([alt])');
+				images.forEach(img => {
+					if (!img.hasAttribute('alt')) img.setAttribute('alt', 'Imagen');
+				});
+			});
 		</script>
 	</body>
 </html>
 
 <style>
+	/* Mejoras visuales para accesibilidad */
 	html,
 	body {
 		margin: 0;
 		width: 100%;
 		height: 100%;
+		font-size: 16px; /* Base font size */
+	}
+	
+	@media (prefers-reduced-motion: reduce) {
+		* {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
+	
+	/* Alto contraste para modo de alto contraste del sistema */
+	@media (forced-colors: active) {
+		button, a {
+			border: 1px solid CanvasText;
+		}
 	}
 </style>
