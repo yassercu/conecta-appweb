@@ -1,0 +1,237 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navbar from '../../components/Navbar.astro';
+import Filtros from '../../components/Filtros.astro';
+import TarjetaServicio from '../../components/TarjetaServicio.astro';
+
+// Simulamos datos de ejemplo para la página de servicios
+const servicios = [
+  {
+    id: '1',
+    nombre: 'Restaurante El Paladar',
+    categoria: 'Gastronomía',
+    descripcion: 'Ofrecemos los mejores platos de la cocina cubana tradicional. Ambiente acogedor y servicio de primera calidad.',
+    direccion: 'Calle 23 #456 e/ 6 y 8',
+    provincia: 'La Habana',
+    municipio: 'Plaza de la Revolución',
+    telefono: '5555-1234',
+    imagen: '/img/restaurante.svg',
+    distancia: 1.2,
+    horario: 'Lun-Dom: 11:00-23:00',
+    calificacion: 4.5
+  },
+  {
+    id: '2',
+    nombre: 'Taller Mecánico Rodríguez',
+    categoria: 'Reparaciones',
+    descripcion: 'Servicio de reparación de automóviles y motocicletas. Disponemos de repuestos originales y alternativos.',
+    direccion: 'Ave. 41 #789 e/ 80 y 82',
+    provincia: 'La Habana',
+    municipio: 'Playa',
+    telefono: '5555-7890',
+    imagen: '/img/taller.svg',
+    distancia: 3.5,
+    horario: 'Lun-Sáb: 8:00-18:00',
+    calificacion: 4.2
+  },
+  {
+    id: '3',
+    nombre: 'Casa Particular Vista al Mar',
+    categoria: 'Alojamiento',
+    descripcion: 'Habitaciones confortables con vista al mar. Incluye desayuno, wifi y aire acondicionado.',
+    direccion: 'Calle 1ra #123 e/ A y B',
+    provincia: 'La Habana',
+    municipio: 'Habana del Este',
+    telefono: '5555-4567',
+    imagen: '/img/alojamiento.svg',
+    distancia: 4.8,
+    horario: 'Disponible 24h',
+    calificacion: 4.8
+  },
+  {
+    id: '4',
+    nombre: 'Peluquería Estilo Único',
+    categoria: 'Belleza',
+    descripcion: 'Cortes modernos, tintes, tratamientos capilares y servicios de manicura y pedicura.',
+    direccion: 'Calle 60 #234 e/ 15 y 17',
+    provincia: 'La Habana',
+    municipio: 'Marianao',
+    telefono: '5555-9876',
+    imagen: '/img/belleza.svg',
+    distancia: 5.3,
+    horario: 'Mar-Sáb: 9:00-19:00',
+    calificacion: 4.3
+  },
+  {
+    id: '5',
+    nombre: 'Taxi 24 Horas',
+    categoria: 'Transporte',
+    descripcion: 'Servicio de taxi las 24 horas. Viajes por toda la ciudad y traslados al aeropuerto.',
+    direccion: 'Ave. 5ta #789',
+    provincia: 'La Habana',
+    municipio: 'Playa',
+    telefono: '5555-5678',
+    imagen: '/img/taxi.svg',
+    distancia: 2.1,
+    horario: 'Disponible 24h',
+    calificacion: 4.1
+  },
+  {
+    id: '6',
+    nombre: 'Reparación de Celulares Y Más',
+    categoria: 'Tecnología',
+    descripcion: 'Servicio técnico de reparación de smartphones, tablets y computadoras. Venta de accesorios.',
+    direccion: 'Calle Infanta #456',
+    provincia: 'La Habana',
+    municipio: 'Centro Habana',
+    telefono: '5555-3456',
+    imagen: '/img/tecnologia.svg',
+    distancia: 6.7,
+    horario: 'Lun-Vie: 9:00-18:00, Sáb: 9:00-13:00',
+    calificacion: 4.6
+  }
+];
+
+// Simulamos diferentes categorías disponibles
+const categorias = [
+  "Gastronomía", "Alojamiento", "Reparaciones", "Transporte", 
+  "Belleza", "Salud", "Educación", "Tecnología", "Construcción", 
+  "Eventos", "Comercio", "Asesoría Legal", "Artesanía", "Limpieza"
+];
+
+// Ordenar por
+const ordenarOpciones = [
+  { valor: "distancia", texto: "Distancia (más cercanos)" },
+  { valor: "calificacion", texto: "Mejor calificados" },
+  { valor: "recientes", texto: "Más recientes" },
+  { valor: "alfabetico", texto: "Alfabéticamente" },
+];
+---
+
+<Layout title="Servicios | Conecta - Encuentra servicios cercanos a ti">
+  <Navbar />
+  
+  <main class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-800">Servicios disponibles</h1>
+      
+      <div class="flex items-center space-x-4">
+        <label for="ordenar" class="text-sm font-medium text-gray-700">Ordenar por:</label>
+        <select
+          id="ordenar"
+          name="ordenar"
+          class="border border-gray-300 rounded-md px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          {ordenarOpciones.map((opcion) => (
+            <option value={opcion.valor}>{opcion.texto}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <!-- Filtros en columna lateral -->
+      <div class="lg:col-span-1">
+        <Filtros />
+        
+        <!-- Filtros adicionales de categorías -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800">Categorías</h2>
+          <div class="space-y-2">
+            {categorias.map((categoria) => (
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  id={`categoria-${categoria.toLowerCase()}`}
+                  name="categorias"
+                  value={categoria}
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label for={`categoria-${categoria.toLowerCase()}`} class="ml-2 text-sm text-gray-700">
+                  {categoria}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Listado de servicios -->
+      <div class="lg:col-span-3">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div class="flex justify-between items-center mb-4">
+            <p class="text-gray-600">Mostrando <span class="font-medium">{servicios.length}</span> servicios</p>
+            
+            <div class="flex space-x-2">
+              <button
+                class="border border-gray-300 rounded-md p-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                title="Vista de cuadrícula"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+              </button>
+              
+              <button
+                class="border border-gray-300 rounded-md p-2 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                title="Vista de lista"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {servicios.map((servicio) => (
+              <TarjetaServicio {...servicio} />
+            ))}
+          </div>
+          
+          <!-- Paginación -->
+          <div class="mt-8 flex justify-center">
+            <nav class="inline-flex rounded-md shadow">
+              <a
+                href="#"
+                class="px-4 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              >
+                Anterior
+              </a>
+              <a
+                href="#"
+                class="px-4 py-2 border-t border-b border-gray-300 bg-blue-50 text-sm font-medium text-blue-600"
+              >
+                1
+              </a>
+              <a
+                href="#"
+                class="px-4 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              >
+                2
+              </a>
+              <a
+                href="#"
+                class="px-4 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              >
+                3
+              </a>
+              <a
+                href="#"
+                class="px-4 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+              >
+                Siguiente
+              </a>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer class="bg-gray-800 text-white py-8">
+    <div class="container mx-auto px-4 text-center text-gray-400">
+      <p>&copy; {new Date().getFullYear()} Conecta. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+</Layout> 

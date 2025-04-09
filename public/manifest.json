@@ -1,0 +1,109 @@
+{
+  "name": "Conecta - Servicios cercanos en Cuba",
+  "short_name": "Conecta",
+  "description": "Plataforma para conectar servicios con clientes en toda Cuba",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Buscar servicios",
+      "short_name": "Buscar",
+      "description": "Encuentra servicios cercanos",
+      "url": "/servicios",
+      "icons": [
+        {
+          "src": "/icons/search-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Ver mapa",
+      "short_name": "Mapa",
+      "description": "Explora el mapa de servicios",
+      "url": "/mapa",
+      "icons": [
+        {
+          "src": "/icons/map-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home-540x720.jpg",
+      "type": "image/jpg",
+      "sizes": "540x720",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/map-540x720.jpg",
+      "type": "image/jpg",
+      "sizes": "540x720",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/home-720x540.jpg",
+      "type": "image/jpg",
+      "sizes": "720x540",
+      "form_factor": "wide"
+    }
+  ],
+  "categories": ["lifestyle", "utilities", "shopping", "business"],
+  "lang": "es-CU",
+  "prefer_related_applications": false
+} 

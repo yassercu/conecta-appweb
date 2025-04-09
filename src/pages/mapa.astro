@@ -1,0 +1,62 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from '../components/Navbar.astro';
+import Filtros from '../components/Filtros.astro';
+import Mapa from '../components/Mapa.jsx';
+---
+
+<Layout title="Mapa de Servicios | Conecta - Encuentra servicios cercanos a ti">
+  <Navbar />
+  
+  <main class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold text-gray-800">Mapa de Servicios</h1>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <!-- Filtros en columna lateral -->
+      <div class="lg:col-span-1">
+        <Filtros />
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800">Leyenda</h2>
+          <div class="space-y-2">
+            <div class="flex items-center">
+              <div class="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
+              <span class="text-sm text-gray-700">Tu ubicación</span>
+            </div>
+            <div class="flex items-center">
+              <div class="w-4 h-4 rounded-full bg-red-500 mr-2"></div>
+              <span class="text-sm text-gray-700">Servicios</span>
+            </div>
+          </div>
+          
+          <div class="mt-6">
+            <h3 class="font-medium text-gray-800 mb-2">Consejos de uso:</h3>
+            <ul class="list-disc pl-5 text-sm text-gray-700 space-y-1">
+              <li>Haz clic en los marcadores para ver detalles</li>
+              <li>Usa los controles de zoom para acercarte o alejarte</li>
+              <li>Arrastra el mapa para moverte</li>
+              <li>Utiliza los filtros para encontrar servicios específicos</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Mapa -->
+      <div class="lg:col-span-3">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div class="h-[700px]">
+            <Mapa client:load />
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer class="bg-gray-800 text-white py-8">
+    <div class="container mx-auto px-4 text-center text-gray-400">
+      <p>&copy; {new Date().getFullYear()} Conecta. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+</Layout> 

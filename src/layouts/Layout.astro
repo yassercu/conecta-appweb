@@ -1,14 +1,40 @@
-<!doctype html>
-<html lang="en">
+---
+interface Props {
+	title: string;
+	description?: string;
+}
+
+const { title, description = "Conecta: Encuentra servicios cercanos a ti en Cuba" } = Astro.props;
+
+// Importar los estilos globales
+import '../styles/global.css';
+---
+
+<!DOCTYPE html>
+<html lang="es">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<meta name="description" content={description} />
+		<title>{title}</title>
+		<link rel="manifest" href="/manifest.json" />
+		<meta name="theme-color" content="#2563eb" />
+		<link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
 	</head>
-	<body>
+	<body class="min-h-screen bg-gray-50">
 		<slot />
+		<script>
+			// Registro del Service Worker para PWA
+			if ('serviceWorker' in navigator) {
+				window.addEventListener('load', () => {
+					navigator.serviceWorker.register('/service-worker.js')
+						.then(reg => console.log('Service worker registrado'))
+						.catch(err => console.error('Error al registrar service worker:', err));
+				});
+			}
+		</script>
 	</body>
 </html>
 

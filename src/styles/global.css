@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variables de colores personalizados */
+:root {
+  /* Colores principales */
+  --color-primary: #2563eb;        /* Azul principal */
+  --color-primary-light: #3b82f6;  /* Azul claro */
+  --color-secondary: #e63946;      /* Rojo cubano */
+  --color-accent: #f59e0b;         /* Amarillo/naranja cálido */
+  
+  /* Colores neutros */
+  --color-text: #1e293b;           /* Texto principal */
+  --color-text-light: #64748b;     /* Texto secundario */
+  --color-background: #f8fafc;     /* Fondo principal */
+  --color-card: #ffffff;           /* Fondo tarjetas */
+  
+  /* Categorías (inspiradas en colores caribeños) */
+  --color-gastronomia: #2a9d8f;    /* Verde-azulado */
+  --color-alojamiento: #e9c46a;    /* Amarillo cálido */
+  --color-reparaciones: #264653;   /* Azul oscuro */
+  --color-transporte: #f4a261;     /* Naranja suave */
+  --color-belleza: #d8bfd8;        /* Lavanda */
+  --color-tecnologia: #023e8a;     /* Azul profundo */
+}
+
+/* Estilos personalizados para la aplicación */
+html, body {
+  scroll-behavior: smooth;
+  color: var(--color-text);
+  background-color: var(--color-background);
+}
+
+/* Clases de utilidad para colores */
+.bg-primary { background-color: var(--color-primary); }
+.text-primary { color: var(--color-primary); }
+.bg-secondary { background-color: var(--color-secondary); }
+.text-secondary { color: var(--color-secondary); }
+.bg-accent { background-color: var(--color-accent); }
+.text-accent { color: var(--color-accent); }
+
+/* Estilos para el mapa de Leaflet */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Personalización de la pulsación de la ubicación del usuario */
+.pulse-marker {
+  border-radius: 50%;
+  height: 12px;
+  width: 12px;
+  background: rgba(52, 152, 219, 0.9);
+  border: 2px solid white;
+  box-shadow: 0 0 0 rgba(52, 152, 219, 0.4);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(52, 152, 219, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
+  }
+}

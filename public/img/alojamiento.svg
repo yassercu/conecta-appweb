@@ -1,0 +1,45 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo -->
+  <rect width="800" height="400" fill="#E6F7FF"/>
+  
+  <!-- Cielo -->
+  <rect width="800" height="200" fill="#87CEEB"/>
+  
+  <!-- Sol -->
+  <circle cx="700" cy="80" r="40" fill="#FFD700"/>
+  <line x1="700" y1="20" x2="700" y2="10" stroke="#FFD700" stroke-width="4"/>
+  <line x1="700" y1="150" x2="700" y2="140" stroke="#FFD700" stroke-width="4"/>
+  <line x1="640" y1="80" x2="630" y2="80" stroke="#FFD700" stroke-width="4"/>
+  <line x1="770" y1="80" x2="760" y2="80" stroke="#FFD700" stroke-width="4"/>
+  <line x1="655" y1="35" x2="645" y2="25" stroke="#FFD700" stroke-width="4"/>
+  <line x1="755" y1="135" x2="745" y2="125" stroke="#FFD700" stroke-width="4"/>
+  <line x1="655" y1="125" x2="645" y2="135" stroke="#FFD700" stroke-width="4"/>
+  <line x1="755" y1="25" x2="745" y2="35" stroke="#FFD700" stroke-width="4"/>
+  
+  <!-- Mar -->
+  <rect x="0" y="200" width="800" height="200" fill="#00BFFF"/>
+  <path d="M0 210 Q 100 190, 200 210 Q 300 230, 400 210 Q 500 190, 600 210 Q 700 230, 800 210 L 800 220 Q 700 240, 600 220 Q 500 200, 400 220 Q 300 240, 200 220 Q 100 200, 0 220 Z" fill="#1E90FF"/>
+  <path d="M0 230 Q 100 210, 200 230 Q 300 250, 400 230 Q 500 210, 600 230 Q 700 250, 800 230 L 800 240 Q 700 260, 600 240 Q 500 220, 400 240 Q 300 260, 200 240 Q 100 220, 0 240 Z" fill="#1E90FF"/>
+  
+  <!-- Casa -->
+  <rect x="250" y="150" width="300" height="150" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+  <polygon points="250,150 400,80 550,150" fill="#FF6347" stroke="#000000" stroke-width="2"/>
+  <rect x="350" y="200" width="100" height="100" fill="#A0522D"/>
+  <rect x="280" y="180" width="60" height="60" fill="#87CEEB" stroke="#000000" stroke-width="2"/>
+  <rect x="460" y="180" width="60" height="60" fill="#87CEEB" stroke="#000000" stroke-width="2"/>
+  <line x1="280" y1="210" x2="340" y2="210" stroke="#000000" stroke-width="2"/>
+  <line x1="310" y1="180" x2="310" y2="240" stroke="#000000" stroke-width="2"/>
+  <line x1="460" y1="210" x2="520" y2="210" stroke="#000000" stroke-width="2"/>
+  <line x1="490" y1="180" x2="490" y2="240" stroke="#000000" stroke-width="2"/>
+  
+  <!-- Palmera -->
+  <rect x="150" y="200" width="20" height="100" fill="#8B4513"/>
+  <path d="M160 200 Q 120 180, 100 150 Q 110 180, 90 170 Q 120 190, 120 200 L 160 200 Z" fill="#008000"/>
+  <path d="M160 200 Q 200 180, 220 150 Q 210 180, 230 170 Q 200 190, 200 200 L 160 200 Z" fill="#008000"/>
+  <path d="M160 190 Q 120 170, 100 140 Q 110 170, 90 160 Q 120 180, 120 190 L 160 190 Z" fill="#008000"/>
+  <path d="M160 190 Q 200 170, 220 140 Q 210 170, 230 160 Q 200 180, 200 190 L 160 190 Z" fill="#008000"/>
+  
+  <!-- Texto -->
+  <text x="400" y="50" font-family="Arial" font-size="40" font-weight="bold" text-anchor="middle" fill="#2563EB">Casa Particular Vista al Mar</text>
+  <text x="400" y="380" font-family="Arial" font-size="24" text-anchor="middle" fill="#FFFFFF">Confort con vista al mar</text>
+</svg> 

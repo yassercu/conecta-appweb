@@ -1,0 +1,23 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" rx="48" fill="#2563EB"/>
+  
+  <!-- Círculo interior -->
+  <circle cx="96" cy="96" r="70" fill="#3B82F6"/>
+  
+  <!-- Punto inicial (ubicación del cliente) -->
+  <circle cx="66" cy="66" r="15" fill="#ffffff"/>
+  
+  <!-- Punto final (ubicación del servicio) -->
+  <circle cx="136" cy="126" r="15" fill="#ffffff"/>
+  
+  <!-- Línea conectora -->
+  <path d="M66 66 Q 96 96, 136 126" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Puntos intermedios de la ruta -->
+  <circle cx="96" cy="96" r="6" fill="#ffffff"/>
+  <circle cx="81" cy="81" r="4" fill="#ffffff"/>
+  <circle cx="111" cy="111" r="4" fill="#ffffff"/>
+  
+  <!-- C para Conecta -->
+  <path d="M45 116 C 40 91, 40 76, 50 61 C 60 51, 70 51, 80 56" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg> 
