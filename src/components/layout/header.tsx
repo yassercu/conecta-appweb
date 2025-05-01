@@ -10,16 +10,22 @@ export function Header() {
           <Sparkles className="h-6 w-6 text-accent" />
           <span>LocalSpark</span>
         </Link>
-        <nav className="flex items-center gap-4">
-          <Button variant="ghost" asChild>
-            <Link href="/">Home</Link>
-          </Button>
-          <Button variant="ghost" asChild>
-            <Link href="/search">Search Businesses</Link>
-          </Button>
-           <Button variant="secondary" asChild>
-             <Link href="/register">Register Business</Link>
-           </Button>
+        <nav className="flex items-center gap-2 md:gap-4"> {/* Reduced gap for smaller screens */}
+          <Link href="/" passHref legacyBehavior>
+            <Button variant="ghost" className="text-sm md:text-base"> {/* Responsive text size */}
+              Inicio
+            </Button>
+          </Link>
+          <Link href="/search" passHref legacyBehavior>
+            <Button variant="ghost" className="text-sm md:text-base">
+              Buscar
+            </Button>
+          </Link>
+           <Link href="/register" passHref legacyBehavior>
+             <Button variant="secondary" className="text-sm md:text-base px-2 md:px-4"> {/* Responsive padding */}
+               Registrar Negocio
+             </Button>
+           </Link>
         </nav>
       </div>
     </header>

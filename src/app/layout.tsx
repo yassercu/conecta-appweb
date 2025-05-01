@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'LocalSpark - Find Local Businesses',
-  description: 'Discover and support local businesses in your area.',
+  title: 'LocalSpark - Encuentra Negocios Locales',
+  description: 'Descubre y apoya a los negocios locales en tu área.',
 };
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased flex flex-col',

@@ -26,8 +26,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MapPin, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { getCoordinates, type BusinessLocation } from '@/services/geolocation'; // Using the service
 
-// Placeholder for business types - replace with actual data
+
+// Placeholder for business types - replace with actual data (Spanish)
 const businessTypes = [
   "Tiendas de ropa",
   "Restaurantes",
@@ -38,71 +40,59 @@ const businessTypes = [
   "Otros",
 ];
 
-// Placeholder for provinces and municipalities - replace with actual data or API call
-const provinces = ["Province A", "Province B"];
+// Placeholder for provinces and municipalities - replace with actual data or API call (Spanish)
+const provinces = ["Provincia A", "Provincia B"];
 const municipalities: Record<string, string[]> = {
-  "Province A": ["Municipality A1", "Municipality A2"],
-  "Province B": ["Municipality B1", "Municipality B2"],
+  "Provincia A": ["Municipio A1", "Municipio A2"],
+  "Provincia B": ["Municipio B1", "Municipio B2"],
 };
 
 const registerFormSchema = z.object({
   businessName: z.string().min(2, {
-    message: "Business name must be at least 2 characters.",
+    message: "El nombre del negocio debe tener al menos 2 caracteres.",
   }),
   businessType: z.string({
-    required_error: "Please select a business type.",
+    required_error: "Por favor, selecciona un tipo de negocio.",
   }),
   phone: z.string().min(7, { // Basic validation
-    message: "Please enter a valid phone number.",
+    message: "Por favor, introduce un número de teléfono válido.",
   }),
   email: z.string().email({
-    message: "Please enter a valid email address.",
+    message: "Por favor, introduce una dirección de correo electrónico válida.",
   }),
   password: z.string().min(8, {
-    message: "Password must be at least 8 characters.",
+    message: "La contraseña debe tener al menos 8 caracteres.",
   }),
   province: z.string({
-    required_error: "Please select a province.",
+    required_error: "Por favor, selecciona una provincia.",
   }),
   municipality: z.string({
-    required_error: "Please select a municipality.",
+    required_error: "Por favor, selecciona un municipio.",
   }),
   address: z.string().min(5, {
-    message: "Please enter a valid street address.",
+    message: "Por favor, introduce una dirección postal válida.",
   }),
 });
 
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
-// Mock function to simulate registration API call
+// Mock function to simulate registration API call (Spanish messages)
 async function registerBusiness(data: RegisterFormValues): Promise<{ success: boolean, message: string }> {
-  console.log("Registering business:", data);
+  console.log("Registrando negocio:", data);
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1500));
   // Simulate success/failure
   const success = Math.random() > 0.2; // 80% success rate
   return {
     success,
-    message: success ? "Business registered successfully!" : "Registration failed. Please try again.",
+    message: success ? "¡Negocio registrado con éxito!" : "Fallo en el registro. Por favor, inténtalo de nuevo.",
   };
 }
-
-// Mock function to simulate geocoding API call
-async function getMapCoordinates(province: string, municipality: string, address: string): Promise<{ lat: number, lng: number } | null> {
-  console.log("Geocoding:", province, municipality, address);
-  await new Promise(resolve => setTimeout(resolve, 800));
-  // Simulate geocoding result (replace with actual Leaflet/geocoding logic)
-  if (province && municipality && address) {
-    return { lat: 37.7749 + (Math.random() - 0.5) * 0.1, lng: -122.4194 + (Math.random() - 0.5) * 0.1 };
-  }
-  return null;
-}
-
 
 export default function RegisterPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [mapCoordinates, setMapCoordinates] = useState<{ lat: number, lng: number } | null>(null);
+  const [mapCoordinates, setMapCoordinates] = useState<{ latitude: number, longitude: number } | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
 
   const form = useForm<RegisterFormValues>({
@@ -125,7 +115,7 @@ export default function RegisterPage() {
 
     if (result.success) {
       toast({
-        title: "Success!",
+        title: "¡Éxito!",
         description: result.message,
         variant: "default", // Green accent
       });
@@ -141,26 +131,28 @@ export default function RegisterPage() {
   }
 
   async function handleGeocode() {
-      const province = form.getValues("province");
-      const municipality = form.getValues("municipality");
-      const address = form.getValues("address");
+      const location: BusinessLocation = {
+          province: form.getValues("province"),
+          municipality: form.getValues("municipality"),
+          address: form.getValues("address"),
+      };
 
-      if (province && municipality && address) {
+      if (location.province && location.municipality && location.address) {
           setIsGeocoding(true);
-          const coords = await getMapCoordinates(province, municipality, address);
+          const coords = await getCoordinates(location); // Use the service
           setMapCoordinates(coords);
           setIsGeocoding(false);
           if (!coords) {
               toast({
-                  title: "Geocoding Failed",
-                  description: "Could not find coordinates for the provided address. Please check the details.",
+                  title: "Geocodificación Fallida",
+                  description: "No se pudieron encontrar coordenadas para la dirección proporcionada. Por favor, comprueba los detalles.",
                   variant: "destructive",
               });
           }
       } else {
           toast({
-              title: "Missing Information",
-              description: "Please fill in Province, Municipality, and Address to locate on map.",
+              title: "Información Incompleta",
+              description: "Por favor, rellena Provincia, Municipio y Dirección para localizar en el mapa.",
               variant: "destructive",
           });
       }
@@ -170,8 +162,8 @@ export default function RegisterPage() {
   return (
     <Card className="max-w-2xl mx-auto">
         <CardHeader>
-            <CardTitle>Register Your Business</CardTitle>
-            <CardDescription>Fill in the details below to list your business on LocalSpark.</CardDescription>
+            <CardTitle>Registra Tu Negocio</CardTitle>
+            <CardDescription>Completa los detalles a continuación para listar tu negocio en LocalSpark.</CardDescription>
         </CardHeader>
         <CardContent>
             <Form {...form}>
@@ -181,9 +173,9 @@ export default function RegisterPage() {
                 name="businessName"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Business Name</FormLabel>
+                    <FormLabel>Nombre del Negocio</FormLabel>
                     <FormControl>
-                        <Input placeholder="e.g., The Corner Cafe" {...field} />
+                        <Input placeholder="Ej., El Rincón del Café" {...field} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -195,11 +187,11 @@ export default function RegisterPage() {
                 name="businessType"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Business Type</FormLabel>
+                    <FormLabel>Tipo de Negocio</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                         <SelectTrigger>
-                            <SelectValue placeholder="Select a business type" />
+                            <SelectValue placeholder="Selecciona un tipo de negocio" />
                         </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -221,9 +213,9 @@ export default function RegisterPage() {
                         name="phone"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
+                            <FormLabel>Número de Teléfono</FormLabel>
                             <FormControl>
-                                <Input type="tel" placeholder="Contact phone" {...field} />
+                                <Input type="tel" placeholder="Teléfono de contacto" {...field} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
@@ -234,9 +226,9 @@ export default function RegisterPage() {
                         name="email"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Email Address</FormLabel>
+                            <FormLabel>Correo Electrónico</FormLabel>
                             <FormControl>
-                                <Input type="email" placeholder="Contact email" {...field} />
+                                <Input type="email" placeholder="Correo de contacto" {...field} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
@@ -250,12 +242,12 @@ export default function RegisterPage() {
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>Contraseña</FormLabel>
                         <FormControl>
-                            <Input type="password" placeholder="Choose a secure password" {...field} />
+                            <Input type="password" placeholder="Elige una contraseña segura" {...field} />
                         </FormControl>
                         <FormDescription>
-                            Must be at least 8 characters long.
+                            Debe tener al menos 8 caracteres.
                         </FormDescription>
                         <FormMessage />
                         </FormItem>
@@ -263,18 +255,18 @@ export default function RegisterPage() {
                 />
 
 
-                <h3 className="text-lg font-medium border-t pt-4">Location</h3>
+                <h3 className="text-lg font-medium border-t pt-4">Ubicación</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                     control={form.control}
                     name="province"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Province</FormLabel>
+                        <FormLabel>Provincia</FormLabel>
                         <Select onValueChange={(value) => { field.onChange(value); form.resetField("municipality"); setMapCoordinates(null); }} defaultValue={field.value}>
                             <FormControl>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select province" />
+                                <SelectValue placeholder="Selecciona provincia" />
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -295,11 +287,11 @@ export default function RegisterPage() {
                     name="municipality"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Municipality</FormLabel>
+                        <FormLabel>Municipio</FormLabel>
                         <Select onValueChange={(value) => {field.onChange(value); setMapCoordinates(null); }} defaultValue={field.value} disabled={!selectedProvince}>
                             <FormControl>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select municipality" />
+                                <SelectValue placeholder="Selecciona municipio" />
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -308,7 +300,7 @@ export default function RegisterPage() {
                                 {municipality}
                                 </SelectItem>
                             ))}
-                            {!selectedProvince && <SelectItem value="disabled" disabled>Select province first</SelectItem>}
+                            {!selectedProvince && <SelectItem value="disabled" disabled>Selecciona provincia primero</SelectItem>}
                             </SelectContent>
                         </Select>
                         <FormMessage />
@@ -322,12 +314,12 @@ export default function RegisterPage() {
                 name="address"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Street Address</FormLabel>
+                    <FormLabel>Dirección</FormLabel>
                     <FormControl>
-                        <Textarea placeholder="e.g., 123 Main St, Suite 100" {...field} onChange={(e) => {field.onChange(e); setMapCoordinates(null);}} />
+                        <Textarea placeholder="Ej., Calle Principal 123, Local 1" {...field} onChange={(e) => {field.onChange(e); setMapCoordinates(null);}} />
                     </FormControl>
                     <FormDescription>
-                        Enter the exact address for map location.
+                        Introduce la dirección exacta para la ubicación en el mapa.
                     </FormDescription>
                     <FormMessage />
                     </FormItem>
@@ -337,22 +329,22 @@ export default function RegisterPage() {
                 <div className="flex items-center gap-4">
                     <Button type="button" variant="outline" onClick={handleGeocode} disabled={isGeocoding}>
                         {isGeocoding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
-                        Locate on Map
+                        Localizar en Mapa
                     </Button>
                     {mapCoordinates && (
-                        <span className="text-sm text-green-600">Location Found! ({mapCoordinates.lat.toFixed(4)}, {mapCoordinates.lng.toFixed(4)})</span>
+                        <span className="text-sm text-green-600">¡Ubicación Encontrada! ({mapCoordinates.latitude.toFixed(4)}, {mapCoordinates.longitude.toFixed(4)})</span>
                     )}
-                    {isGeocoding && <span className="text-sm text-muted-foreground">Locating...</span>}
+                    {isGeocoding && <span className="text-sm text-muted-foreground">Localizando...</span>}
                 </div>
                 {/* TODO: Add Leaflet map integration here */}
                  <div className="h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
-                    Map Placeholder (Requires Leaflet Integration)
+                    Espacio para el Mapa (Requiere Integración con Leaflet)
                 </div>
 
 
                 <Button type="submit" disabled={isLoading} className="w-full">
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isLoading ? 'Registering...' : 'Register Business'}
+                    {isLoading ? 'Registrando...' : 'Registrar Negocio'}
                 </Button>
             </form>
             </Form>

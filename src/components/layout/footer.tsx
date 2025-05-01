@@ -3,7 +3,7 @@ export function Footer() {
   return (
     <footer className="bg-muted text-muted-foreground py-4 mt-12">
       <div className="container mx-auto px-4 text-center text-sm">
-        © {currentYear} LocalSpark. All rights reserved.
+        © {currentYear} LocalSpark. Todos los derechos reservados.
       </div>
     </footer>
   );

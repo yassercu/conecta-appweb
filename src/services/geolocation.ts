@@ -38,7 +38,7 @@ export interface BusinessLocation {
  * @returns A promise that resolves to a Coordinates object containing the latitude and longitude of the location, or null if geocoding fails.
  */
 export async function getCoordinates(location: BusinessLocation): Promise<Coordinates | null> {
-    console.log('Geocoding location:', location);
+    console.log('Geocodificando ubicación:', location);
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 800));
 
@@ -53,7 +53,7 @@ export async function getCoordinates(location: BusinessLocation): Promise<Coordi
             longitude: -122.4194 + (Math.random() - 0.5) * 0.1,
         };
     } else {
-        console.warn('Geocoding failed: Incomplete address provided.');
+        console.warn('Geocodificación fallida: Dirección incompleta proporcionada.');
         return null; // Indicate failure
     }
 }
@@ -66,18 +66,18 @@ export async function getCoordinates(location: BusinessLocation): Promise<Coordi
  * @returns A promise that resolves to an array of nearby business objects (or just names for simplicity).
  */
 export async function getNearbyBusinesses(coordinates: Coordinates, radius: number = 5): Promise<string[]> {
-    console.log(`Fetching nearby businesses within ${radius}km of:`, coordinates);
+    console.log(`Buscando negocios cercanos dentro de ${radius}km de:`, coordinates);
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1200));
 
     // TODO: Implement this by calling your backend API, which queries your database
     // for businesses within the specified radius of the given coordinates.
 
-    // Mock implementation
+    // Mock implementation (Spanish)
     return [
-        'Nearby Coffee Shop',
-        'Local Bookstore',
-        'Pizza Place around the corner',
-        'Convenience Store'
+        'Cafetería Cercana',
+        'Librería Local',
+        'Pizzería a la vuelta',
+        'Tienda de Conveniencia'
     ];
 }

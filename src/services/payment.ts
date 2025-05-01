@@ -34,7 +34,7 @@ export interface PaymentResult {
  * @returns A promise that resolves to a PaymentResult object indicating the success or failure of the payment.
  */
 export async function processPayment(plan: PaymentPlan, paymentMethod: string): Promise<PaymentResult> {
-  console.log(`Attempting payment for ${plan.name} plan ($${plan.price}) using ${paymentMethod}`);
+  console.log(`Intentando pago para plan ${plan.name} ($${plan.price}) usando ${paymentMethod}`);
 
   // Simulate API call to a payment gateway (Stripe, PayPal, etc.)
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -48,12 +48,12 @@ export async function processPayment(plan: PaymentPlan, paymentMethod: string): 
   if (isSuccess) {
     return {
       success: true,
-      message: 'Payment processed successfully.',
+      message: 'Pago procesado con éxito.',
     };
   } else {
     return {
       success: false,
-      message: 'Payment failed. Please check your payment details or try another method.',
+      message: 'Pago fallido. Por favor, verifica los detalles de tu pago o intenta con otro método.',
     };
   }
 }

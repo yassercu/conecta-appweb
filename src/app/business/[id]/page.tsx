@@ -5,41 +5,42 @@ import Image from 'next/image';
 import { MapPin, Phone, Mail, Star, ShoppingBag, MessageSquare } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 
-// Placeholder data - replace with actual data fetching based on ID
+// Placeholder data - replace with actual data fetching based on ID (Spanish)
 const getBusinessDetails = async (id: string) => {
   console.log("Fetching details for business ID:", id);
   await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
 
-  // Find business or return a default placeholder if not found
+  // Find business or return a default placeholder if not found (Spanish)
   const business = [
-      { id: '1', name: 'Cool Cafe', category: 'Restaurantes', rating: 4.5, location: 'Downtown', address: '123 Main St', phone: '555-1234', email: 'info@coolcafe.com', description: 'A cozy cafe with great coffee and pastries.', image: 'https://picsum.photos/800/400', promoted: true, dataAiHint: 'cafe interior detail' },
-      { id: '2', name: 'Trendy Boutique', category: 'Tiendas de ropa', rating: 5.0, location: 'Uptown', address: '456 Fashion Ave', phone: '555-5678', email: 'contact@trendyboutique.com', description: 'Latest fashion trends and unique styles.', image: 'https://picsum.photos/800/400', promoted: true, dataAiHint: 'fashion boutique display' },
-      { id: '3', name: 'Happy Paws Vet', category: 'Veterinarias', rating: 4.8, location: 'Suburbia', address: '789 Pet Lane', phone: '555-9012', email: 'care@happypaws.vet', description: 'Compassionate care for your furry friends.', image: 'https://picsum.photos/800/400', promoted: true, dataAiHint: 'veterinarian examining dog' },
-      // Add other businesses matching the search page...
-      { id: '4', name: 'Bookworm Haven', category: 'Librerías', rating: 4.2, location: 'Downtown', address: '321 Read St', phone: '555-1122', email: 'books@bookworm.com', description: 'A quiet place to find your next favorite book.', image: 'https://picsum.photos/800/400', promoted: false, dataAiHint: 'cozy bookstore corner'},
-      { id: '5', 'name': 'Gourmet Grill', category: 'Restaurantes', rating: 4.7, location: 'Midtown', address: '654 Foodie Blvd', phone: '555-3344', email: 'reservations@gourmetgrill.com', description: 'Exquisite dining experience with a modern twist.', image: 'https://picsum.photos/800/400', promoted: false, dataAiHint: 'fine dining plate'},
-      { id: '6', 'name': 'Style Spot', category: 'Tiendas de ropa', rating: 4.0, location: 'Suburbia', address: '987 Style Rd', phone: '555-5566', email: 'shop@stylespot.com', description: 'Affordable and stylish clothing for everyone.', image: 'https://picsum.photos/800/400', promoted: false, dataAiHint: 'casual clothing store'},
-      { id: '7', 'name': 'Central Perk Cafe', category: 'Cafeterías', rating: 4.9, location: 'Uptown', address: '101 Coffee Ave', phone: '555-7788', email: 'friends@centralperk.com', description: 'The best coffee and couches in town.', image: 'https://picsum.photos/800/400', promoted: false, dataAiHint: 'famous coffee shop sofa'},
+      { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', address: 'Calle Principal 123', phone: '555-1234', email: 'info@cafeesquina.com', description: 'Un café acogedor con excelente café y pastelería.', image: 'https://picsum.photos/800/400?random=1', promoted: true, dataAiHint: 'cafe interior detail' },
+      { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', address: 'Av. Moda 456', phone: '555-5678', email: 'contacto@modaurbana.com', description: 'Últimas tendencias de moda y estilos únicos.', image: 'https://picsum.photos/800/400?random=2', promoted: true, dataAiHint: 'fashion boutique display' },
+      { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', address: 'Calle Mascotas 789', phone: '555-9012', email: 'cuidado@patitasfelices.vet', description: 'Cuidado compasivo para tus amigos peludos.', image: 'https://picsum.photos/800/400?random=3', promoted: true, dataAiHint: 'veterinarian examining dog' },
+      { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', address: 'Calle Lectura 321', phone: '555-1122', email: 'libros@librosymas.com', description: 'Un lugar tranquilo para encontrar tu próximo libro favorito.', image: 'https://picsum.photos/800/400?random=4', promoted: false, dataAiHint: 'cozy bookstore corner'},
+      { id: '5', 'name': 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', address: 'Blvd. Gastronomía 654', phone: '555-3344', email: 'reservas@saborcriollo.com', description: 'Experiencia culinaria exquisita con un toque moderno.', image: 'https://picsum.photos/800/400?random=5', promoted: false, dataAiHint: 'fine dining plate'},
+      { id: '6', 'name': 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', address: 'Ruta Estilo 987', phone: '555-5566', email: 'tienda@estilocasual.com', description: 'Ropa asequible y con estilo para todos.', image: 'https://picsum.photos/800/400?random=6', promoted: false, dataAiHint: 'casual clothing store'},
+      { id: '7', 'name': 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', address: 'Av. Café 101', phone: '555-7788', email: 'amigos@cafecentral.com', description: 'El mejor café y sofás de la ciudad.', image: 'https://picsum.photos/800/400?random=7', promoted: false, dataAiHint: 'famous coffee shop sofa'},
   ].find(b => b.id === id);
 
    if (!business) {
-        // Return a default structure or throw an error
-        return { id: 'not-found', name: 'Business Not Found', category: 'Unknown', rating: 0, location: 'N/A', address: 'N/A', phone: 'N/A', email: 'N/A', description: 'Could not find details for this business.', image: 'https://picsum.photos/800/400', promoted: false, dataAiHint: 'empty street' };
+        // Return a default structure or throw an error (Spanish)
+        return { id: 'not-found', name: 'Negocio No Encontrado', category: 'Desconocida', rating: 0, location: 'N/A', address: 'N/A', phone: 'N/A', email: 'N/A', description: 'No se pudieron encontrar los detalles de este negocio.', image: 'https://picsum.photos/800/400', promoted: false, dataAiHint: 'empty street' };
     }
 
   return business;
 };
 
-// Placeholder review data
+// Placeholder review data (Spanish)
 const reviews = [
-    { id: 'r1', author: 'Alice', rating: 5, comment: 'Amazing coffee and atmosphere!', date: '2 days ago' },
-    { id: 'r2', author: 'Bob', rating: 4, comment: 'Good place, a bit crowded sometimes.', date: '1 week ago' },
+    { id: 'r1', author: 'Alicia', rating: 5, comment: '¡Café y ambiente increíbles!', date: 'Hace 2 días' },
+    { id: 'r2', author: 'Roberto', rating: 4, comment: 'Buen lugar, a veces un poco lleno.', date: 'Hace 1 semana' },
+    { id: 'r3', author: 'Carla', rating: 5, comment: '¡La mejor atención para mi perro!', date: 'Hace 3 días' },
 ];
 
-// Placeholder catalog data
+// Placeholder catalog data (Spanish)
 const catalogItems = [
-    { id: 'c1', name: 'Espresso', price: '$3.00', description: 'Rich and bold single shot.' },
-    { id: 'c2', name: 'Croissant', price: '$2.50', description: 'Flaky and buttery pastry.' },
+    { id: 'c1', name: 'Espresso', price: '$3.00', description: 'Un shot rico y audaz.' },
+    { id: 'c2', name: 'Croissant', price: '$2.50', description: 'Pastelito hojaldrado y mantecoso.' },
+    { id: 'c3', name: 'Consulta Veterinaria', price: '$50.00', description: 'Revisión general de salud.' },
 ]
 
 export default async function BusinessDetailPage({ params }: { params: { id: string } }) {
@@ -47,13 +48,24 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 
   if (business.id === 'not-found') {
       return <div className="text-center py-10">
-          <h1 className="text-2xl font-bold">Business Not Found</h1>
-          <p className="text-muted-foreground">We couldn't find the business you were looking for.</p>
+          <h1 className="text-2xl font-bold">Negocio No Encontrado</h1>
+          <p className="text-muted-foreground">No pudimos encontrar el negocio que buscabas.</p>
           <Button asChild className="mt-4">
-              <a href="/search">Back to Search</a>
+              <a href="/search">Volver a la Búsqueda</a>
           </Button>
       </div>
   }
+
+  // Select catalog items relevant to the business category (example logic)
+  const relevantCatalogItems = catalogItems.filter(item => {
+      if (business.category === 'Cafeterías' || business.category === 'Restaurantes') {
+          return ['Espresso', 'Croissant'].includes(item.name);
+      } else if (business.category === 'Veterinarias') {
+          return ['Consulta Veterinaria'].includes(item.name);
+      }
+      return false; // Show nothing for other categories by default
+  });
+
 
   return (
     <div className="space-y-8">
@@ -68,7 +80,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
             priority // Load hero image quickly
             data-ai-hint={business.dataAiHint}
           />
-           {business.promoted && <Badge variant="default" className="absolute top-4 right-4 bg-accent text-accent-foreground text-lg p-2">🌟 Promoted</Badge>}
+           {business.promoted && <Badge variant="default" className="absolute top-4 right-4 bg-accent text-accent-foreground text-lg p-2">🌟 Promo</Badge>}
         </CardHeader>
         <CardContent className="pt-6 space-y-4">
             <div className="flex flex-col md:flex-row justify-between md:items-center">
@@ -79,7 +91,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                  <div className="flex items-center gap-1 text-yellow-500 mt-2 md:mt-0">
                     <Star className="h-6 w-6 fill-current" />
                     <span className="text-xl font-semibold text-foreground">{business.rating.toFixed(1)}</span>
-                    <span className="text-sm text-muted-foreground">({reviews.length} reviews)</span>
+                    <span className="text-sm text-muted-foreground">({reviews.length} reseñas)</span>
                 </div>
             </div>
 
@@ -91,37 +103,37 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
             <div className="flex items-start gap-2">
               <MapPin className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
               <div>
-                  <span className="font-medium">Location:</span> {business.address}, {business.location}
+                  <span className="font-medium">Ubicación:</span> {business.address}, {business.location}
                   {/* TODO: Add link to map view */}
-                  <Button variant="link" size="sm" className="p-0 h-auto ml-1">View on Map</Button>
+                  <Button variant="link" size="sm" className="p-0 h-auto ml-1">Ver en Mapa</Button>
               </div>
             </div>
             <div className="flex items-start gap-2">
               <Phone className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-              <div><span className="font-medium">Phone:</span> {business.phone}</div>
+              <div><span className="font-medium">Teléfono:</span> {business.phone}</div>
             </div>
              <div className="flex items-start gap-2">
               <Mail className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-              <div><span className="font-medium">Email:</span> <a href={`mailto:${business.email}`} className="text-primary hover:underline">{business.email}</a></div>
+              <div><span className="font-medium">Correo:</span> <a href={`mailto:${business.email}`} className="text-primary hover:underline">{business.email}</a></div>
             </div>
           </div>
 
         </CardContent>
       </Card>
 
-       {/* Catalog Section */}
+       {/* Catalog Section (Spanish) */}
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <ShoppingBag className="h-6 w-6 text-primary" />
-                    Products / Services
+                    Productos / Servicios
                 </CardTitle>
-                 <CardDescription>Explore what {business.name} offers.</CardDescription>
+                 <CardDescription>Explora lo que {business.name} ofrece.</CardDescription>
             </CardHeader>
             <CardContent>
-                 {catalogItems.length > 0 ? (
+                 {relevantCatalogItems.length > 0 ? (
                     <ul className="space-y-3">
-                        {catalogItems.map(item => (
+                        {relevantCatalogItems.map(item => (
                              <li key={item.id} className="flex justify-between items-center border-b pb-2">
                                  <div>
                                      <p className="font-medium">{item.name}</p>
@@ -132,25 +144,25 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                         ))}
                     </ul>
                  ) : (
-                     <p className="text-muted-foreground">No catalog items available yet.</p>
+                     <p className="text-muted-foreground">Aún no hay artículos en el catálogo.</p>
                  )}
                  {/* TODO: Add full catalog management for business owner */}
             </CardContent>
         </Card>
 
 
-      {/* Reviews Section */}
+      {/* Reviews Section (Spanish) */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
               <MessageSquare className="h-6 w-6 text-primary" />
-              Customer Reviews
+              Reseñas de Clientes
           </CardTitle>
-           <CardDescription>See what others are saying about {business.name}.</CardDescription>
+           <CardDescription>Mira lo que otros dicen sobre {business.name}.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* TODO: Implement review submission form */}
-           <Button variant="outline">Write a Review</Button>
+           <Button variant="outline">Escribir una Reseña</Button>
 
           <Separator />
 
@@ -172,19 +184,19 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground">No reviews yet. Be the first!</p>
+            <p className="text-muted-foreground">Aún no hay reseñas. ¡Sé el primero!</p>
           )}
         </CardContent>
       </Card>
 
-       {/* TODO: Add Promotion Management Section for Business Owner */}
+       {/* TODO: Add Promotion Management Section for Business Owner (Spanish) */}
        {/* This should only be visible if the current user is the owner */}
         {/* <Card>
             <CardHeader>
-                <CardTitle>Manage Promotion</CardTitle>
+                <CardTitle>Gestionar Promoción</CardTitle>
             </CardHeader>
             <CardContent>
-                <p>Promotion controls go here (upgrade plan, view stats, etc.)</p>
+                <p>Controles de promoción van aquí (mejorar plan, ver estadísticas, etc.)</p>
             </CardContent>
         </Card> */}
 

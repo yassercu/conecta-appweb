@@ -12,20 +12,20 @@ import { Search, MapPin, Star, Filter, StarIcon, ArrowDownUp, LocateFixed, List 
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
-// Placeholder data - replace with actual data fetching
+// Placeholder data - replace with actual data fetching (Spanish)
 const allBusinesses = [
-  { id: '1', name: 'Cool Cafe', category: 'Restaurantes', rating: 4.5, location: 'Downtown', image: 'https://picsum.photos/400/200', promoted: true, dataAiHint: 'cafe interior' },
-  { id: '2', name: 'Trendy Boutique', category: 'Tiendas de ropa', rating: 5.0, location: 'Uptown', image: 'https://picsum.photos/400/200', promoted: true, dataAiHint: 'clothing boutique' },
-  { id: '3', name: 'Happy Paws Vet', category: 'Veterinarias', rating: 4.8, location: 'Suburbia', image: 'https://picsum.photos/400/200', promoted: true, dataAiHint: 'veterinary clinic' },
-  { id: '4', name: 'Bookworm Haven', category: 'Librerías', rating: 4.2, location: 'Downtown', image: 'https://picsum.photos/400/200', promoted: false, dataAiHint: 'bookstore shelf' },
-  { id: '5', 'name': 'Gourmet Grill', category: 'Restaurantes', rating: 4.7, location: 'Midtown', image: 'https://picsum.photos/400/200', promoted: false, dataAiHint: 'restaurant food' },
-  { id: '6', 'name': 'Style Spot', category: 'Tiendas de ropa', rating: 4.0, location: 'Suburbia', image: 'https://picsum.photos/400/200', promoted: false, dataAiHint: 'clothing rack' },
-  { id: '7', 'name': 'Central Perk Cafe', category: 'Cafeterías', rating: 4.9, location: 'Uptown', image: 'https://picsum.photos/400/200', promoted: false, dataAiHint: 'coffee shop counter'},
+  { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', image: 'https://picsum.photos/400/200?random=1', promoted: true, dataAiHint: 'cafe interior' },
+  { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', image: 'https://picsum.photos/400/200?random=2', promoted: true, dataAiHint: 'clothing boutique' },
+  { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', image: 'https://picsum.photos/400/200?random=3', promoted: true, dataAiHint: 'veterinary clinic' },
+  { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', image: 'https://picsum.photos/400/200?random=4', promoted: false, dataAiHint: 'bookstore shelf' },
+  { id: '5', 'name': 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', image: 'https://picsum.photos/400/200?random=5', promoted: false, dataAiHint: 'restaurant food' },
+  { id: '6', 'name': 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', image: 'https://picsum.photos/400/200?random=6', promoted: false, dataAiHint: 'clothing rack' },
+  { id: '7', 'name': 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', image: 'https://picsum.photos/400/200?random=7', promoted: false, dataAiHint: 'coffee shop counter'},
 ];
 
-// Placeholder categories
+// Placeholder categories (Spanish)
 const categories = [
-  "All",
+  "Todas",
   "Restaurantes",
   "Tiendas de ropa",
   "Veterinarias",
@@ -42,7 +42,7 @@ async function fetchBusinesses(filters: { query: string, category: string, ratin
 
     let filtered = allBusinesses.filter(b =>
         (b.name.toLowerCase().includes(filters.query.toLowerCase()) || b.category.toLowerCase().includes(filters.query.toLowerCase())) &&
-        (filters.category === 'All' || b.category === filters.category) &&
+        (filters.category === 'Todas' || b.category === filters.category) &&
         (filters.rating === '0' || b.rating >= parseInt(filters.rating))
     );
 
@@ -63,7 +63,7 @@ async function fetchBusinesses(filters: { query: string, category: string, ratin
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('query') || '';
-  const initialCategory = searchParams.get('category') || 'All';
+  const initialCategory = searchParams.get('category') || 'Todas'; // Changed default to Spanish 'Todas'
   const initialMapView = searchParams.get('map') === 'true';
 
   const [businesses, setBusinesses] = useState<typeof allBusinesses>([]);
@@ -105,17 +105,17 @@ export default function SearchPage() {
   return (
     <div className="space-y-8">
       <section className="space-y-4">
-        <h1 className="text-3xl font-bold">Search Businesses</h1>
+        <h1 className="text-3xl font-bold">Buscar Negocios</h1>
         <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-2">
             <Input
                 type="text"
-                placeholder="Search by name or category..."
+                placeholder="Buscar por nombre, categoría..."
                 className="flex-grow"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
             />
             <Button type="submit">
-                <Search className="mr-2 h-4 w-4" /> Search
+                <Search className="mr-2 h-4 w-4" /> Buscar
             </Button>
         </form>
       </section>
@@ -127,7 +127,7 @@ export default function SearchPage() {
                 {/* Category Filter */}
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Category" />
+                        <SelectValue placeholder="Categoría" />
                     </SelectTrigger>
                     <SelectContent>
                         {categories.map(cat => (
@@ -140,14 +140,14 @@ export default function SearchPage() {
                  <Select value={minRating} onValueChange={setMinRating}>
                     <SelectTrigger className="w-[150px]">
                          <StarIcon className="h-4 w-4 mr-1 inline-block text-yellow-500 fill-current" />
-                        <SelectValue placeholder="Rating" />
+                        <SelectValue placeholder="Valoración" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="0">Any Rating</SelectItem>
-                        <SelectItem value="4">4 Stars & Up</SelectItem>
-                        <SelectItem value="3">3 Stars & Up</SelectItem>
-                        <SelectItem value="2">2 Stars & Up</SelectItem>
-                        <SelectItem value="1">1 Star & Up</SelectItem>
+                        <SelectItem value="0">Cualquiera</SelectItem>
+                        <SelectItem value="4">4 Estrellas o más</SelectItem>
+                        <SelectItem value="3">3 Estrellas o más</SelectItem>
+                        <SelectItem value="2">2 Estrellas o más</SelectItem>
+                        <SelectItem value="1">1 Estrella o más</SelectItem>
                     </SelectContent>
                 </Select>
 
@@ -155,11 +155,11 @@ export default function SearchPage() {
                  <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="w-[150px]">
                         <ArrowDownUp className="h-4 w-4 mr-1 inline-block" />
-                        <SelectValue placeholder="Sort By" />
+                        <SelectValue placeholder="Ordenar por" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="rating">Rating</SelectItem>
-                        <SelectItem value="name">Name (A-Z)</SelectItem>
+                        <SelectItem value="rating">Valoración</SelectItem>
+                        <SelectItem value="name">Nombre (A-Z)</SelectItem>
                         {/* Add distance sorting later */}
                     </SelectContent>
                 </Select>
@@ -168,10 +168,10 @@ export default function SearchPage() {
              {/* View Toggle */}
              <div className="flex gap-2">
                  <Button variant={isMapView ? "outline" : "default"} onClick={() => setIsMapView(false)}>
-                     <List className="mr-2 h-4 w-4" /> List View
+                     <List className="mr-2 h-4 w-4" /> Vista Lista
                  </Button>
                  <Button variant={isMapView ? "default" : "outline"} onClick={() => setIsMapView(true)}>
-                     <LocateFixed className="mr-2 h-4 w-4" /> Map View
+                     <LocateFixed className="mr-2 h-4 w-4" /> Vista Mapa
                  </Button>
              </div>
         </div>
@@ -179,9 +179,9 @@ export default function SearchPage() {
         {/* Conditional Rendering based on View */}
         {isMapView ? (
              <section>
-                 <h2 className="text-2xl font-semibold mb-4">Map View</h2>
+                 <h2 className="text-2xl font-semibold mb-4">Vista de Mapa</h2>
                  <Card className="h-[500px] flex items-center justify-center bg-muted text-muted-foreground">
-                     Map Placeholder (Requires Leaflet Integration)
+                     Mapa (Requiere Integración con Leaflet)
                      {/* TODO: Implement Leaflet map here, plotting businesses */}
                  </Card>
              </section>
@@ -190,7 +190,7 @@ export default function SearchPage() {
                 {/* Promoted Results */}
                 {isLoading && promotedListings.length === 0 && (
                     <section>
-                        <h2 className="text-xl font-semibold mb-4 text-primary">🌟 Featured Businesses</h2>
+                        <h2 className="text-xl font-semibold mb-4 text-primary">🌟 Negocios Destacados</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                              {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-80" />)}
                          </div>
@@ -198,7 +198,7 @@ export default function SearchPage() {
                 )}
                 {!isLoading && promotedListings.length > 0 && (
                     <section>
-                        <h2 className="text-xl font-semibold mb-4 text-primary">🌟 Featured Businesses</h2>
+                        <h2 className="text-xl font-semibold mb-4 text-primary">🌟 Negocios Destacados</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {promotedListings.map((business) => (
                                 <BusinessCard key={business.id} business={business} />
@@ -210,7 +210,7 @@ export default function SearchPage() {
 
                 {/* Regular Results */}
                 <section>
-                    <h2 className="text-2xl font-semibold mb-4">Search Results ({isLoading ? '...' : regularListings.length})</h2>
+                    <h2 className="text-2xl font-semibold mb-4">Resultados ({isLoading ? '...' : regularListings.length})</h2>
                     {isLoading ? (
                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-80" />)}
@@ -222,7 +222,7 @@ export default function SearchPage() {
                             ))}
                         </div>
                     ) : (
-                        <p className="text-muted-foreground text-center py-8">No businesses found matching your criteria.</p>
+                        <p className="text-muted-foreground text-center py-8">No se encontraron negocios con tus criterios.</p>
                     )}
                 </section>
             </>
@@ -232,7 +232,7 @@ export default function SearchPage() {
 }
 
 
-// Business Card Component
+// Business Card Component (Spanish)
 function BusinessCard({ business }: { business: typeof allBusinesses[0] }) {
     return (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
@@ -246,7 +246,7 @@ function BusinessCard({ business }: { business: typeof allBusinesses[0] }) {
                     data-ai-hint={business.dataAiHint} // Added AI hint
                     priority={business.promoted} // Prioritize loading promoted images
                 />
-                {business.promoted && <Badge variant="default" className="absolute top-2 right-2 bg-accent text-accent-foreground">Promoted</Badge>}
+                {business.promoted && <Badge variant="default" className="absolute top-2 right-2 bg-accent text-accent-foreground">Promo</Badge>}
             </CardHeader>
             <CardContent className="pt-4 flex-grow">
                 <CardTitle className="text-lg">{business.name}</CardTitle>
@@ -264,7 +264,7 @@ function BusinessCard({ business }: { business: typeof allBusinesses[0] }) {
                  </div>
                  <Button variant="outline" size="sm" asChild>
                      {/* TODO: Update href when business detail page is created */}
-                     <Link href={`/business/${business.id}`}>View</Link>
+                     <Link href={`/business/${business.id}`}>Ver</Link>
                  </Button>
             </CardFooter>
         </Card>

@@ -1,94 +1,92 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, MapPin, Star, Store, Utensils, Shirt, PawPrint } from 'lucide-react';
+import { MapPin, Star } from 'lucide-react';
 import Image from 'next/image';
 
-// Placeholder data - replace with actual data fetching
-const promotedBusinesses = [
-  { id: '1', name: 'Cool Cafe', category: 'Restaurantes', rating: 4.5, location: 'Downtown', image: 'https://picsum.photos/400/200', dataAiHint: 'cafe interior' },
-  { id: '2', name: 'Trendy Boutique', category: 'Tiendas de ropa', rating: 5.0, location: 'Uptown', image: 'https://picsum.photos/400/200', dataAiHint: 'clothing boutique' },
-  { id: '3', name: 'Happy Paws Vet', category: 'Veterinarias', rating: 4.8, location: 'Suburbia', image: 'https://picsum.photos/400/200', dataAiHint: 'veterinary clinic' },
-];
-
-const categories = [
-  { name: 'Restaurantes', icon: Utensils },
-  { name: 'Tiendas de ropa', icon: Shirt },
-  { name: 'Veterinarias', icon: PawPrint },
-  { name: 'Other Shops', icon: Store },
+// Placeholder data - replace with actual data fetching and diversify
+const featuredSections = [
+  {
+    title: "Novedades en el Barrio",
+    businesses: [
+      { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', image: 'https://picsum.photos/300/300?random=1', dataAiHint: 'modern cafe interior', promoted: false },
+      { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', image: 'https://picsum.photos/300/300?random=2', dataAiHint: 'stylish clothing display', promoted: true },
+      { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', image: 'https://picsum.photos/300/300?random=4', dataAiHint: 'cozy bookstore aisle', promoted: false },
+      { id: '5', name: 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', image: 'https://picsum.photos/300/300?random=5', dataAiHint: 'traditional dish presentation', promoted: false },
+    ]
+  },
+  {
+    title: "Populares Cerca de Ti",
+    businesses: [
+       { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', image: 'https://picsum.photos/300/300?random=3', dataAiHint: 'vet with cat', promoted: true },
+       { id: '6', name: 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', image: 'https://picsum.photos/300/300?random=6', dataAiHint: 'casual wear shop', promoted: false },
+       { id: '7', name: 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', image: 'https://picsum.photos/300/300?random=7', dataAiHint: 'coffee shop barista', promoted: false },
+       { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', image: 'https://picsum.photos/300/300?random=8', dataAiHint: 'latte art close up', promoted: false }, // Reusing ID for example
+    ]
+  },
+  // Add more sections as needed
 ];
 
 export default function Home() {
   return (
     <div className="space-y-12">
-      <section className="text-center space-y-4">
-        <h1 className="text-4xl font-bold tracking-tight">Find Local Businesses Near You</h1>
-        <p className="text-lg text-muted-foreground">Discover amazing local shops, restaurants, and services in your community.</p>
-        <div className="max-w-xl mx-auto flex gap-2">
-          <Input type="text" placeholder="Search by name, category, or product..." className="flex-grow" />
-          <Button>
-            <Search className="mr-2 h-4 w-4" /> Search
-          </Button>
-        </div>
-         <p className="text-sm text-muted-foreground">
-           Or browse by <Link href="/search" className="text-primary underline">category</Link> or <Link href="/search?map=true" className="text-primary underline">location</Link>.
-         </p>
-      </section>
+       {/* Hero Section Minimalist */}
+       <section className="text-center py-10">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">Explora Negocios Locales</h1>
+            <p className="text-md md:text-lg text-muted-foreground mb-6">Encuentra lo mejor de tu comunidad.</p>
+            <Button asChild>
+                <Link href="/search">Ver Todos los Negocios</Link>
+            </Button>
+        </section>
 
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">🌟 Promoted Businesses</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {promotedBusinesses.map((business) => (
-            <Card key={business.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-               <CardHeader className="p-0 relative">
+
+      {featuredSections.map((section, index) => (
+        <section key={index}>
+          <h2 className="text-2xl font-semibold mb-4">{section.title}</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {section.businesses.map((business) => (
+              <Card key={business.id} className="overflow-hidden group relative border-0 shadow-sm hover:shadow-md transition-shadow aspect-square flex flex-col">
+                <Link href={`/business/${business.id}`} className="absolute inset-0 z-10">
+                    <span className="sr-only">Ver detalles de {business.name}</span>
+                </Link>
                  <Image
                    src={business.image}
                    alt={business.name}
-                   width={400}
-                   height={200}
-                   className="w-full h-48 object-cover"
+                   fill // Use fill layout
+                   sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw" // Responsive sizes
+                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                    data-ai-hint={business.dataAiHint}
+                   priority={index < 1} // Prioritize images in the first section
                  />
-                 <Badge variant="default" className="absolute top-2 right-2 bg-accent text-accent-foreground">Promoted</Badge>
-               </CardHeader>
-              <CardContent className="pt-4">
-                <CardTitle className="text-lg">{business.name}</CardTitle>
-                 <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <MapPin className="h-4 w-4" /> {business.location}
-                  </p>
-              </CardContent>
-              <CardFooter className="flex justify-between items-center text-sm">
-                 <span className="text-muted-foreground">{business.category}</span>
-                 <div className="flex items-center gap-1 text-yellow-500">
-                   <Star className="h-4 w-4 fill-current" />
-                   <span>{business.rating.toFixed(1)}</span>
-                 </div>
-              </CardFooter>
-              <div className="p-4 pt-0">
-                <Button variant="outline" size="sm" className="w-full" asChild>
-                    <Link href={`/business/${business.id}`}>View Details</Link>
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </section>
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent pointer-events-none"></div>
 
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Browse by Category</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {categories.map((category) => (
-            <Link key={category.name} href={`/search?category=${encodeURIComponent(category.name)}`} passHref>
-              <Card className="text-center p-6 hover:bg-secondary transition-colors cursor-pointer flex flex-col items-center gap-2">
-                <category.icon className="h-8 w-8 text-primary" />
-                <span className="font-medium">{category.name}</span>
+                  {business.promoted && (
+                    <Badge variant="default" className="absolute top-2 right-2 bg-accent text-accent-foreground text-[10px] px-1.5 py-0.5 z-20">
+                       ★ PROMO
+                    </Badge>
+                  )}
+
+                 <CardContent className="p-2 mt-auto z-10 relative text-white">
+                    <h3 className="font-semibold text-sm truncate">{business.name}</h3>
+                    <p className="text-xs text-gray-300 truncate">{business.category}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                         <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                         <span className="text-xs font-medium">{business.rating.toFixed(1)}</span>
+                         <span className="text-xs text-gray-400 ml-auto hidden sm:inline">• {business.location}</span>
+                    </div>
+                 </CardContent>
               </Card>
-            </Link>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+           {/* Optional "See More" button for each section */}
+           <div className="text-center mt-6">
+               <Button variant="outline" size="sm" asChild>
+                   <Link href={`/search?category=${encodeURIComponent(section.businesses[0]?.category || '')}`}>Ver más {section.businesses[0]?.category || 'negocios'}</Link>
+               </Button>
+           </div>
+        </section>
+      ))}
     </div>
   );
 }

@@ -9,14 +9,15 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, Loader2, CreditCard } from 'lucide-react';
 import { processPayment, type PaymentPlan, type PaymentResult } from '@/services/payment'; // Assuming service exists
 
+// Updated plans with Spanish names
 const plans: PaymentPlan[] = [
-  { name: 'Monthly', price: 10 },
-  { name: 'Annual', price: 96 }, // $8/month effective price
+  { name: 'Mensual', price: 10 },
+  { name: 'Anual', price: 96 }, // $8/month effective price
 ];
 
-// Mock payment methods
+// Mock payment methods (Spanish)
 const paymentMethods = [
-    { id: 'card', name: 'Credit/Debit Card', icon: CreditCard },
+    { id: 'card', name: 'Tarjeta de Crédito/Débito', icon: CreditCard },
     // { id: 'paypal', name: 'PayPal', icon: PaypalIcon }, // Placeholder for PayPal icon
 ];
 
@@ -29,8 +30,8 @@ export default function PaymentPage() {
   const handlePayment = async () => {
     if (!selectedPlan || !selectedMethod) {
       toast({
-        title: "Incomplete Selection",
-        description: "Please select a plan and payment method.",
+        title: "Selección Incompleta",
+        description: "Por favor, selecciona un plan y un método de pago.",
         variant: "destructive",
       });
       return;
@@ -44,8 +45,8 @@ export default function PaymentPage() {
 
       if (result.success) {
         toast({
-          title: "Payment Successful!",
-          description: `${result.message} Your ${selectedPlan.name} promotion is now active.`,
+          title: "¡Pago Exitoso!",
+          description: `${result.message} Tu promoción ${selectedPlan.name.toLowerCase()} está ahora activa.`,
           variant: "default", // Use default (green accent) for success
         });
         // Reset selection or redirect
@@ -53,16 +54,16 @@ export default function PaymentPage() {
         setSelectedMethod(null);
       } else {
         toast({
-          title: "Payment Failed",
+          title: "Pago Fallido",
           description: result.message,
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Payment processing error:", error);
+      console.error("Error procesando el pago:", error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred during payment processing.",
+        description: "Ocurrió un error inesperado durante el procesamiento del pago.",
         variant: "destructive",
       });
     } finally {
@@ -73,8 +74,8 @@ export default function PaymentPage() {
   return (
     <Card className="max-w-lg mx-auto">
       <CardHeader>
-        <CardTitle>Choose Your Promotion Plan</CardTitle>
-        <CardDescription>Boost your business visibility on LocalSpark.</CardDescription>
+        <CardTitle>Elige Tu Plan de Promoción</CardTitle>
+        <CardDescription>Aumenta la visibilidad de tu negocio en LocalSpark.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Plan Selection */}
@@ -83,7 +84,7 @@ export default function PaymentPage() {
           onValueChange={(value) => setSelectedPlan(plans.find(p => p.name === value) || null)}
           className="space-y-2"
         >
-          <h3 className="font-medium">Select a Plan:</h3>
+          <h3 className="font-medium">Selecciona un Plan:</h3>
           {plans.map((plan) => (
             <Label
               key={plan.name}
@@ -94,12 +95,12 @@ export default function PaymentPage() {
                 <RadioGroupItem value={plan.name} id={`plan-${plan.name}`} />
                 <div>
                   <span className="font-semibold">{plan.name}</span>
-                  {plan.name === 'Annual' && <Badge variant="outline" className="ml-2 bg-accent text-accent-foreground border-none">Save 20%</Badge>}
+                   {plan.name === 'Anual' && <Badge variant="outline" className="ml-2 bg-accent text-accent-foreground border-none">Ahorra 20%</Badge>}
                 </div>
               </div>
               <span className="font-bold text-lg">
                 ${plan.price}
-                <span className="text-sm font-normal text-muted-foreground">/{plan.name === 'Monthly' ? 'month' : 'year'}</span>
+                 <span className="text-sm font-normal text-muted-foreground">/{plan.name === 'Mensual' ? 'mes' : 'año'}</span>
               </span>
             </Label>
           ))}
@@ -112,7 +113,7 @@ export default function PaymentPage() {
                 onValueChange={setSelectedMethod}
                 className="space-y-2 pt-4 border-t"
             >
-                 <h3 className="font-medium">Select Payment Method:</h3>
+                 <h3 className="font-medium">Selecciona Método de Pago:</h3>
                  {paymentMethods.map((method) => (
                      <Label
                         key={method.id}
@@ -127,7 +128,7 @@ export default function PaymentPage() {
                  {/* TODO: Add input fields for Credit Card details using Stripe Elements or similar */}
                  {selectedMethod === 'card' && (
                      <div className="p-4 border rounded-md bg-muted text-muted-foreground text-sm">
-                         Credit Card input fields would appear here (using a secure integration like Stripe Elements).
+                         Los campos para detalles de tarjeta de crédito aparecerían aquí (usando una integración segura como Stripe Elements).
                      </div>
                  )}
 
@@ -146,7 +147,7 @@ export default function PaymentPage() {
           ) : (
             <CheckCircle className="mr-2 h-4 w-4" />
           )}
-          {isLoading ? 'Processing...' : `Pay $${selectedPlan?.price || 0} (${selectedPlan?.name || 'Plan'})`}
+          {isLoading ? 'Procesando...' : `Pagar $${selectedPlan?.price || 0} (${selectedPlan?.name || 'Plan'})`}
         </Button>
       </CardFooter>
     </Card>
