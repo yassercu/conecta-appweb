@@ -28,8 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning> {/* Add suppressHydrationWarning for next-themes */}
-      
+    <html lang="es" suppressHydrationWarning={true}>
       <body
         className={cn(
           'min-h-screen bg-background font-sans antialiased flex flex-col',
@@ -51,7 +50,6 @@ export default function RootLayout({
           <Toaster />
         </ThemeProvider>
       </body>
-    
     </html>
   );
 }
