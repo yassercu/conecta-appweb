@@ -15,7 +15,7 @@ export function Header() {
             <span className="hidden sm:inline">LocalSpark</span>
           </Link>
           {/* Search Bar integrated into the header */}
-          <div className="flex-grow max-w-3xl hidden md:block">
+          <div className="flex-grow hidden md:block">
             <SearchBar />
           </div>
         </div>
@@ -47,9 +47,6 @@ export function Header() {
               </SheetTrigger>
               <SheetContent side="right">
                   <nav className="grid gap-4 text-lg p-4 mt-8">
-                      <Link href="/" className="font-medium text-foreground hover:text-primary" passHref>
-                         Inicio
-                      </Link>
                       <Link href="/search" className="font-medium text-foreground hover:text-primary" passHref>
                          Explorar
                       </Link>
@@ -73,3 +70,4 @@ export function Header() {
     </header>
   );
 }
+
