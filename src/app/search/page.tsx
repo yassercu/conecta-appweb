@@ -1,3 +1,6 @@
+// src/app/search/page.tsx
+'use client'; // Add this directive
+
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -10,6 +13,7 @@ import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import dynamic from 'next/dynamic';
 import type { Business } from '@/types/business'; // Import the Business type
+import { allBusinesses, categories } from '@/lib/data'; // Ensure this path is correct
 
 // Dynamically import Map component to avoid SSR issues with Leaflet
 const MapView = dynamic(() => import('@/components/map-view/map-view'), {
@@ -17,37 +21,6 @@ const MapView = dynamic(() => import('@/components/map-view/map-view'), {
   loading: () => <Skeleton className="h-[500px] w-full rounded-lg" />,
 });
 
-
-// Placeholder data - replace with actual data fetching (Spanish)
-// Added 'promoted' flag
-const allBusinesses: Business[] = [
-  { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', image: 'https://picsum.photos/400/200?random=1', promoted: false, dataAiHint: 'cafe interior', latitude: 37.7749, longitude: -122.4194, description: 'Un café acogedor con excelente café y pastelería.', address: 'Calle Falsa 123', phone: '555-1111', email: 'info@cafeesquina.com' },
-  { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', image: 'https://picsum.photos/400/200?random=2', promoted: true, dataAiHint: 'clothing boutique', latitude: 37.7949, longitude: -122.4294, description: 'Últimas tendencias de moda y estilos únicos.', address: 'Av Moda 456', phone: '555-2222', email: 'info@modaurbana.com' },
-  { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', image: 'https://picsum.photos/400/200?random=3', promoted: true, dataAiHint: 'veterinary clinic', latitude: 37.7549, longitude: -122.4094, description: 'Cuidado compasivo para tus amigos peludos.', address: 'Calle Mascotas 789', phone: '555-3333', email: 'info@patitas.com' },
-  { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', image: 'https://picsum.photos/400/200?random=4', promoted: false, dataAiHint: 'bookstore shelf', latitude: 37.7755, longitude: -122.4180, description: 'Un lugar tranquilo para encontrar tu próximo libro favorito.', address: 'Plaza Libro 1', phone: '555-4444', email: 'info@librosymas.com' },
-  { id: '5', name: 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', image: 'https://picsum.photos/400/200?random=5', promoted: true, dataAiHint: 'restaurant food', latitude: 37.7800, longitude: -122.3994, description: 'Experiencia culinaria exquisita con un toque moderno.', address: 'Blvd Sabor 987', phone: '555-5555', email: 'info@saborcriollo.com' },
-  { id: '6', name: 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', image: 'https://picsum.photos/400/200?random=6', promoted: false, dataAiHint: 'clothing rack', latitude: 37.7449, longitude: -122.4154, description: 'Ropa asequible y con estilo para todos.', address: 'Ruta Estilo 101', phone: '555-6666', email: 'info@estilocasual.com' },
-  { id: '7', name: 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', image: 'https://picsum.photos/400/200?random=7', promoted: true, dataAiHint: 'coffee shop counter', latitude: 37.8049, longitude: -122.4394, description: 'El mejor café y sofás de la ciudad.', address: 'Av Cafe 10', phone: '555-7777', email: 'info@cafecentral.com' },
-   // Add more businesses for the "Populares" section
-    { id: '8', name: 'Flores del Edén', category: 'Floristerías', rating: 4.6, location: 'Oeste', image: 'https://picsum.photos/400/200?random=8', dataAiHint: 'flower shop display', promoted: false, description: 'Arreglos florales frescos para toda ocasión.', latitude: 37.7700, longitude: -122.4500, address: 'Calle Flor 22', phone: '555-8888', email: 'info@flores.com' },
-    { id: '9', name: 'TecnoSoluciones', category: 'Reparación Electrónica', rating: 4.3, location: 'Centro', image: 'https://picsum.photos/400/200?random=9', dataAiHint: 'electronics repair bench', promoted: false, description: 'Reparación rápida y confiable de tus dispositivos.', latitude: 37.7780, longitude: -122.4150, address: 'Pasaje Tecno 3', phone: '555-9999', email: 'info@tecnosoluciones.com' },
-    { id: '10', name: 'Pan Caliente', category: 'Panaderías', rating: 4.9, location: 'Este', image: 'https://picsum.photos/400/200?random=10', dataAiHint: 'fresh bread bakery', promoted: true, description: 'Pan artesanal horneado diariamente.', latitude: 37.7850, longitude: -122.3950, address: 'Esquina Pan 50', phone: '555-1010', email: 'info@pancaliente.com' },
-];
-
-// Placeholder categories (Spanish)
-const categories = [
-  "Todas",
-  "Restaurantes",
-  "Tiendas de ropa",
-  "Veterinarias",
-  "Cafeterías",
-  "Librerías",
-  "Floristerías",
-  "Reparación Electrónica",
-  "Panaderías",
-  "Servicios Profesionales",
-  "Otros",
-];
 
 // Simulate API call
 async function fetchBusinesses(filters: { query: string, category: string, rating: string, sortBy: string }): Promise<Business[]> {
@@ -278,4 +251,3 @@ function BusinessCard({ business }: { business: Business }) {
         </Card>
     );
 }
-
