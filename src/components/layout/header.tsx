@@ -15,18 +15,13 @@ export function Header() {
             <span className="hidden sm:inline">LocalSpark</span>
           </Link>
           {/* Search Bar integrated into the header */}
-          <div className="flex-grow max-w-xl hidden md:block">
+          <div className="flex-grow max-w-3xl hidden md:block">
             <SearchBar />
           </div>
         </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-1 md:flex">
-          <Link href="/" passHref legacyBehavior>
-            <Button variant="ghost" className="text-sm">
-              Inicio
-            </Button>
-          </Link>
           <Link href="/search" passHref legacyBehavior>
             <Button variant="ghost" className="text-sm">
               Explorar

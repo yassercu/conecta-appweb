@@ -65,9 +65,9 @@ export default function Home() {
       </section>
 
       {/* Promoted Business Carousel Section */}
-      <section className="py-10 bg-gradient-to-b from-background to-muted/50 rounded-lg">
+      <section className="py-6 bg-gradient-to-b from-background to-muted/50 rounded-lg">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-6">
             <h2 className="text-2xl md:text-3xl font-semibold text-foreground flex items-center gap-2 mb-4 md:mb-0">
               <Sparkles className="text-primary h-6 w-6" />
               Negocios Destacados
@@ -87,16 +87,16 @@ export default function Home() {
           >
             <CarouselContent>
               {carouselBusinesses.map((business) => (
-                <CarouselItem key={business.id} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                <CarouselItem key={business.id} className="md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
                   <div className="p-1"> {/* Add padding for spacing */}
-                    <Card className="overflow-hidden group relative border bg-card rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
+                    <Card className="overflow-hidden group relative border bg-card rounded-md shadow-sm hover:shadow-md transition-shadow duration-300 h-48 flex flex-col">
                         <Link href={`/business/${business.id}`} className="block">
-                            <div className="relative aspect-video">
+                            <div className="relative aspect-square h-32">
                                 <Image
                                     src={business.image}
                                     alt={business.name}
                                     fill
-                                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                                    sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 15vw"
                                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                                     data-ai-hint={business.dataAiHint}
                                     priority={true} // Prioritize images in the carousel
@@ -104,11 +104,11 @@ export default function Home() {
                                 <Badge variant="default" className="absolute top-2 right-2 bg-accent text-accent-foreground text-[10px] px-1.5 py-0.5 z-20">★ PROMO</Badge>
                             </div>
                             <CardContent className="p-3 flex-grow space-y-1">
-                                <h3 className="font-semibold text-lg truncate text-card-foreground">{business.name}</h3>
+                                <h3 className="font-semibold text-sm truncate text-card-foreground">{business.name}</h3>
                                 <Badge variant="secondary" className="text-xs">{business.category}</Badge>
                                 <div className="flex items-center justify-between text-sm text-muted-foreground pt-1">
                                     <div className="flex items-center gap-1">
-                                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                        <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
                                         <span className="font-medium text-foreground">{business.rating.toFixed(1)}</span>
                                     </div>
                                     <span>{business.location}</span>
