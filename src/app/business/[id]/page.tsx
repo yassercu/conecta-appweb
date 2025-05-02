@@ -29,6 +29,10 @@ const getBusinessDetails = async (id: string): Promise<Business | null> => {
       { id: '5', name: 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', address: 'Blvd. Gastronomía 654', phone: '555-3344', email: 'reservas@saborcriollo.com', description: 'Experiencia culinaria exquisita con un toque moderno.', image: 'https://picsum.photos/800/400?random=5', promoted: true, dataAiHint: 'fine dining plate', latitude: 37.7800, longitude: -122.3994 },
       { id: '6', name: 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', address: 'Ruta Estilo 987', phone: '555-5566', email: 'tienda@estilocasual.com', description: 'Ropa asequible y con estilo para todos.', image: 'https://picsum.photos/800/400?random=6', promoted: false, dataAiHint: 'casual clothing store', latitude: 37.7449, longitude: -122.4154 },
       { id: '7', name: 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', address: 'Av. Café 101', phone: '555-7788', email: 'amigos@cafecentral.com', description: 'El mejor café y sofás de la ciudad.', image: 'https://picsum.photos/800/400?random=7', promoted: true, dataAiHint: 'famous coffee shop sofa', latitude: 37.8049, longitude: -122.4394 },
+       // Add more businesses for the "Populares" section
+      { id: '8', name: 'Flores del Edén', category: 'Floristerías', rating: 4.6, location: 'Oeste', image: 'https://picsum.photos/800/400?random=8', dataAiHint: 'flower shop display', promoted: false, description: 'Arreglos florales frescos para toda ocasión.', latitude: 37.7700, longitude: -122.4500, address: 'Calle Flor 22', phone: '555-8888', email: 'info@flores.com' },
+      { id: '9', name: 'TecnoSoluciones', category: 'Reparación Electrónica', rating: 4.3, location: 'Centro', image: 'https://picsum.photos/800/400?random=9', dataAiHint: 'electronics repair bench', promoted: false, description: 'Reparación rápida y confiable de tus dispositivos.', latitude: 37.7780, longitude: -122.4150, address: 'Pasaje Tecno 3', phone: '555-9999', email: 'info@tecnosoluciones.com' },
+      { id: '10', name: 'Pan Caliente', category: 'Panaderías', rating: 4.9, location: 'Este', image: 'https://picsum.photos/800/400?random=10', dataAiHint: 'fresh bread bakery', promoted: true, description: 'Pan artesanal horneado diariamente.', latitude: 37.7850, longitude: -122.3950, address: 'Esquina Pan 50', phone: '555-1010', email: 'info@pancaliente.com' },
   ];
 
    const business = businesses.find(b => b.id === id);
@@ -55,7 +59,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 
   if (!business) {
       return <div className="text-center py-16"> {/* Increased padding */}
-          <h1 className="text-3xl font-bold mb-4">Negocio No Encontrado</h1>
+          <h1 className="text-3xl font-bold mb-4 text-foreground">Negocio No Encontrado</h1>
           <p className="text-lg text-muted-foreground mb-6">No pudimos encontrar el negocio que buscabas.</p>
           <Button asChild size="lg" className="mt-4">
               <Link href="/search">Volver a la Búsqueda</Link>
@@ -77,7 +81,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
   return (
     <div className="space-y-10"> {/* Increased spacing */}
       {/* Main Business Info Card */}
-      <Card className="overflow-hidden shadow-lg"> {/* Added shadow */}
+      <Card className="overflow-hidden shadow-lg border bg-card"> {/* Added border */}
         <CardHeader className="p-0 relative">
           <div className="aspect-video relative"> {/* Consistent aspect ratio */}
             <Image
@@ -89,16 +93,21 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
               priority // Load hero image quickly
               data-ai-hint={business.dataAiHint}
             />
-            {/* Promoted Badge */}
+             {/* Destacado Badge */}
             {business.promoted && (
-                <Badge variant="default" className="absolute top-3 right-3 bg-accent text-accent-foreground text-xs px-2 py-1 z-10 shadow-md">★ PROMO</Badge>
+                 <Badge
+                   variant="default"
+                   className="absolute top-3 right-3 bg-yellow-500 text-black text-xs px-2 py-1 z-10 shadow-md border border-yellow-600" // Golden badge style
+                 >
+                   ★ DESTACADO
+                 </Badge>
             )}
           </div>
         </CardHeader>
         <CardContent className="p-6 space-y-6"> {/* Increased padding */}
             <div className="flex flex-col md:flex-row justify-between md:items-start gap-4"> {/* Align items start for multi-line text */}
                  <div>
-                    <CardTitle className="text-3xl md:text-4xl mb-1">{business.name}</CardTitle>
+                    <CardTitle className="text-3xl md:text-4xl mb-1 text-card-foreground">{business.name}</CardTitle>
                     <Badge variant="secondary">{business.category}</Badge> {/* Use Badge for category */}
                  </div>
                  <div className="flex items-center gap-1 text-yellow-500 flex-shrink-0 mt-2 md:mt-0">
@@ -147,9 +156,9 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
       </Card>
 
        {/* Catalog Section */}
-        <Card>
+        <Card className="border bg-card">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl"> {/* Increased text size */}
+                <CardTitle className="flex items-center gap-2 text-2xl text-card-foreground"> {/* Increased text size */}
                     <ShoppingBag className="h-6 w-6 text-primary" />
                     Productos / Servicios
                 </CardTitle>
@@ -161,7 +170,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                         {relevantCatalogItems.map(item => (
                              <li key={item.id} className="flex justify-between items-start border-b pb-3 last:border-b-0"> {/* Align items start, increased padding */}
                                  <div>
-                                     <p className="font-medium text-lg">{item.name}</p> {/* Increased text size */}
+                                     <p className="font-medium text-lg text-card-foreground">{item.name}</p> {/* Increased text size */}
                                      <p className="text-sm text-muted-foreground">{item.description}</p>
                                  </div>
                                  <span className="font-semibold text-primary text-lg ml-4 flex-shrink-0">{item.price}</span> {/* Increased text size */}
@@ -177,9 +186,9 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 
 
       {/* Reviews Section */}
-      <Card>
+      <Card className="border bg-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
+          <CardTitle className="flex items-center gap-2 text-2xl text-card-foreground">
               <MessageSquare className="h-6 w-6 text-primary" />
               Reseñas de Clientes
           </CardTitle>
@@ -196,7 +205,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
               {reviews.map((review) => (
                 <li key={review.id} className="border p-4 rounded-lg shadow-sm bg-muted/50"> {/* Subtle background, larger padding */}
                   <div className="flex justify-between items-center mb-2"> {/* Increased margin */}
-                    <span className="font-semibold text-lg">{review.author}</span>
+                    <span className="font-semibold text-lg text-card-foreground">{review.author}</span>
                     <div className="flex items-center gap-1 text-yellow-500">
                        {[...Array(5)].map((_, i) => (
                             <Star key={i} className={`h-5 w-5 ${i < review.rating ? 'fill-current' : 'text-muted-foreground opacity-50'}`} /> /* Larger stars */
@@ -204,7 +213,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">{review.date}</p> {/* Increased margin */}
-                  <p className="text-base">{review.comment}</p> {/* Base text size */}
+                  <p className="text-base text-card-foreground">{review.comment}</p> {/* Base text size */}
                 </li>
               ))}
             </ul>

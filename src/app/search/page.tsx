@@ -23,13 +23,17 @@ const MapView = dynamic(() => import('@/components/map-view'), {
 // Placeholder data - replace with actual data fetching (Spanish)
 // Added 'promoted' flag
 const allBusinesses: Business[] = [
-  { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', image: 'https://picsum.photos/400/200?random=1', promoted: false, dataAiHint: 'cafe interior', latitude: 37.7749, longitude: -122.4194 },
-  { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', image: 'https://picsum.photos/400/200?random=2', promoted: true, dataAiHint: 'clothing boutique', latitude: 37.7949, longitude: -122.4294 },
-  { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', image: 'https://picsum.photos/400/200?random=3', promoted: true, dataAiHint: 'veterinary clinic', latitude: 37.7549, longitude: -122.4094 },
-  { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', image: 'https://picsum.photos/400/200?random=4', promoted: false, dataAiHint: 'bookstore shelf', latitude: 37.7755, longitude: -122.4180 },
-  { id: '5', name: 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', image: 'https://picsum.photos/400/200?random=5', promoted: true, dataAiHint: 'restaurant food', latitude: 37.7800, longitude: -122.3994 },
-  { id: '6', name: 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', image: 'https://picsum.photos/400/200?random=6', promoted: false, dataAiHint: 'clothing rack', latitude: 37.7449, longitude: -122.4154 },
-  { id: '7', name: 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', image: 'https://picsum.photos/400/200?random=7', promoted: true, dataAiHint: 'coffee shop counter', latitude: 37.8049, longitude: -122.4394 },
+  { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', image: 'https://picsum.photos/400/200?random=1', promoted: false, dataAiHint: 'cafe interior', latitude: 37.7749, longitude: -122.4194, description: 'Un café acogedor con excelente café y pastelería.', address: 'Calle Falsa 123', phone: '555-1111', email: 'info@cafeesquina.com' },
+  { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', image: 'https://picsum.photos/400/200?random=2', promoted: true, dataAiHint: 'clothing boutique', latitude: 37.7949, longitude: -122.4294, description: 'Últimas tendencias de moda y estilos únicos.', address: 'Av Moda 456', phone: '555-2222', email: 'info@modaurbana.com' },
+  { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', image: 'https://picsum.photos/400/200?random=3', promoted: true, dataAiHint: 'veterinary clinic', latitude: 37.7549, longitude: -122.4094, description: 'Cuidado compasivo para tus amigos peludos.', address: 'Calle Mascotas 789', phone: '555-3333', email: 'info@patitas.com' },
+  { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', image: 'https://picsum.photos/400/200?random=4', promoted: false, dataAiHint: 'bookstore shelf', latitude: 37.7755, longitude: -122.4180, description: 'Un lugar tranquilo para encontrar tu próximo libro favorito.', address: 'Plaza Libro 1', phone: '555-4444', email: 'info@librosymas.com' },
+  { id: '5', name: 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', image: 'https://picsum.photos/400/200?random=5', promoted: true, dataAiHint: 'restaurant food', latitude: 37.7800, longitude: -122.3994, description: 'Experiencia culinaria exquisita con un toque moderno.', address: 'Blvd Sabor 987', phone: '555-5555', email: 'info@saborcriollo.com' },
+  { id: '6', name: 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', image: 'https://picsum.photos/400/200?random=6', promoted: false, dataAiHint: 'clothing rack', latitude: 37.7449, longitude: -122.4154, description: 'Ropa asequible y con estilo para todos.', address: 'Ruta Estilo 101', phone: '555-6666', email: 'info@estilocasual.com' },
+  { id: '7', name: 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', image: 'https://picsum.photos/400/200?random=7', promoted: true, dataAiHint: 'coffee shop counter', latitude: 37.8049, longitude: -122.4394, description: 'El mejor café y sofás de la ciudad.', address: 'Av Cafe 10', phone: '555-7777', email: 'info@cafecentral.com' },
+   // Add more businesses for the "Populares" section
+    { id: '8', name: 'Flores del Edén', category: 'Floristerías', rating: 4.6, location: 'Oeste', image: 'https://picsum.photos/400/200?random=8', dataAiHint: 'flower shop display', promoted: false, description: 'Arreglos florales frescos para toda ocasión.', latitude: 37.7700, longitude: -122.4500, address: 'Calle Flor 22', phone: '555-8888', email: 'info@flores.com' },
+    { id: '9', name: 'TecnoSoluciones', category: 'Reparación Electrónica', rating: 4.3, location: 'Centro', image: 'https://picsum.photos/400/200?random=9', dataAiHint: 'electronics repair bench', promoted: false, description: 'Reparación rápida y confiable de tus dispositivos.', latitude: 37.7780, longitude: -122.4150, address: 'Pasaje Tecno 3', phone: '555-9999', email: 'info@tecnosoluciones.com' },
+    { id: '10', name: 'Pan Caliente', category: 'Panaderías', rating: 4.9, location: 'Este', image: 'https://picsum.photos/400/200?random=10', dataAiHint: 'fresh bread bakery', promoted: true, description: 'Pan artesanal horneado diariamente.', latitude: 37.7850, longitude: -122.3950, address: 'Esquina Pan 50', phone: '555-1010', email: 'info@pancaliente.com' },
 ];
 
 // Placeholder categories (Spanish)
@@ -40,6 +44,9 @@ const categories = [
   "Veterinarias",
   "Cafeterías",
   "Librerías",
+  "Floristerías",
+  "Reparación Electrónica",
+  "Panaderías",
   "Servicios Profesionales",
   "Otros",
 ];
@@ -58,17 +65,17 @@ async function fetchBusinesses(filters: { query: string, category: string, ratin
     // Sorting logic - prioritize promoted businesses first within each sort type
     if (filters.sortBy === 'rating') {
         filtered.sort((a, b) => {
-            if (a.promoted !== b.promoted) return b.promoted ? 1 : -1; // Promoted first
+            if (a.promoted !== b.promoted) return a.promoted ? -1 : 1; // Promoted first (negated logic for descending)
             return b.rating - a.rating || a.name.localeCompare(b.name); // Then by rating, then name
         });
     } else if (filters.sortBy === 'name') {
         filtered.sort((a, b) => {
-            if (a.promoted !== b.promoted) return b.promoted ? 1 : -1; // Promoted first
+            if (a.promoted !== b.promoted) return a.promoted ? -1 : 1; // Promoted first
             return a.name.localeCompare(b.name); // Then by name
         });
     } else { // Default sort (e.g., relevance or just promoted first)
          filtered.sort((a, b) => {
-            if (a.promoted !== b.promoted) return b.promoted ? 1 : -1; // Promoted first
+            if (a.promoted !== b.promoted) return a.promoted ? -1 : 1; // Promoted first
             return 0; // Keep original order otherwise, or implement relevance
          });
     }
@@ -130,19 +137,19 @@ export default function SearchPage() {
   return (
     <div className="space-y-8">
       <section>
-        <h1 className="text-3xl font-bold mb-4">
+        <h1 className="text-3xl font-bold mb-4 text-foreground">
           Resultados de Búsqueda {query ? `para "${query}"` : ''}
         </h1>
          {/* Search Form is in the header */}
       </section>
 
        {/* Filters and View Toggle */}
-       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 bg-muted rounded-lg">
+       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 bg-muted/50 rounded-lg border">
             <div className="flex flex-wrap gap-4 items-center">
                 <Filter className="h-5 w-5 text-muted-foreground hidden md:inline" />
                 {/* Category Filter */}
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-full sm:w-[180px]"> {/* Full width on small screens */}
+                    <SelectTrigger className="w-full sm:w-[180px] bg-background"> {/* Full width on small screens */}
                         <SelectValue placeholder="Categoría" />
                     </SelectTrigger>
                     <SelectContent>
@@ -154,7 +161,7 @@ export default function SearchPage() {
 
                  {/* Rating Filter */}
                  <Select value={minRating} onValueChange={setMinRating}>
-                    <SelectTrigger className="w-full sm:w-[170px]"> {/* Adjusted width */}
+                    <SelectTrigger className="w-full sm:w-[170px] bg-background"> {/* Adjusted width */}
                          <StarIcon className="h-4 w-4 mr-1 inline-block text-yellow-500 fill-current" />
                         <SelectValue placeholder="Valoración" />
                     </SelectTrigger>
@@ -169,7 +176,7 @@ export default function SearchPage() {
 
                  {/* Sort By */}
                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-full sm:w-[160px]"> {/* Adjusted width */}
+                    <SelectTrigger className="w-full sm:w-[160px] bg-background"> {/* Adjusted width */}
                         <ArrowDownUp className="h-4 w-4 mr-1 inline-block" />
                         <SelectValue placeholder="Ordenar por" />
                     </SelectTrigger>
@@ -196,7 +203,7 @@ export default function SearchPage() {
         {isMapView ? (
              <section>
                  <h2 className="text-2xl font-semibold mb-4 sr-only">Vista de Mapa</h2> {/* Hide title visually */}
-                 <Card className="h-[500px] flex items-center justify-center bg-muted text-muted-foreground rounded-lg overflow-hidden">
+                 <Card className="h-[500px] flex items-center justify-center bg-muted text-muted-foreground rounded-lg overflow-hidden border">
                      <MapView businesses={businesses} />
                  </Card>
              </section>
@@ -233,7 +240,7 @@ function BusinessCard({ business }: { business: Business }) {
     return (
         <Card className="overflow-hidden group relative border bg-card rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col"> {/* Use card background and border */}
             <Link href={`/business/${business.id}`} className="block"> {/* Wrap content in link */}
-                 <div className="relative aspect-[4/3]"> {/* Aspect ratio for image */}
+                 <div className="relative aspect-video"> {/* Aspect ratio for image */}
                     <Image
                         src={business.image}
                         alt={business.name}
@@ -242,9 +249,14 @@ function BusinessCard({ business }: { business: Business }) {
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                         data-ai-hint={business.dataAiHint}
                     />
-                     {/* Promoted Badge */}
+                     {/* Destacado Badge */}
                     {business.promoted && (
-                         <Badge variant="default" className="absolute top-2 right-2 bg-accent text-accent-foreground text-[10px] px-1.5 py-0.5 z-10">★ PROMO</Badge>
+                         <Badge
+                           variant="default"
+                           className="absolute top-2 right-2 bg-yellow-500 text-black text-[10px] px-1.5 py-0.5 z-10 shadow-sm border border-yellow-600" // Golden badge style
+                         >
+                           ★ DESTACADO
+                         </Badge>
                     )}
                  </div>
                 <CardContent className="p-4 flex-grow space-y-1"> {/* Consistent padding and spacing */}
@@ -259,9 +271,12 @@ function BusinessCard({ business }: { business: Business }) {
                             <span className="font-medium text-foreground">{business.rating.toFixed(1)}</span>
                         </div>
                     </div>
+                    {/* Optional: Add a short description snippet */}
+                    {business.description && (
+                        <p className="text-sm text-muted-foreground pt-2 line-clamp-2">{business.description}</p>
+                    )}
                 </CardContent>
             </Link>
         </Card>
     );
 }
-
