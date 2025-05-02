@@ -5,29 +5,35 @@ import Image from 'next/image';
 import { MapPin, Phone, Mail, Star, ShoppingBag, MessageSquare } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link"; // Import Link
+import dynamic from 'next/dynamic';
+import type { Business } from '@/types/business'; // Import the Business type
+
+// Dynamically import Map component to avoid SSR issues with Leaflet
+const MapView = dynamic(() => import('@/components/map-view'), {
+  ssr: false,
+  loading: () => <div className="h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">Cargando mapa...</div>,
+});
 
 // Placeholder data - replace with actual data fetching based on ID (Spanish)
-const getBusinessDetails = async (id: string) => {
+// Added 'promoted' flag and coordinates
+const getBusinessDetails = async (id: string): Promise<Business | null> => {
   console.log("Fetching details for business ID:", id);
   await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
 
-  // Find business or return a default placeholder if not found (Spanish)
-  const business = [
-      { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', address: 'Calle Principal 123', phone: '555-1234', email: 'info@cafeesquina.com', description: 'Un café acogedor con excelente café y pastelería.', image: 'https://picsum.photos/800/400?random=1', promoted: false, dataAiHint: 'cafe interior detail' }, // Removed promoted
-      { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', address: 'Av. Moda 456', phone: '555-5678', email: 'contacto@modaurbana.com', description: 'Últimas tendencias de moda y estilos únicos.', image: 'https://picsum.photos/800/400?random=2', promoted: false, dataAiHint: 'fashion boutique display' }, // Removed promoted
-      { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', address: 'Calle Mascotas 789', phone: '555-9012', email: 'cuidado@patitasfelices.vet', description: 'Cuidado compasivo para tus amigos peludos.', image: 'https://picsum.photos/800/400?random=3', promoted: false, dataAiHint: 'veterinarian examining dog' }, // Removed promoted
-      { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', address: 'Calle Lectura 321', phone: '555-1122', email: 'libros@librosymas.com', description: 'Un lugar tranquilo para encontrar tu próximo libro favorito.', image: 'https://picsum.photos/800/400?random=4', promoted: false, dataAiHint: 'cozy bookstore corner'},
-      { id: '5', 'name': 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', address: 'Blvd. Gastronomía 654', phone: '555-3344', email: 'reservas@saborcriollo.com', description: 'Experiencia culinaria exquisita con un toque moderno.', image: 'https://picsum.photos/800/400?random=5', promoted: false, dataAiHint: 'fine dining plate'},
-      { id: '6', 'name': 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', address: 'Ruta Estilo 987', phone: '555-5566', email: 'tienda@estilocasual.com', description: 'Ropa asequible y con estilo para todos.', image: 'https://picsum.photos/800/400?random=6', promoted: false, dataAiHint: 'casual clothing store'},
-      { id: '7', 'name': 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', address: 'Av. Café 101', phone: '555-7788', email: 'amigos@cafecentral.com', description: 'El mejor café y sofás de la ciudad.', image: 'https://picsum.photos/800/400?random=7', promoted: false, dataAiHint: 'famous coffee shop sofa'},
-  ].find(b => b.id === id);
+  // Find business or return null if not found (Spanish)
+  const businesses: Business[] = [
+      { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', address: 'Calle Principal 123', phone: '555-1234', email: 'info@cafeesquina.com', description: 'Un café acogedor con excelente café y pastelería.', image: 'https://picsum.photos/800/400?random=1', promoted: false, dataAiHint: 'cafe interior detail', latitude: 37.7749, longitude: -122.4194 },
+      { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', address: 'Av. Moda 456', phone: '555-5678', email: 'contacto@modaurbana.com', description: 'Últimas tendencias de moda y estilos únicos.', image: 'https://picsum.photos/800/400?random=2', promoted: true, dataAiHint: 'fashion boutique display', latitude: 37.7949, longitude: -122.4294 },
+      { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', address: 'Calle Mascotas 789', phone: '555-9012', email: 'cuidado@patitasfelices.vet', description: 'Cuidado compasivo para tus amigos peludos.', image: 'https://picsum.photos/800/400?random=3', promoted: true, dataAiHint: 'veterinarian examining dog', latitude: 37.7549, longitude: -122.4094 },
+      { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', address: 'Calle Lectura 321', phone: '555-1122', email: 'libros@librosymas.com', description: 'Un lugar tranquilo para encontrar tu próximo libro favorito.', image: 'https://picsum.photos/800/400?random=4', promoted: false, dataAiHint: 'cozy bookstore corner', latitude: 37.7755, longitude: -122.4180 },
+      { id: '5', name: 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', address: 'Blvd. Gastronomía 654', phone: '555-3344', email: 'reservas@saborcriollo.com', description: 'Experiencia culinaria exquisita con un toque moderno.', image: 'https://picsum.photos/800/400?random=5', promoted: true, dataAiHint: 'fine dining plate', latitude: 37.7800, longitude: -122.3994 },
+      { id: '6', name: 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', address: 'Ruta Estilo 987', phone: '555-5566', email: 'tienda@estilocasual.com', description: 'Ropa asequible y con estilo para todos.', image: 'https://picsum.photos/800/400?random=6', promoted: false, dataAiHint: 'casual clothing store', latitude: 37.7449, longitude: -122.4154 },
+      { id: '7', name: 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', address: 'Av. Café 101', phone: '555-7788', email: 'amigos@cafecentral.com', description: 'El mejor café y sofás de la ciudad.', image: 'https://picsum.photos/800/400?random=7', promoted: true, dataAiHint: 'famous coffee shop sofa', latitude: 37.8049, longitude: -122.4394 },
+  ];
 
-   if (!business) {
-        // Return a default structure or throw an error (Spanish)
-        return { id: 'not-found', name: 'Negocio No Encontrado', category: 'Desconocida', rating: 0, location: 'N/A', address: 'N/A', phone: 'N/A', email: 'N/A', description: 'No se pudieron encontrar los detalles de este negocio.', image: 'https://picsum.photos/800/400', promoted: false, dataAiHint: 'empty street' };
-    }
+   const business = businesses.find(b => b.id === id);
 
-  return business;
+   return business || null; // Return null if not found
 };
 
 // Placeholder review data (Spanish)
@@ -47,7 +53,7 @@ const catalogItems = [
 export default async function BusinessDetailPage({ params }: { params: { id: string } }) {
   const business = await getBusinessDetails(params.id);
 
-  if (business.id === 'not-found') {
+  if (!business) {
       return <div className="text-center py-16"> {/* Increased padding */}
           <h1 className="text-3xl font-bold mb-4">Negocio No Encontrado</h1>
           <p className="text-lg text-muted-foreground mb-6">No pudimos encontrar el negocio que buscabas.</p>
@@ -83,7 +89,10 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
               priority // Load hero image quickly
               data-ai-hint={business.dataAiHint}
             />
-           {/* Removed Promoted Badge */}
+            {/* Promoted Badge */}
+            {business.promoted && (
+                <Badge variant="default" className="absolute top-3 right-3 bg-accent text-accent-foreground text-xs px-2 py-1 z-10 shadow-md">★ PROMO</Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-6 space-y-6"> {/* Increased padding */}
@@ -110,23 +119,27 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
               <div>
                   <span className="font-medium text-foreground">Dirección:</span>
                   <p className="text-muted-foreground">{business.address}, {business.location}</p>
-                  {/* TODO: Add link to map view */}
-                  <Button variant="link" size="sm" className="p-0 h-auto mt-1 text-base">Ver en Mapa</Button>
+                  {/* Map View Integrated */}
+                  <div className="mt-2 h-40 rounded-md overflow-hidden border">
+                       <MapView businesses={[business]} zoom={15} />
+                   </div>
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <Phone className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
-               <div>
-                    <span className="font-medium text-foreground">Teléfono:</span>
-                    <p className="text-muted-foreground">{business.phone}</p>
-               </div>
-            </div>
-             <div className="flex items-start gap-3 md:col-span-2"> {/* Email takes full width on medium */}
-              <Mail className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
-              <div>
-                  <span className="font-medium text-foreground">Correo:</span>
-                  <a href={`mailto:${business.email}`} className="block text-primary hover:underline text-muted-foreground">{business.email}</a>
-              </div>
+            <div className="space-y-4"> {/* Stack phone and email */}
+                <div className="flex items-start gap-3">
+                  <Phone className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                   <div>
+                        <span className="font-medium text-foreground">Teléfono:</span>
+                        <p className="text-muted-foreground">{business.phone}</p>
+                   </div>
+                </div>
+                 <div className="flex items-start gap-3">
+                  <Mail className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
+                  <div>
+                      <span className="font-medium text-foreground">Correo:</span>
+                      <a href={`mailto:${business.email}`} className="block text-primary hover:underline text-muted-foreground">{business.email}</a>
+                  </div>
+                </div>
             </div>
           </div>
 

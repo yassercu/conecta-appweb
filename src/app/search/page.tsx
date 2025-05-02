@@ -9,17 +9,27 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Star, Filter, StarIcon, ArrowDownUp, LocateFixed, List } from 'lucide-react';
 import Image from 'next/image';
-import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
+import { Skeleton } from '@/components/ui/skeleton';
+import dynamic from 'next/dynamic';
+import type { Business } from '@/types/business'; // Import the Business type
+
+// Dynamically import Map component to avoid SSR issues with Leaflet
+const MapView = dynamic(() => import('@/components/map-view'), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[500px] w-full rounded-lg" />,
+});
+
 
 // Placeholder data - replace with actual data fetching (Spanish)
-const allBusinesses = [
-  { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', image: 'https://picsum.photos/400/200?random=1', promoted: false, dataAiHint: 'cafe interior' }, // Removed promotion
-  { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', image: 'https://picsum.photos/400/200?random=2', promoted: false, dataAiHint: 'clothing boutique' }, // Removed promotion
-  { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', image: 'https://picsum.photos/400/200?random=3', promoted: false, dataAiHint: 'veterinary clinic' }, // Removed promotion
-  { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', image: 'https://picsum.photos/400/200?random=4', promoted: false, dataAiHint: 'bookstore shelf' },
-  { id: '5', 'name': 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', image: 'https://picsum.photos/400/200?random=5', promoted: false, dataAiHint: 'restaurant food' },
-  { id: '6', 'name': 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', image: 'https://picsum.photos/400/200?random=6', promoted: false, dataAiHint: 'clothing rack' },
-  { id: '7', 'name': 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', image: 'https://picsum.photos/400/200?random=7', promoted: false, dataAiHint: 'coffee shop counter'},
+// Added 'promoted' flag
+const allBusinesses: Business[] = [
+  { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', image: 'https://picsum.photos/400/200?random=1', promoted: false, dataAiHint: 'cafe interior', latitude: 37.7749, longitude: -122.4194 },
+  { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', image: 'https://picsum.photos/400/200?random=2', promoted: true, dataAiHint: 'clothing boutique', latitude: 37.7949, longitude: -122.4294 },
+  { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', image: 'https://picsum.photos/400/200?random=3', promoted: true, dataAiHint: 'veterinary clinic', latitude: 37.7549, longitude: -122.4094 },
+  { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', image: 'https://picsum.photos/400/200?random=4', promoted: false, dataAiHint: 'bookstore shelf', latitude: 37.7755, longitude: -122.4180 },
+  { id: '5', name: 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', image: 'https://picsum.photos/400/200?random=5', promoted: true, dataAiHint: 'restaurant food', latitude: 37.7800, longitude: -122.3994 },
+  { id: '6', name: 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', image: 'https://picsum.photos/400/200?random=6', promoted: false, dataAiHint: 'clothing rack', latitude: 37.7449, longitude: -122.4154 },
+  { id: '7', name: 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', image: 'https://picsum.photos/400/200?random=7', promoted: true, dataAiHint: 'coffee shop counter', latitude: 37.8049, longitude: -122.4394 },
 ];
 
 // Placeholder categories (Spanish)
@@ -35,7 +45,7 @@ const categories = [
 ];
 
 // Simulate API call
-async function fetchBusinesses(filters: { query: string, category: string, rating: string, sortBy: string }): Promise<typeof allBusinesses> {
+async function fetchBusinesses(filters: { query: string, category: string, rating: string, sortBy: string }): Promise<Business[]> {
     console.log("Fetching businesses with filters:", filters);
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
 
@@ -45,13 +55,23 @@ async function fetchBusinesses(filters: { query: string, category: string, ratin
         (filters.rating === '0' || b.rating >= parseInt(filters.rating))
     );
 
-    // Sorting logic
+    // Sorting logic - prioritize promoted businesses first within each sort type
     if (filters.sortBy === 'rating') {
-        filtered.sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name));
+        filtered.sort((a, b) => {
+            if (a.promoted !== b.promoted) return b.promoted ? 1 : -1; // Promoted first
+            return b.rating - a.rating || a.name.localeCompare(b.name); // Then by rating, then name
+        });
     } else if (filters.sortBy === 'name') {
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        filtered.sort((a, b) => {
+            if (a.promoted !== b.promoted) return b.promoted ? 1 : -1; // Promoted first
+            return a.name.localeCompare(b.name); // Then by name
+        });
+    } else { // Default sort (e.g., relevance or just promoted first)
+         filtered.sort((a, b) => {
+            if (a.promoted !== b.promoted) return b.promoted ? 1 : -1; // Promoted first
+            return 0; // Keep original order otherwise, or implement relevance
+         });
     }
-     // Removed promotion sort
 
     return filtered;
 }
@@ -62,10 +82,10 @@ export default function SearchPage() {
   const query = searchParams.get('query') || '';
   const category = searchParams.get('category') || 'Todas'; // Changed default to Spanish 'Todas'
   const rating = searchParams.get('rating') || '0';
-  const sort = searchParams.get('sort') || 'rating';
+  const sort = searchParams.get('sort') || 'rating'; // Default sort by rating
   const view = searchParams.get('view') || 'list';
 
-  const [businesses, setBusinesses] = useState<typeof allBusinesses>([]);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // State for filters controlled by selects
@@ -107,18 +127,13 @@ export default function SearchPage() {
       window.history.replaceState(null, '', `/search?${params.toString()}`);
   }, [selectedCategory, minRating, sortBy, isMapView, query, searchParams]);
 
-
-  // No promoted listings needed anymore
-  // const promotedListings = businesses.filter(b => b.promoted);
-  // const regularListings = businesses.filter(b => !b.promoted);
-
   return (
     <div className="space-y-8">
       <section>
         <h1 className="text-3xl font-bold mb-4">
           Resultados de Búsqueda {query ? `para "${query}"` : ''}
         </h1>
-         {/* Removed Search Form - it's now in the header */}
+         {/* Search Form is in the header */}
       </section>
 
        {/* Filters and View Toggle */}
@@ -181,14 +196,12 @@ export default function SearchPage() {
         {isMapView ? (
              <section>
                  <h2 className="text-2xl font-semibold mb-4 sr-only">Vista de Mapa</h2> {/* Hide title visually */}
-                 <Card className="h-[500px] flex items-center justify-center bg-muted text-muted-foreground rounded-lg">
-                     Mapa (Requiere Integración con Leaflet)
-                     {/* TODO: Implement Leaflet map here, plotting businesses */}
+                 <Card className="h-[500px] flex items-center justify-center bg-muted text-muted-foreground rounded-lg overflow-hidden">
+                     <MapView businesses={businesses} />
                  </Card>
              </section>
         ) : (
              <>
-                 {/* No separate promoted section */}
                 {/* Results Section */}
                 <section>
                      <h2 className="text-2xl font-semibold mb-6 sr-only">Resultados en Lista</h2> {/* Hide title visually */}
@@ -216,7 +229,7 @@ export default function SearchPage() {
 
 
 // Business Card Component (Spanish) - Updated styling
-function BusinessCard({ business }: { business: typeof allBusinesses[0] }) {
+function BusinessCard({ business }: { business: Business }) {
     return (
         <Card className="overflow-hidden group relative border bg-card rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col"> {/* Use card background and border */}
             <Link href={`/business/${business.id}`} className="block"> {/* Wrap content in link */}
@@ -228,9 +241,11 @@ function BusinessCard({ business }: { business: typeof allBusinesses[0] }) {
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                         data-ai-hint={business.dataAiHint}
-                        // Removed priority loading, let Next.js handle defaults
                     />
-                    {/* Removed promo badge */}
+                     {/* Promoted Badge */}
+                    {business.promoted && (
+                         <Badge variant="default" className="absolute top-2 right-2 bg-accent text-accent-foreground text-[10px] px-1.5 py-0.5 z-10">★ PROMO</Badge>
+                    )}
                  </div>
                 <CardContent className="p-4 flex-grow space-y-1"> {/* Consistent padding and spacing */}
                     <CardTitle className="text-lg font-semibold text-card-foreground">{business.name}</CardTitle> {/* Use card-foreground */}
@@ -245,7 +260,6 @@ function BusinessCard({ business }: { business: typeof allBusinesses[0] }) {
                         </div>
                     </div>
                 </CardContent>
-                 {/* Footer removed, link wraps content */}
             </Link>
         </Card>
     );
