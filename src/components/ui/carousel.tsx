@@ -1,3 +1,4 @@
+// src/components/ui/carousel.tsx
 "use client"
 
 import * as React from "react"
@@ -162,7 +163,7 @@ const CarouselContent = React.forwardRef<
         ref={ref}
         className={cn(
           "flex",
-          orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
+          orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col", // Default negative margin
           className
         )}
         {...props}
@@ -185,7 +186,7 @@ const CarouselItem = React.forwardRef<
       aria-roledescription="slide"
       className={cn(
         "min-w-0 shrink-0 grow-0 basis-full",
-        orientation === "horizontal" ? "pl-4" : "pt-4",
+        orientation === "horizontal" ? "pl-4" : "pt-4", // Default padding
         className
       )}
       {...props}
@@ -206,10 +207,10 @@ const CarouselPrevious = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute  h-8 w-8 rounded-full",
+        "absolute h-8 w-8 rounded-full", // Base styles
         orientation === "horizontal"
-          ? "-left-12 top-1/2 -translate-y-1/2"
-          : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+          ? "left-2 top-1/2 -translate-y-1/2" // Horizontal position inside
+          : "top-2 left-1/2 -translate-x-1/2 rotate-90", // Vertical position inside
         className
       )}
       disabled={!canScrollPrev}
@@ -235,10 +236,10 @@ const CarouselNext = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute h-8 w-8 rounded-full",
+        "absolute h-8 w-8 rounded-full", // Base styles
         orientation === "horizontal"
-          ? "-right-12 top-1/2 -translate-y-1/2"
-          : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
+          ? "right-2 top-1/2 -translate-y-1/2" // Horizontal position inside
+          : "bottom-2 left-1/2 -translate-x-1/2 rotate-90", // Vertical position inside
         className
       )}
       disabled={!canScrollNext}
