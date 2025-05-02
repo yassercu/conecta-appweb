@@ -7,38 +7,14 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link"; // Import Link
 import dynamic from 'next/dynamic';
 import type { Business } from '@/types/business'; // Import the Business type
+import { getBusinessDetails } from "@/lib/data"; // Import data fetching function
 
 // Dynamically import Map component to avoid SSR issues with Leaflet
-const MapView = dynamic(() => import('@/components/map-view'), {
+const MapView = dynamic(() => import('@/components/map-view/map-view'), {
   ssr: false,
   loading: () => <div className="h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">Cargando mapa...</div>,
 });
 
-// Placeholder data - replace with actual data fetching based on ID (Spanish)
-// Added 'promoted' flag and coordinates
-const getBusinessDetails = async (id: string): Promise<Business | null> => {
-  console.log("Fetching details for business ID:", id);
-  await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
-
-  // Find business or return null if not found (Spanish)
-  const businesses: Business[] = [
-      { id: '1', name: 'Café Esquina', category: 'Cafeterías', rating: 4.5, location: 'Centro', address: 'Calle Principal 123', phone: '555-1234', email: 'info@cafeesquina.com', description: 'Un café acogedor con excelente café y pastelería.', image: 'https://picsum.photos/800/400?random=1', promoted: false, dataAiHint: 'cafe interior detail', latitude: 37.7749, longitude: -122.4194 },
-      { id: '2', name: 'Moda Urbana', category: 'Tiendas de ropa', rating: 5.0, location: 'Norte', address: 'Av. Moda 456', phone: '555-5678', email: 'contacto@modaurbana.com', description: 'Últimas tendencias de moda y estilos únicos.', image: 'https://picsum.photos/800/400?random=2', promoted: true, dataAiHint: 'fashion boutique display', latitude: 37.7949, longitude: -122.4294 },
-      { id: '3', name: 'Patitas Felices', category: 'Veterinarias', rating: 4.8, location: 'Sur', address: 'Calle Mascotas 789', phone: '555-9012', email: 'cuidado@patitasfelices.vet', description: 'Cuidado compasivo para tus amigos peludos.', image: 'https://picsum.photos/800/400?random=3', promoted: true, dataAiHint: 'veterinarian examining dog', latitude: 37.7549, longitude: -122.4094 },
-      { id: '4', name: 'Libros & Más', category: 'Librerías', rating: 4.2, location: 'Centro', address: 'Calle Lectura 321', phone: '555-1122', email: 'libros@librosymas.com', description: 'Un lugar tranquilo para encontrar tu próximo libro favorito.', image: 'https://picsum.photos/800/400?random=4', promoted: false, dataAiHint: 'cozy bookstore corner', latitude: 37.7755, longitude: -122.4180 },
-      { id: '5', name: 'Sabor Criollo', category: 'Restaurantes', rating: 4.7, location: 'Este', address: 'Blvd. Gastronomía 654', phone: '555-3344', email: 'reservas@saborcriollo.com', description: 'Experiencia culinaria exquisita con un toque moderno.', image: 'https://picsum.photos/800/400?random=5', promoted: true, dataAiHint: 'fine dining plate', latitude: 37.7800, longitude: -122.3994 },
-      { id: '6', name: 'Estilo Casual', category: 'Tiendas de ropa', rating: 4.0, location: 'Sur', address: 'Ruta Estilo 987', phone: '555-5566', email: 'tienda@estilocasual.com', description: 'Ropa asequible y con estilo para todos.', image: 'https://picsum.photos/800/400?random=6', promoted: false, dataAiHint: 'casual clothing store', latitude: 37.7449, longitude: -122.4154 },
-      { id: '7', name: 'Café Central', category: 'Cafeterías', rating: 4.9, location: 'Norte', address: 'Av. Café 101', phone: '555-7788', email: 'amigos@cafecentral.com', description: 'El mejor café y sofás de la ciudad.', image: 'https://picsum.photos/800/400?random=7', promoted: true, dataAiHint: 'famous coffee shop sofa', latitude: 37.8049, longitude: -122.4394 },
-       // Add more businesses for the "Populares" section
-      { id: '8', name: 'Flores del Edén', category: 'Floristerías', rating: 4.6, location: 'Oeste', image: 'https://picsum.photos/800/400?random=8', dataAiHint: 'flower shop display', promoted: false, description: 'Arreglos florales frescos para toda ocasión.', latitude: 37.7700, longitude: -122.4500, address: 'Calle Flor 22', phone: '555-8888', email: 'info@flores.com' },
-      { id: '9', name: 'TecnoSoluciones', category: 'Reparación Electrónica', rating: 4.3, location: 'Centro', image: 'https://picsum.photos/800/400?random=9', dataAiHint: 'electronics repair bench', promoted: false, description: 'Reparación rápida y confiable de tus dispositivos.', latitude: 37.7780, longitude: -122.4150, address: 'Pasaje Tecno 3', phone: '555-9999', email: 'info@tecnosoluciones.com' },
-      { id: '10', name: 'Pan Caliente', category: 'Panaderías', rating: 4.9, location: 'Este', image: 'https://picsum.photos/800/400?random=10', dataAiHint: 'fresh bread bakery', promoted: true, description: 'Pan artesanal horneado diariamente.', latitude: 37.7850, longitude: -122.3950, address: 'Esquina Pan 50', phone: '555-1010', email: 'info@pancaliente.com' },
-  ];
-
-   const business = businesses.find(b => b.id === id);
-
-   return business || null; // Return null if not found
-};
 
 // Placeholder review data (Spanish)
 const reviews = [
@@ -128,9 +104,12 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
               <div>
                   <span className="font-medium text-foreground">Dirección:</span>
                   <p className="text-muted-foreground">{business.address}, {business.location}</p>
-                  {/* Map View Integrated */}
-                  <div className="mt-2 h-40 rounded-md overflow-hidden border">
-                       <MapView businesses={[business]} zoom={15} />
+                  {/* Map View Integrated - pass only the current business */}
+                  <div className="mt-2 h-60 rounded-md overflow-hidden border"> {/* Increased height */}
+                       <MapView
+                          businesses={[business]} // Pass only this business
+                          forceFitBounds={false} // Don't force fit bounds for single business (uses center/zoom)
+                        />
                    </div>
               </div>
             </div>
@@ -230,10 +209,4 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                 <CardTitle>Gestionar Promoción</CardTitle>
             </CardHeader>
             <CardContent>
-                <p>Controles de promoción van aquí (mejorar plan, ver estadísticas, etc.)</p>
-            </CardContent>
-        </Card> */}
-
-    </div>
-  );
-}
+                <p>Controles de promoción

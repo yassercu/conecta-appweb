@@ -25,8 +25,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MapPin, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { getCoordinates, type BusinessLocation } from '@/services/geolocation'; // Using the service
+import { useState, useEffect } from "react";
+import { getCoordinates, type BusinessLocation, type Coordinates } from '@/services/geolocation'; // Using the service
+import dynamic from 'next/dynamic'; // Import dynamic
+
+// Dynamically import Map component
+const MapView = dynamic(() => import('@/components/map-view/map-view'), {
+  ssr: false,
+  loading: () => <div className="h-60 bg-muted rounded-md flex items-center justify-center text-muted-foreground">Cargando mapa...</div>, // Adjusted height
+});
 
 
 // Placeholder for business types - replace with actual data (Spanish)
@@ -37,6 +44,11 @@ const businessTypes = [
   "Cafeterías",
   "Librerías",
   "Servicios Profesionales",
+  "Floristerías",
+  "Gimnasios",
+  "Cines",
+  "Panaderías",
+  "Reparación Electrónica",
   "Otros",
 ];
 
@@ -77,8 +89,8 @@ const registerFormSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
 // Mock function to simulate registration API call (Spanish messages)
-async function registerBusiness(data: RegisterFormValues): Promise<{ success: boolean, message: string }> {
-  console.log("Registrando negocio:", data);
+async function registerBusiness(data: RegisterFormValues, coordinates: Coordinates | null): Promise<{ success: boolean, message: string }> {
+  console.log("Registrando negocio:", data, "Coordenadas:", coordinates);
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1500));
   // Simulate success/failure
@@ -92,8 +104,9 @@ async function registerBusiness(data: RegisterFormValues): Promise<{ success: bo
 export default function RegisterPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [mapCoordinates, setMapCoordinates] = useState<{ latitude: number, longitude: number } | null>(null);
+  const [mapCoordinates, setMapCoordinates] = useState<Coordinates | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
+   const [showMap, setShowMap] = useState(false); // State to control map visibility
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
@@ -108,9 +121,17 @@ export default function RegisterPage() {
 
   const selectedProvince = form.watch("province");
 
+  // Reset coordinates and hide map if address fields change
+  useEffect(() => {
+    setMapCoordinates(null);
+    setShowMap(false);
+  }, [form.watch("province"), form.watch("municipality"), form.watch("address")]);
+
+
   async function onSubmit(data: RegisterFormValues) {
     setIsLoading(true);
-    const result = await registerBusiness(data);
+    // Pass coordinates along with form data
+    const result = await registerBusiness(data, mapCoordinates);
     setIsLoading(false);
 
     if (result.success) {
@@ -121,6 +142,7 @@ export default function RegisterPage() {
       });
       form.reset(); // Reset form on success
       setMapCoordinates(null);
+      setShowMap(false); // Hide map on success
     } else {
       toast({
         title: "Error",
@@ -139,6 +161,7 @@ export default function RegisterPage() {
 
       if (location.province && location.municipality && location.address) {
           setIsGeocoding(true);
+          setShowMap(true); // Show map immediately
           const coords = await getCoordinates(location); // Use the service
           setMapCoordinates(coords);
           setIsGeocoding(false);
@@ -148,6 +171,7 @@ export default function RegisterPage() {
                   description: "No se pudieron encontrar coordenadas para la dirección proporcionada. Por favor, comprueba los detalles.",
                   variant: "destructive",
               });
+              setShowMap(false); // Hide map if geocoding fails
           }
       } else {
           toast({
@@ -263,7 +287,7 @@ export default function RegisterPage() {
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Provincia</FormLabel>
-                        <Select onValueChange={(value) => { field.onChange(value); form.resetField("municipality"); setMapCoordinates(null); }} defaultValue={field.value}>
+                        <Select onValueChange={(value) => { field.onChange(value); form.resetField("municipality"); }} defaultValue={field.value}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona provincia" />
@@ -288,7 +312,7 @@ export default function RegisterPage() {
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Municipio</FormLabel>
-                        <Select onValueChange={(value) => {field.onChange(value); setMapCoordinates(null); }} defaultValue={field.value} disabled={!selectedProvince}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedProvince}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona municipio" />
@@ -316,7 +340,7 @@ export default function RegisterPage() {
                     <FormItem>
                     <FormLabel>Dirección</FormLabel>
                     <FormControl>
-                        <Textarea placeholder="Ej., Calle Principal 123, Local 1" {...field} onChange={(e) => {field.onChange(e); setMapCoordinates(null);}} />
+                        <Textarea placeholder="Ej., Calle Principal 123, Local 1" {...field} />
                     </FormControl>
                     <FormDescription>
                         Introduce la dirección exacta para la ubicación en el mapa.
@@ -326,20 +350,30 @@ export default function RegisterPage() {
                 )}
                 />
 
-                <div className="flex items-center gap-4">
-                    <Button type="button" variant="outline" onClick={handleGeocode} disabled={isGeocoding}>
-                        {isGeocoding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
-                        Localizar en Mapa
-                    </Button>
-                    {mapCoordinates && (
-                        <span className="text-sm text-green-600">¡Ubicación Encontrada! ({mapCoordinates.latitude.toFixed(4)}, {mapCoordinates.longitude.toFixed(4)})</span>
-                    )}
-                    {isGeocoding && <span className="text-sm text-muted-foreground">Localizando...</span>}
-                </div>
-                {/* TODO: Add Leaflet map integration here */}
-                 <div className="h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
-                    Espacio para el Mapa (Requiere Integración con Leaflet)
-                </div>
+                 {/* Map Section */}
+                <div className="space-y-2">
+                     <div className="flex items-center gap-4">
+                         <Button type="button" variant="outline" onClick={handleGeocode} disabled={isGeocoding}>
+                             {isGeocoding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
+                             Localizar en Mapa
+                         </Button>
+                         {mapCoordinates && showMap && (
+                             <span className="text-sm text-green-600">¡Ubicación Encontrada! ({mapCoordinates.latitude.toFixed(4)}, {mapCoordinates.longitude.toFixed(4)})</span>
+                         )}
+                         {isGeocoding && <span className="text-sm text-muted-foreground">Localizando...</span>}
+                     </div>
+
+                      {/* Conditionally render MapView */}
+                      {showMap && (
+                         <div className="h-60 rounded-md overflow-hidden border">
+                             <MapView
+                                 key={`${mapCoordinates?.latitude}-${mapCoordinates?.longitude}`} // Re-render map if coordinates change
+                                 center={mapCoordinates ? [mapCoordinates.latitude, mapCoordinates.longitude] : undefined}
+                                 zoom={mapCoordinates ? 15 : undefined} // Zoom in if coordinates found
+                             />
+                         </div>
+                     )}
+                 </div>
 
 
                 <Button type="submit" disabled={isLoading} className="w-full">
@@ -349,6 +383,4 @@ export default function RegisterPage() {
             </form>
             </Form>
         </CardContent>
-    </Card>
-  );
-}
+    </Card
