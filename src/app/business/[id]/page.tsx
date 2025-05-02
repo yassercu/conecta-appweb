@@ -7,14 +7,14 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link"; // Import Link
 import dynamic from 'next/dynamic';
 import type { Business } from '@/types/business'; // Import the Business type
-import { getBusinessDetails } from "@/lib/data"; // Import data fetching function
+import { allBusinesses } from '@/lib/data'; // Correct import from lib/data
+
 
 // Dynamically import Map component to avoid SSR issues with Leaflet
 const MapView = dynamic(() => import('@/components/map-view/map-view'), {
   ssr: false,
   loading: () => <div className="h-40 bg-muted rounded-md flex items-center justify-center text-muted-foreground">Cargando mapa...</div>,
 });
-
 
 // Placeholder review data (Spanish)
 const reviews = [
@@ -29,6 +29,14 @@ const catalogItems = [
     { id: 'c2', name: 'Croissant', price: '$2.50', description: 'Pastelito hojaldrado y mantecoso.' },
     { id: 'c3', name: 'Consulta Veterinaria', price: '$50.00', description: 'Revisión general de salud.' },
 ]
+
+// Mock function to simulate fetching business details
+// In a real app, this would fetch from a database or API
+async function getBusinessDetails(id: string): Promise<Business | undefined> {
+  await new Promise(resolve => setTimeout(resolve, 50)); // Simulate async delay
+  return allBusinesses.find(business => business.id === id);
+}
+
 
 export default async function BusinessDetailPage({ params }: { params: { id: string } }) {
   const business = await getBusinessDetails(params.id);
@@ -125,6 +133,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                   <Mail className="h-5 w-5 mt-1 text-primary flex-shrink-0" />
                   <div>
                       <span className="font-medium text-foreground">Correo:</span>
+                       {/* Corrected template literal usage */}
                       <a href={`mailto:${business.email}`} className="block text-primary hover:underline text-muted-foreground">{business.email}</a>
                   </div>
                 </div>
@@ -209,4 +218,9 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                 <CardTitle>Gestionar Promoción</CardTitle>
             </CardHeader>
             <CardContent>
-                <p>Controles de promoción
+                <p>Controles de promoción</p>
+            </CardContent>
+        </Card> */}
+    </div>
+  );
+}
