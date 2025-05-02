@@ -49,6 +49,9 @@ const featuredSections = [
   },
 ];
 
+// Extract categories from allBusinesses
+const availableCategories = [...new Set(allBusinesses.map(business => business.category))];
+
 
 export default function Home() {
     // State to manage hydration, ensure client-only rendering for Carousel
