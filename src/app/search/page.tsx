@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -14,7 +12,7 @@ import dynamic from 'next/dynamic';
 import type { Business } from '@/types/business'; // Import the Business type
 
 // Dynamically import Map component to avoid SSR issues with Leaflet
-const MapView = dynamic(() => import('@/components/map-view'), {
+const MapView = dynamic(() => import('@/components/map-view/map-view'), {
   ssr: false,
   loading: () => <Skeleton className="h-[500px] w-full rounded-lg" />,
 });
@@ -280,3 +278,4 @@ function BusinessCard({ business }: { business: Business }) {
         </Card>
     );
 }
+
