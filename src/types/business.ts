@@ -6,13 +6,13 @@ export interface Business {
   category: string;
   rating: number;
   location: string; // Neighborhood/Area
-  address: string; // Full address
-  phone: string;
-  email: string;
-  description: string;
   image: string;
-  promoted: boolean; // Flag for promoted businesses
   dataAiHint?: string; // Optional hint for image generation/search
+  promoted: boolean; // Flag for promoted businesses
+  description: string;
   latitude: number;
   longitude: number;
+  address: string;
+  phone?: string;
+  email?: string;
 }

@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PaymentPlans from '@/components/payment/PaymentPlans.jsx';
+---
+
+<Layout title="Promociona Tu Negocio | ConectaApp">
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-10">
+      <h1 class="text-3xl font-bold mb-4">Promociona Tu Negocio</h1>
+      <p class="text-muted-foreground max-w-2xl mx-auto">
+        Aumenta la visibilidad de tu negocio y atrae más clientes con nuestros planes de promoción. Aparece en posiciones destacadas en búsquedas y categorías.
+      </p>
+    </div>
+    
+    <PaymentPlans client:load />
+  </div>
+</Layout>

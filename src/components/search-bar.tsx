@@ -1,21 +1,27 @@
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 
 export function SearchBar() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [searchParams, setSearchParams] = useState<URLSearchParams>(
+    typeof window !== 'undefined' 
+      ? new URLSearchParams(window.location.search) 
+      : new URLSearchParams()
+  );
   const initialQuery = searchParams.get('query') || '';
   const [searchQuery, setSearchQuery] = useState(initialQuery);
 
   // Update search query state if the URL param changes (e.g., back button)
   useEffect(() => {
-    setSearchQuery(searchParams.get('query') || '');
-  }, [searchParams]);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      setSearchParams(params);
+      setSearchQuery(params.get('query') || '');
+    }
+  }, []);
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -25,8 +31,8 @@ export function SearchBar() {
     } else {
       params.delete('query');
     }
-    // Preserve other existing params like category, rating etc.
-    router.push(`/search?${params.toString()}`);
+    // Navigate to search page with query params
+    window.location.href = `/search?${params.toString()}`;
   };
 
   return (

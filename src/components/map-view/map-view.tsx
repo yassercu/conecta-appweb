@@ -8,19 +8,16 @@ import { useEffect, useState, useRef } from 'react';
 import type { Business } from '@/types/business';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { MapPin, Phone, Mail } from 'lucide-react';
 
-// Fix marker icon issue using direct imports (if 'require' was causing issues)
-// Note: Ensure these images are correctly handled by your bundler (Next.js should handle this)
+// Fix marker icon issue using direct imports
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 // Configure Leaflet's default icon paths
-// delete (L.Icon.Default.prototype as any)._getIconUrl; // Uncomment if needed, but usually direct mergeOptions is enough
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: markerIcon2x.src,
     iconUrl: markerIcon.src,
@@ -238,14 +235,13 @@ function BusinessPopup({ business }: { business: Business }) {
         {business.email && (
           <div className="flex items-start gap-1.5">
             <Mail className="h-3.5 w-3.5 mt-0.5 text-muted-foreground flex-shrink-0" />
-            {/* Corrected template literal usage */}
             <a href={`mailto:${business.email}`} className="text-primary hover:underline truncate">{business.email}</a>
           </div>
         )}
       </div>
       <Separator className="my-1"/> {/* Reduced margin */}
       <Button asChild size="xs" className="w-full mt-1.5 h-7"> {/* Adjusted size and margin */}
-        <Link href={`/business/${business.id}`}>Ver Detalles</Link>
+        <a href={`/business/${business.id}`}>Ver Detalles</a>
       </Button>
     </div>
   );

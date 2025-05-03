@@ -1,0 +1,16 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BusinessSearchResults from '@/components/BusinessSearchResults.jsx';
+---
+
+<Layout title="Buscar Negocios | ConectaApp">
+  <div class="space-y-8">
+    <section>
+      <h1 class="text-3xl font-bold mb-4">
+        Encuentra Negocios
+      </h1>
+    </section>
+
+    <BusinessSearchResults client:load />
+  </div>
+</Layout>

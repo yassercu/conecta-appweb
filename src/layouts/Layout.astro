@@ -1,0 +1,97 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Conecta App - Encuentra y promociona negocios locales" } = Astro.props;
+import '../styles/globals.css';
+import { ThemeToggle } from '@/components/ThemeToggle';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <!-- Script para inicializar el tema antes de la carga para evitar flash -->
+    <script is:inline>
+      // Verificar si hay un tema guardado en localStorage
+      const savedTheme = localStorage.getItem('theme');
+      // Aplicar tema guardado o usar la preferencia del sistema
+      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    </script>
+  </head>
+  <body>
+    <div class="min-h-screen flex flex-col">
+      <header class="border-b sticky top-0 z-40 bg-background">
+        <div class="container flex h-16 items-center justify-between py-4">
+          <a href="/" class="flex items-center gap-2 font-semibold">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              width="24" 
+              height="24" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              stroke-width="2" 
+              stroke-linecap="round" 
+              stroke-linejoin="round" 
+              class="text-primary"
+            >
+              <path d="M18 8c0 4.5-6 9-6 9s-6-4.5-6-9a6 6 0 0 1 12 0Z" />
+              <circle cx="12" cy="8" r="2" />
+            </svg>
+            <span class="text-xl font-bold">ConectaApp</span>
+          </a>
+          
+          <nav class="flex items-center gap-4">
+            <a href="/search" class="text-sm font-medium hover:text-primary">Buscar</a>
+            <a href="/payment" class="text-sm font-medium hover:text-primary">Planes</a>
+            <a href="/register" class="text-sm font-medium hover:text-primary">Registrar Negocio</a>
+            <a href="/business/dashboard" class="text-sm font-medium hover:text-primary">Mi Negocio</a>
+            <ThemeToggle client:load />
+          </nav>
+        </div>
+      </header>
+
+      <main class="container flex-1 py-6">
+        <slot />
+      </main>
+
+      <footer class="border-t py-6 md:py-0">
+        <div class="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
+          <p class="text-sm text-muted-foreground">
+            &copy; 2025 ConectaApp. Todos los derechos reservados.
+          </p>
+          <nav class="flex items-center gap-4 text-sm">
+            <a href="/about" class="text-muted-foreground hover:text-foreground">
+              Sobre Nosotros
+            </a>
+            <a href="/terms" class="text-muted-foreground hover:text-foreground">
+              Términos
+            </a>
+            <a href="/privacy" class="text-muted-foreground hover:text-foreground">
+              Privacidad
+            </a>
+          </nav>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  /* Importar estilos de Tailwind */
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+</style> 
