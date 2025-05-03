@@ -8,27 +8,46 @@ export function ThemeToggle() {
 
   // Al cargar el componente, comprueba si hay una preferencia guardada
   React.useEffect(() => {
-    const storedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    
-    // Si hay una preferencia guardada, úsala
-    if (storedTheme) {
-      setTheme(storedTheme);
-      document.documentElement.classList.toggle('dark', storedTheme === 'dark');
-    } else {
-      // Si no hay preferencia, comprueba la preferencia del sistema
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setTheme(prefersDark ? 'dark' : 'light');
-      document.documentElement.classList.toggle('dark', prefersDark);
-      localStorage.setItem('theme', prefersDark ? 'dark' : 'light');
+    try {
+      const storedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+      
+      // Si hay una preferencia guardada, úsala
+      if (storedTheme && (storedTheme === 'light' || storedTheme === 'dark')) {
+        setTheme(storedTheme);
+        document.documentElement.classList.toggle('dark', storedTheme === 'dark');
+      } else {
+        // Si no hay preferencia, comprueba la preferencia del sistema
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setTheme(prefersDark ? 'dark' : 'light');
+        document.documentElement.classList.toggle('dark', prefersDark);
+        try {
+          localStorage.setItem('theme', prefersDark ? 'dark' : 'light');
+        } catch (e) {
+          console.warn("No se pudo guardar el tema en localStorage:", e);
+        }
+      }
+    } catch (e) {
+      console.warn("Error al inicializar el tema:", e);
+      // Usar tema claro como fallback en caso de error
+      setTheme('light');
+      document.documentElement.classList.remove('dark');
     }
   }, []);
 
   // Función para cambiar el tema
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    localStorage.setItem('theme', newTheme);
+    try {
+      const newTheme = theme === 'light' ? 'dark' : 'light';
+      setTheme(newTheme);
+      document.documentElement.classList.toggle('dark', newTheme === 'dark');
+      localStorage.setItem('theme', newTheme);
+    } catch (e) {
+      console.warn("Error al cambiar el tema:", e);
+      // Aún cambiamos el tema visualmente aunque falle localStorage
+      const newTheme = theme === 'light' ? 'dark' : 'light';
+      setTheme(newTheme);
+      document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    }
   };
 
   return (

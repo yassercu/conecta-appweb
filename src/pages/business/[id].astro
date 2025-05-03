@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/business/ProductCard';
 import { BusinessCard } from '@/components/business/BusinessCard';
 import { ReviewCard } from '@/components/business/ReviewCard';
+import MapView from '@/components/map-view/map-view';
 
 // Función requerida para rutas dinámicas en modo estático
 export function getStaticPaths() {
@@ -18,6 +19,10 @@ export function getStaticPaths() {
 
 // Obtener la propiedad 'business' de las props
 const { business } = Astro.props;
+
+// Verificar si el negocio tiene coordenadas válidas (para evitar errores en el mapa)
+const hasValidCoordinates = business.latitude && business.longitude && 
+                           !isNaN(business.latitude) && !isNaN(business.longitude);
 
 // Productos de ejemplo para este negocio
 const products = [
@@ -107,6 +112,21 @@ const similarBusinesses = allBusinesses
           <Button>Contactar</Button>
           <Button variant="outline">Ver Ubicación</Button>
         </div>
+
+        <!-- Mapa de ubicación -->
+        {hasValidCoordinates && (
+          <div class="pt-4 mt-4">
+            <Card className="shadow-md overflow-hidden">
+              <CardContent className="p-0 h-[250px]">
+                <MapView 
+                  businesses={[business]} 
+                  forceFitBounds={true}
+                  client:only="react"
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
     

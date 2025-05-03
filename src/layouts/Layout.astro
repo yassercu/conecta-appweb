@@ -6,7 +6,7 @@ interface Props {
 
 const { title, description = "Conecta App - Encuentra y promociona negocios locales" } = Astro.props;
 import '../styles/globals.css';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { Header } from '@/components/layout/header';
 ---
 
 <!doctype html>
@@ -20,48 +20,24 @@ import { ThemeToggle } from '@/components/ThemeToggle';
     <title>{title}</title>
     <!-- Script para inicializar el tema antes de la carga para evitar flash -->
     <script is:inline>
-      // Verificar si hay un tema guardado en localStorage
-      const savedTheme = localStorage.getItem('theme');
-      // Aplicar tema guardado o usar la preferencia del sistema
-      if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+      try {
+        // Verificar si hay un tema guardado en localStorage
+        const savedTheme = localStorage.getItem('theme');
+        // Aplicar tema guardado o usar la preferencia del sistema
+        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {
+        // Fallback silencioso en caso de error de localStorage o matchMedia
+        console.warn("Error al inicializar el tema:", e);
       }
     </script>
   </head>
   <body>
     <div class="min-h-screen flex flex-col">
-      <header class="border-b sticky top-0 z-40 bg-background">
-        <div class="container flex h-16 items-center justify-between py-4">
-          <a href="/" class="flex items-center gap-2 font-semibold">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="24" 
-              height="24" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              stroke-width="2" 
-              stroke-linecap="round" 
-              stroke-linejoin="round" 
-              class="text-primary"
-            >
-              <path d="M18 8c0 4.5-6 9-6 9s-6-4.5-6-9a6 6 0 0 1 12 0Z" />
-              <circle cx="12" cy="8" r="2" />
-            </svg>
-            <span class="text-xl font-bold">ConectaApp</span>
-          </a>
-          
-          <nav class="flex items-center gap-4">
-            <a href="/search" class="text-sm font-medium hover:text-primary">Buscar</a>
-            <a href="/payment" class="text-sm font-medium hover:text-primary">Planes</a>
-            <a href="/register" class="text-sm font-medium hover:text-primary">Registrar Negocio</a>
-            <a href="/business/dashboard" class="text-sm font-medium hover:text-primary">Mi Negocio</a>
-            <ThemeToggle client:load />
-          </nav>
-        </div>
-      </header>
+      <Header client:load />
 
       <main class="container flex-1 py-6">
         <slot />

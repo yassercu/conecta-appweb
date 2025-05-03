@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { SearchBar } from '@/components/search-bar';
 import PromotedBusinessesCarousel from '@/components/PromotedBusinessesCarousel.jsx';
 import FeaturedSections from '@/components/FeaturedSections.jsx';
 ---
@@ -8,19 +7,24 @@ import FeaturedSections from '@/components/FeaturedSections.jsx';
 <Layout title="ConectaApp - Descubre negocios locales">
   <div class="space-y-12">
     <!-- Hero Section -->
-    <section class="text-center py-10">
-      <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">
-        Explora Negocios Locales
-      </h1>
-      <p class="hidden md:block text-md md:text-lg text-muted-foreground mb-6">
-        Encuentra lo mejor de tu comunidad.
-      </p>
-      <div class="max-w-lg mx-auto mb-6">
-        <SearchBar client:load />
+    <section class="relative py-16 md:py-24 overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-muted/30 -z-10"></div>
+      <div class="container mx-auto px-4 text-center">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
+          Explora Negocios Locales
+        </h1>
+        <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+          Descubre los mejores servicios y productos de tu comunidad en un solo lugar
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/search" class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+            Explorar Ahora
+          </a>
+          <a href="/register" class="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background px-8 py-3 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+            Registrar mi Negocio
+          </a>
+        </div>
       </div>
-      <a href="/search" class="w-full md:w-auto inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground h-10 px-4 py-2">
-        Ver Todos los Negocios
-      </a>
     </section>
 
     <!-- Promoted Business Carousel -->

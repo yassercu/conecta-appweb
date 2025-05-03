@@ -74,100 +74,126 @@ const MapView: React.FC<MapViewProps> = ({
     const [currentZoom, setCurrentZoom] = useState<number>(initialZoom || DEFAULT_ZOOM);
     const [currentBounds, setCurrentBounds] = useState<LatLngBoundsExpression | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
     const mapRef = useRef<L.Map | null>(null);
 
     useEffect(() => {
         let isMounted = true;
         setIsLoading(true);
+        setHasError(false);
 
-        const validBusinesses = businesses.filter(b => b.latitude != null && b.longitude != null);
-
-        // Priority 1: Use businesses if provided
-        if (validBusinesses.length > 0) {
-             const shouldFitBounds = (validBusinesses.length > 1 || (validBusinesses.length === 1 && forceFitBounds));
-
-             if (shouldFitBounds) {
-                 try {
-                     const bounds = new L.LatLngBounds(validBusinesses.map(b => [b.latitude!, b.longitude!]));
-                      if (isMounted) {
-                         setCurrentBounds(bounds);
-                         setCurrentCenter(bounds.getCenter()); // Fallback center
-                         setCurrentZoom(DEFAULT_ZOOM); // Fallback zoom, fitBounds will override
-                      }
-                 } catch (error) {
-                      console.error("Error creating LatLngBounds:", error, validBusinesses);
-                      if (isMounted) {
-                         // Fallback for invalid bounds: center on the first valid business
-                         setCurrentCenter([validBusinesses[0].latitude!, validBusinesses[0].longitude!]);
-                         setCurrentZoom(SINGLE_BUSINESS_ZOOM);
-                         setCurrentBounds(null);
-                      }
-                 }
-             } else {
-                 // Single business and forceFitBounds is false
-                  if (isMounted) {
-                     setCurrentCenter([validBusinesses[0].latitude!, validBusinesses[0].longitude!]);
-                     setCurrentZoom(SINGLE_BUSINESS_ZOOM);
-                     setCurrentBounds(null);
-                  }
-             }
-             if (isMounted) setIsLoading(false);
-             return; // Don't proceed to other priorities
-        }
-
-        // Priority 2: Use explicit center if provided (and no valid businesses)
-        if (initialCenter && initialZoom) {
-             if (isMounted) {
-                 setCurrentCenter(initialCenter);
-                 setCurrentZoom(initialZoom);
-                 setCurrentBounds(null);
-                 setIsLoading(false);
-             }
-             return;
-        }
-
-        // Priority 3: Try to get user's current location
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                     if (isMounted) {
-                        setCurrentCenter([position.coords.latitude, position.coords.longitude]);
-                        setCurrentZoom(USER_LOCATION_ZOOM);
-                        setCurrentBounds(null);
-                        setIsLoading(false);
-                     }
-                },
-                (error) => {
-                     console.warn("Error getting user location:", error.message);
-                     // Priority 4: Default to Cuba if geolocation fails
-                     if (isMounted) {
-                        setCurrentCenter(CUBA_CENTER);
-                        setCurrentZoom(CUBA_ZOOM);
-                        setCurrentBounds(null);
-                        setIsLoading(false);
-                     }
-                },
-                { timeout: 5000 }
+        try {
+            // Filtrar negocios con coordenadas válidas
+            const validBusinesses = businesses.filter(b => 
+                b && b.latitude != null && b.longitude != null && 
+                !isNaN(Number(b.latitude)) && !isNaN(Number(b.longitude))
             );
-        } else {
-            console.warn("Geolocation is not supported by this browser.");
-            // Priority 4: Default to Cuba if geolocation is not supported
-             if (isMounted) {
+
+            // Priority 1: Use businesses if provided
+            if (validBusinesses.length > 0) {
+                const shouldFitBounds = (validBusinesses.length > 1 || (validBusinesses.length === 1 && forceFitBounds));
+
+                if (shouldFitBounds) {
+                    try {
+                        const bounds = new L.LatLngBounds(
+                            validBusinesses.map(b => [Number(b.latitude), Number(b.longitude)] as LatLngExpression)
+                        );
+                        if (isMounted) {
+                            setCurrentBounds(bounds);
+                            setCurrentCenter(bounds.getCenter()); // Fallback center
+                            setCurrentZoom(DEFAULT_ZOOM); // Fallback zoom, fitBounds will override
+                        }
+                    } catch (error) {
+                        console.error("Error creating LatLngBounds:", error, validBusinesses);
+                        if (isMounted) {
+                            // Fallback for invalid bounds: center on the first valid business
+                            setCurrentCenter([Number(validBusinesses[0].latitude), Number(validBusinesses[0].longitude)]);
+                            setCurrentZoom(SINGLE_BUSINESS_ZOOM);
+                            setCurrentBounds(null);
+                        }
+                    }
+                } else {
+                    // Single business and forceFitBounds is false
+                    if (isMounted) {
+                        setCurrentCenter([Number(validBusinesses[0].latitude), Number(validBusinesses[0].longitude)]);
+                        setCurrentZoom(SINGLE_BUSINESS_ZOOM);
+                        setCurrentBounds(null);
+                    }
+                }
+                if (isMounted) setIsLoading(false);
+                return; // Don't proceed to other priorities
+            }
+
+            // Priority 2: Use explicit center if provided (and no valid businesses)
+            if (initialCenter && initialZoom) {
+                if (isMounted) {
+                    setCurrentCenter(initialCenter);
+                    setCurrentZoom(initialZoom);
+                    setCurrentBounds(null);
+                    setIsLoading(false);
+                }
+                return;
+            }
+
+            // Priority 3: Try to get user's current location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        if (isMounted) {
+                            setCurrentCenter([position.coords.latitude, position.coords.longitude]);
+                            setCurrentZoom(USER_LOCATION_ZOOM);
+                            setCurrentBounds(null);
+                            setIsLoading(false);
+                        }
+                    },
+                    (error) => {
+                        console.warn("Error getting user location:", error.message);
+                        // Priority 4: Default to Cuba if geolocation fails
+                        if (isMounted) {
+                            setCurrentCenter(CUBA_CENTER);
+                            setCurrentZoom(CUBA_ZOOM);
+                            setCurrentBounds(null);
+                            setIsLoading(false);
+                        }
+                    },
+                    { timeout: 5000 }
+                );
+            } else {
+                console.warn("Geolocation is not supported by this browser.");
+                // Priority 4: Default to Cuba if geolocation is not supported
+                if (isMounted) {
+                    setCurrentCenter(CUBA_CENTER);
+                    setCurrentZoom(CUBA_ZOOM);
+                    setCurrentBounds(null);
+                    setIsLoading(false);
+                }
+            }
+        } catch (error) {
+            console.error("Error al inicializar el mapa:", error);
+            if (isMounted) {
+                setHasError(true);
+                setIsLoading(false);
                 setCurrentCenter(CUBA_CENTER);
                 setCurrentZoom(CUBA_ZOOM);
                 setCurrentBounds(null);
-                setIsLoading(false);
-             }
+            }
         }
 
         return () => {
             isMounted = false;
         };
-
     }, [businesses, initialCenter, initialZoom, forceFitBounds]);
 
     if (isLoading || !currentCenter) {
         return <Skeleton className={className} />;
+    }
+
+    if (hasError) {
+        return (
+            <div className={`${className} flex items-center justify-center bg-muted text-muted-foreground`}>
+                <p>No se pudo cargar el mapa. Por favor, intente nuevamente.</p>
+            </div>
+        );
     }
 
     // Key to force re-render if map logic changes significantly (e.g., switching from center/zoom to bounds)

@@ -1,26 +1,27 @@
 import { Button } from '@/components/ui/button';
 import { Sparkles, Menu, Home, Search, Store, X } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { SearchBar } from '@/components/search-bar';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-4">
-          <a href="/" className="flex items-center gap-2 text-xl font-bold">
+      <div className="container mx-auto h-16 px-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <a href="/" className="flex items-center gap-2 text-xl font-bold whitespace-nowrap">
             <Sparkles className="h-6 w-6 text-accent" />
             <span className="hidden sm:inline">LocalSpark</span>
           </a>
-          {/* Search Bar integrated into the header - only visible on desktop */}
-          <div className="flex-grow hidden md:block">
-            <SearchBar />
-          </div>
+        </div>
+
+        {/* Barra de búsqueda centralizada que ocupa todo el espacio disponible */}
+        <div className="flex-1 px-4 max-w-xl mx-auto">
+          <SearchBar />
         </div>
 
         {/* Desktop Navigation - only visible on md screens and up */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-1 ml-2">
           <Button variant="ghost" className="text-sm" asChild>
             <a href="/search">Explorar</a>
           </Button>
@@ -31,7 +32,7 @@ export function Header() {
         </nav>
 
         {/* Mobile Navigation Trigger & Theme Toggle - only visible on smaller than md screens */}
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-2 md:hidden ml-2">
           <ThemeToggle />
           <Sheet>
               <SheetTrigger asChild>
@@ -73,11 +74,6 @@ export function Header() {
               </SheetContent>
           </Sheet>
         </div>
-      </div>
-      
-      {/* Barra de búsqueda visible en móvil debajo del header principal */}
-      <div className="container mx-auto px-4 pb-4 md:hidden">
-          <SearchBar />
       </div>
     </header>
   );
