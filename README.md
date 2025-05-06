@@ -61,3 +61,57 @@ npm run build
 # Previsualizar la build de producción
 npm run preview
 ```
+
+# Conecta AppWeb
+
+## Descripción del Proyecto
+
+Conecta AppWeb es una aplicación diseñada para facilitar la conexión entre usuarios y servicios a través de una plataforma intuitiva y fácil de usar. La aplicación permite a los usuarios buscar, comparar y contratar servicios de manera eficiente.
+
+## Tecnologías Utilizadas
+
+- **Frontend**: React, TypeScript
+- **Backend**: Node.js, Express
+- **Base de Datos**: MongoDB
+- **Autenticación**: JWT (JSON Web Tokens)
+- **Estilos**: CSS, Bootstrap
+- **Control de Versiones**: Git
+
+## Guía de Uso
+
+### Instalación
+
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/tu-usuario/conecta-appweb.git
+   ```
+2. Navega al directorio del proyecto:
+   ```bash
+   cd conecta-appweb
+   ```
+3. Instala las dependencias:
+   ```bash
+   npm install
+   ```
+
+### Ejecución
+
+1. Inicia el servidor de desarrollo:
+   ```bash
+   npm start
+   ```
+2. Abre tu navegador y visita `http://localhost:3000` para ver la aplicación en acción.
+
+### Contribución
+
+Si deseas contribuir al proyecto, por favor sigue estos pasos:
+
+1. Haz un fork del repositorio.
+2. Crea una nueva rama (`git checkout -b feature/nueva-funcionalidad`).
+3. Realiza tus cambios y haz commit (`git commit -m 'Añadir nueva funcionalidad'`).
+4. Sube tus cambios a la rama (`git push origin feature/nueva-funcionalidad`).
+5. Abre un Pull Request.
+
+---
+
+¡Gracias por usar Conecta AppWeb! Si tienes alguna pregunta o sugerencia, no dudes en contactarnos.
