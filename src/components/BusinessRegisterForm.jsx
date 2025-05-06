@@ -89,7 +89,7 @@ async function registerBusiness(data, coordinates) {
   console.log("Registrando negocio:", data, "Coordenadas:", coordinates);
   // Simular API delay
   await new Promise(resolve => setTimeout(resolve, 1500));
-  
+
   // Simular éxito/fallo (80% de éxito)
   if (Math.random() > 0.2) {
     return { success: true, message: "¡Negocio registrado con éxito!" };
@@ -102,12 +102,12 @@ async function registerBusiness(data, coordinates) {
 async function getCoordinates({ province, municipality, address }) {
   // Simular API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
   // Simulación - generar coordenadas aleatorias en Cuba
   // En producción, usar un servicio real de geocodificación
   const baseLat = 21.5 + Math.random() * 2;
   const baseLng = -80 + Math.random() * 5;
-  
+
   return {
     lat: baseLat,
     lng: baseLng
@@ -152,10 +152,10 @@ export default function BusinessRegisterForm() {
   async function onSubmit(data) {
     setIsLoading(true);
     setErrorMessage("");
-    
+
     try {
       const result = await registerBusiness(data, mapCoordinates);
-      
+
       if (result.success) {
         setIsSuccess(true);
         form.reset();
@@ -183,7 +183,7 @@ export default function BusinessRegisterForm() {
     if (location.province && location.municipality && location.address) {
       setIsGeocoding(true);
       setShowMap(true);
-      
+
       try {
         const coords = await getCoordinates(location);
         setMapCoordinates(coords);
@@ -230,7 +230,7 @@ export default function BusinessRegisterForm() {
             {/* Información del negocio */}
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Información del Negocio</h2>
-              
+
               <FormField
                 control={form.control}
                 name="businessName"
@@ -244,7 +244,7 @@ export default function BusinessRegisterForm() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="businessType"
@@ -267,7 +267,7 @@ export default function BusinessRegisterForm() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="description"
@@ -275,7 +275,7 @@ export default function BusinessRegisterForm() {
                   <FormItem>
                     <FormLabel>Descripción*</FormLabel>
                     <FormControl>
-                      <Textarea 
+                      <Textarea
                         placeholder="Describe tu negocio en pocas palabras..."
                         className="resize-none"
                         rows={4}
@@ -290,11 +290,11 @@ export default function BusinessRegisterForm() {
                 )}
               />
             </div>
-            
+
             {/* Información de contacto */}
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Datos de Contacto</h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -309,7 +309,7 @@ export default function BusinessRegisterForm() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="email"
@@ -324,7 +324,7 @@ export default function BusinessRegisterForm() {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={form.control}
                 name="password"
@@ -342,11 +342,11 @@ export default function BusinessRegisterForm() {
                 )}
               />
             </div>
-            
+
             {/* Ubicación */}
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Ubicación</h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -354,8 +354,8 @@ export default function BusinessRegisterForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Provincia*</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
+                      <Select
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -375,7 +375,7 @@ export default function BusinessRegisterForm() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="municipality"
@@ -406,7 +406,7 @@ export default function BusinessRegisterForm() {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={form.control}
                 name="address"
@@ -420,7 +420,7 @@ export default function BusinessRegisterForm() {
                   </FormItem>
                 )}
               />
-              
+
               <div className="flex justify-end">
                 <Button
                   type="button"
@@ -442,12 +442,13 @@ export default function BusinessRegisterForm() {
                   )}
                 </Button>
               </div>
-              
+
               {showMap && (
                 <div className="mt-4 rounded-md overflow-hidden border h-60">
                   {isBrowser ? (
                     <Suspense fallback={<div className="h-60 bg-muted flex items-center justify-center text-muted-foreground">Cargando mapa...</div>}>
                       <MapView
+                        client:only="react"
                         center={mapCoordinates ? [mapCoordinates.lat, mapCoordinates.lng] : undefined}
                         zoom={16}
                         businesses={mapCoordinates ? [
@@ -457,22 +458,19 @@ export default function BusinessRegisterForm() {
                             category: form.getValues("businessType"),
                             latitude: mapCoordinates.lat,
                             longitude: mapCoordinates.lng,
-                            address: form.getValues("address"),
                           }
                         ] : []}
                       />
                     </Suspense>
-                  ) : (
-                    <div className="h-60 bg-muted flex items-center justify-center text-muted-foreground">Cargando mapa...</div>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>
-            
+
             {/* Datos de acceso */}
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Datos de Acceso</h2>
-              
+
               <FormField
                 control={form.control}
                 name="email"
@@ -489,7 +487,7 @@ export default function BusinessRegisterForm() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="password"
@@ -507,13 +505,13 @@ export default function BusinessRegisterForm() {
                 )}
               />
             </div>
-            
+
             {errorMessage && (
               <div className="px-4 py-3 rounded-md bg-red-50 text-red-500 text-sm">
                 {errorMessage}
               </div>
             )}
-            
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -529,4 +527,4 @@ export default function BusinessRegisterForm() {
       </CardContent>
     </Card>
   );
-} 
+}

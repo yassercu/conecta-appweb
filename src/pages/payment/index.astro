@@ -1,0 +1,149 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { EnzonaPaymentButton } from "@/components/payment/EnzonaPaymentButton";
+
+// Definición de los planes de pago
+const pricingPlans = [
+  {
+    id: "basic",
+    name: "Básico",
+    price: 500,
+    duration: "1 mes",
+    features: [
+      "Listado en búsquedas",
+      "Perfil básico de negocio",
+      "Contacto directo"
+    ],
+    recommended: false,
+  },
+  {
+    id: "pro",
+    name: "Profesional",
+    price: 1200,
+    duration: "3 meses",
+    features: [
+      "Listado destacado en búsquedas",
+      "Perfil completo con imágenes",
+      "Insignia de verificación",
+      "Estadísticas básicas",
+      "Atención prioritaria"
+    ],
+    recommended: true,
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    price: 2000,
+    duration: "6 meses",
+    features: [
+      "Posición TOP en resultados",
+      "Perfil premium con videos",
+      "Promoción en página principal",
+      "Estadísticas avanzadas",
+      "Soporte personalizado",
+      "Campañas segmentadas"
+    ],
+    recommended: false,
+  },
+];
+---
+
+<Layout title="Planes de Promoción - Orbita" description="Promociona tu negocio con nuestros planes de pago">
+  <div class="py-16 md:py-24">
+    <div class="container max-w-5xl">
+      <!-- Encabezado -->
+      <div class="text-center mb-16">
+        <h1 class="text-3xl md:text-5xl font-bold mb-4">
+          Impulsa tu Negocio en la Órbita
+        </h1>
+        <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Elige el plan perfecto para dar visibilidad a tu negocio y conectar con
+          más clientes potenciales.
+        </p>
+      </div>
+
+      <!-- Planes de Precios -->
+      <div class="grid md:grid-cols-3 gap-8">
+        {
+          pricingPlans.map((plan) => (
+            <div class={`flex flex-col p-6 rounded-xl border bg-card ${plan.recommended ? "ring-2 ring-primary relative" : ""}`}>
+              {plan.recommended && (
+                <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-white text-xs font-medium px-4 py-1 rounded-full">
+                  Recomendado
+                </div>
+              )}
+              <div class="text-center mb-6">
+                <h3 class="text-xl font-bold">{plan.name}</h3>
+                <div class="mt-3 flex items-baseline justify-center">
+                  <span class="text-4xl font-extrabold">{plan.price}</span>
+                  <span class="ml-1 text-muted-foreground">CUP</span>
+                </div>
+                <p class="text-sm text-muted-foreground">{plan.duration}</p>
+              </div>
+
+              <ul class="mb-8 space-y-3 flex-1">
+                {plan.features.map((feature) => (
+                  <li class="flex items-center">
+                    <svg
+                      class="h-5 w-5 text-primary flex-shrink-0"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    <span class="ml-3 text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <EnzonaPaymentButton
+                client:load
+                amount={plan.price}
+                description={`Plan ${plan.name} por ${plan.duration}`}
+                businessName="Orbita-Y"
+                className={`w-full ${plan.recommended ? 'bg-primary hover:bg-primary/90' : ''}`}
+              />
+            </div>
+          ))
+        }
+      </div>
+
+      <!-- Información adicional -->
+      <div class="mt-16 bg-muted rounded-lg p-6">
+        <h2 class="text-2xl font-bold mb-4">Información de Pago</h2>
+        <div class="grid md:grid-cols-2 gap-8">
+          <div>
+            <h3 class="text-lg font-semibold mb-2">Métodos de Pago</h3>
+            <p class="text-muted-foreground mb-3">
+              Aceptamos pagos seguros a través de <strong>EnZona</strong>, la pasarela de pago oficial en Cuba.
+            </p>
+            <div class="flex items-center gap-3 mt-4">
+              <img src="/images/enzona-logo.png" alt="EnZona" class="h-8" />
+            </div>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-2">Preguntas Frecuentes</h3>
+            <ul class="space-y-2">
+              <li>
+                <p class="font-medium">¿Puedo cambiar de plan en cualquier momento?</p>
+                <p class="text-sm text-muted-foreground">
+                  Sí, puedes actualizar o cambiar tu plan en cualquier momento.
+                </p>
+              </li>
+              <li>
+                <p class="font-medium">¿Los planes se renuevan automáticamente?</p>
+                <p class="text-sm text-muted-foreground">
+                  No, deberás renovar manualmente al finalizar el período contratado.
+                </p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout> 

@@ -1,36 +1,40 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import PromotedBusinessesCarousel from '@/components/PromotedBusinessesCarousel.jsx';
-import FeaturedSections from '@/components/FeaturedSections.jsx';
+import Layout from "../layouts/Layout.astro";
+import PromotedBusinessesCarousel from "@/components/PromotedBusinessesCarousel.jsx";
+import FeaturedSections from "@/components/FeaturedSections.jsx";
 ---
 
-<Layout title="ConectaApp - Descubre negocios locales">
-  <div class="space-y-12">
-    <!-- Hero Section -->
-    <section class="relative py-16 md:py-24 overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-muted/30 -z-10"></div>
-      <div class="container mx-auto px-4 text-center">
-        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-          Explora Negocios Locales
-        </h1>
-        <p class="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-          Descubre los mejores servicios y productos de tu comunidad en un solo lugar
+<Layout title="Orbita - Descubre negocios locales" isHomePage={true}>
+  <div class="space-y-16">
+    <!-- Promoted Business Carousel -->
+    <section class="container mx-auto px-4">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold tracking-tight mb-4">
+          Negocios Destacados
+        </h2>
+        <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Estos negocios brillan con luz propia en nuestra órbita comercial
         </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/search" class="inline-flex h-11 items-center justify-center rounded-md bg-primary px-8 py-3 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-            Explorar Ahora
-          </a>
-          <a href="/register" class="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background px-8 py-3 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-            Registrar mi Negocio
-          </a>
-        </div>
       </div>
+
+      <PromotedBusinessesCarousel client:load />
     </section>
 
-    <!-- Promoted Business Carousel -->
-    <PromotedBusinessesCarousel client:load />
-    
-    <!-- Featured Sections -->
-    <FeaturedSections client:load />
+    <!-- Featured Sections with space theme -->
+    <section class="relative py-16">
+      <div class="absolute inset-0 bg-accent/5 -z-10"></div>
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold tracking-tight mb-4">
+            Explora el Universo Comercial
+          </h2>
+          <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Descubre diferentes constelaciones de negocios por categoría
+          </p>
+        </div>
+
+        <FeaturedSections client:load />
+      </div>
+    </section>
   </div>
-</Layout> 
+</Layout>

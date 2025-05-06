@@ -1,17 +1,25 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import { allBusinesses } from '@/lib/data';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ProductCard } from '@/components/business/ProductCard';
-import { BusinessCard } from '@/components/business/BusinessCard';
-import { ReviewCard } from '@/components/business/ReviewCard';
-import MapView from '@/components/map-view/map-view';
+import Layout from "../../layouts/Layout.astro";
+import { allBusinesses } from "@/lib/data";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ProductCard, type Product } from "@/components/business/ProductCard";
+import { BusinessCard } from "@/components/business/BusinessCard";
+import { ReviewCard, type Review } from "@/components/business/ReviewCard";
+import { ProductPaymentForm } from "@/components/business/ProductPaymentForm";
+import MapView from "@/components/map-view/map-view";
+
+// Import the Business type from types folder
+import type { Business } from "@/types/business";
+
+// Get the business ID from URL params and product ID from search params
+const { id: businessId } = Astro.params;
+const selectedProductId = Astro.url.searchParams.get("product");
 
 // Función requerida para rutas dinámicas en modo estático
 export function getStaticPaths() {
-  return allBusinesses.map(business => ({
+  return allBusinesses.map((business) => ({
     params: { id: business.id },
     props: { business },
   }));
@@ -20,158 +28,219 @@ export function getStaticPaths() {
 // Obtener la propiedad 'business' de las props
 const { business } = Astro.props;
 
+// Get the selected product if there's an ID
+const selectedProduct = selectedProductId
+  ? business.products?.find(
+      (p: Product) => p.id.toString() === selectedProductId,
+    )
+  : null;
+
 // Verificar si el negocio tiene coordenadas válidas (para evitar errores en el mapa)
-const hasValidCoordinates = business.latitude && business.longitude && 
-                           !isNaN(business.latitude) && !isNaN(business.longitude);
+const hasValidCoordinates =
+  business.latitude &&
+  business.longitude &&
+  !isNaN(business.latitude) &&
+  !isNaN(business.longitude);
 
-// Productos de ejemplo para este negocio
-const products = [
-  { id: 1, name: 'Café Espresso', price: 2.5, category: 'Bebidas', description: 'Clásico café espresso italiano.', image: 'https://picsum.photos/300/300?random=101' },
-  { id: 2, name: 'Café Americano', price: 3.0, category: 'Bebidas', description: 'Café espresso con agua caliente añadida.', image: 'https://picsum.photos/300/300?random=102' },
-  { id: 3, name: 'Café Latte', price: 3.5, category: 'Bebidas', description: 'Espresso con leche vaporizada.', image: 'https://picsum.photos/300/300?random=103' },
-  { id: 4, name: 'Pastel de Chocolate', price: 4.5, category: 'Postres', description: 'Delicioso pastel con chocolate belga.', image: 'https://picsum.photos/300/300?random=104' },
-  { id: 5, name: 'Sandwich de Jamón y Queso', price: 5.0, category: 'Comidas', description: 'Pan artesanal con jamón y queso premium.', image: 'https://picsum.photos/300/300?random=105' },
-];
-
-// Reseñas de ejemplo
-const reviews = [
-  { id: 1, author: 'María G.', rating: 5, comment: 'Excelente café y ambiente muy acogedor. Volveré pronto.', date: '2023-06-15' },
-  { id: 2, author: 'Juan P.', rating: 4, comment: 'Muy buen servicio, aunque los precios son un poco altos.', date: '2023-05-28' },
-  { id: 3, author: 'Ana L.', rating: 5, comment: 'El mejor café de la zona sin duda. Personal muy amable.', date: '2023-07-03' },
-  { id: 4, author: 'Carlos M.', rating: 3, comment: 'La comida estaba buena, pero tuve que esperar demasiado.', date: '2023-06-22' },
-];
-
-// Negocios similares
-const similarBusinesses = allBusinesses
-  .filter(b => b.category === business.category && b.id !== business.id)
-  .slice(0, 4);
+// Client-side React components
+const ReactComponents = {
+  Button: Button,
+  Badge: Badge,
+  Card: Card,
+  CardHeader: CardHeader,
+  CardContent: CardContent,
+  CardTitle: CardTitle,
+};
 ---
 
-<Layout title={`${business.name} | ConectaApp`}>
-  <div class="container py-6 space-y-6">
-    <!-- Encabezado del negocio -->
-    <div class="grid md:grid-cols-2 gap-6">
-      <div class="relative overflow-hidden rounded-lg aspect-video md:aspect-square">
-        <img 
-          src={business.image} 
-          alt={business.name} 
-          class="w-full h-full object-cover"
-        />
-        {business.promoted && (
-          <div class="absolute top-2 right-2 z-10">
-            <Badge variant="destructive">★ DESTACADO</Badge>
-          </div>
-        )}
-      </div>
-      
-      <div class="space-y-4">
-        <div>
-          <h1 class="text-3xl font-bold mb-2">{business.name}</h1>
-          <div class="flex flex-wrap gap-2 mb-4">
-            <Badge variant="secondary">{business.category}</Badge>
-            <div class="flex items-center gap-1 text-yellow-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 fill-current" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-              <span class="font-medium">{business.rating.toFixed(1)}</span>
+<Layout title={`${business.name} | Orbita`}>
+  <div class="container mx-auto px-4 py-8">
+    {
+      selectedProduct ? (
+        <div class="max-w-4xl mx-auto">
+          <Button
+            client:load
+            variant="ghost"
+            className="mb-4"
+            onClick={() => {
+              const url = new URL(window.location.href);
+              url.searchParams.delete("product");
+              window.history.pushState({}, "", url);
+              window.location.reload();
+            }}
+          >
+            ← Volver al negocio
+          </Button>
+          <Card>
+            <div class="relative aspect-video">
+              <img
+                src={selectedProduct.image}
+                alt={selectedProduct.name}
+                class="w-full h-full object-cover"
+              />
+              <Badge
+                client:load
+                variant={
+                  selectedProduct.inStock !== false ? "secondary" : "outline"
+                }
+                className="absolute top-4 right-4"
+              >
+                {selectedProduct.inStock !== false ? "Disponible" : "Agotado"}
+              </Badge>
             </div>
-          </div>
-          <p class="text-muted-foreground mb-4">{business.description}</p>
-        </div>
-        
-        <div class="space-y-2">
-          <h2 class="text-lg font-semibold">Información de Contacto</h2>
-          <div class="grid gap-1">
-            <div class="flex items-start gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span>{business.address}</span>
-            </div>
-            {business.phone && (
-              <div class="flex items-start gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                <span>{business.phone}</span>
+            <CardHeader>
+              <div class="flex justify-between items-start">
+                <div>
+                  <CardTitle className="text-2xl">
+                    {selectedProduct.name}
+                  </CardTitle>
+                  <Badge client:load variant="secondary" className="mt-2">
+                    {selectedProduct.category}
+                  </Badge>
+                </div>
+                <div class="text-2xl font-bold">
+                  ${selectedProduct.price.toFixed(2)}
+                </div>
               </div>
-            )}
-            {business.email && (
-              <div class="flex items-start gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                <a href={`mailto:${business.email}`} class="text-primary hover:underline">{business.email}</a>
-              </div>
-            )}
-          </div>
+            </CardHeader>
+            <CardContent>
+              <p class="text-muted-foreground">{selectedProduct.description}</p>
+              <ProductPaymentForm
+                client:load
+                product={selectedProduct}
+                quantity={1}
+                isOpen={true}
+                onClose={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete("product");
+                  window.history.pushState({}, "", url);
+                  window.location.reload();
+                }}
+                maxQuantity={selectedProduct.maxQuantity ?? 99}
+              />
+            </CardContent>
+          </Card>
         </div>
-        
-        <div class="pt-4 flex flex-wrap gap-3">
-          <Button>Contactar</Button>
-          <Button variant="outline">Ver Ubicación</Button>
-        </div>
-
-        <!-- Mapa de ubicación -->
-        {hasValidCoordinates && (
-          <div class="pt-4 mt-4">
-            <Card className="shadow-md overflow-hidden">
-              <CardContent className="p-0 h-[250px]">
-                <MapView 
-                  businesses={[business]} 
-                  forceFitBounds={true}
-                  client:only="react"
+      ) : (
+        <>
+          <div class="grid gap-6 lg:grid-cols-[2fr_1fr]">
+            {/* Business Info */}
+            <Card>
+              <div class="relative aspect-video">
+                <img
+                  src={business.image}
+                  alt={business.name}
+                  class="w-full h-full object-cover"
                 />
+                {business.promoted && (
+                  <Badge
+                    client:load
+                    variant="default"
+                    className="absolute top-4 right-4 bg-yellow-500 text-black"
+                  >
+                    ★ DESTACADO
+                  </Badge>
+                )}
+              </div>
+              <CardHeader>
+                <div class="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-2xl">{business.name}</CardTitle>
+                    <Badge client:load variant="secondary" className="mt-2">
+                      {business.category}
+                    </Badge>
+                  </div>
+                  <div class="flex items-center gap-1 text-yellow-500">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-5 w-5 fill-current"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.4 7.4-6-4.6-6 4.6 2.4-7.4-6-4.6h7.6z" />
+                    </svg>
+                    <span class="text-lg font-semibold">
+                      {business.rating.toFixed(1)}
+                    </span>
+                    <span class="text-muted-foreground">
+                      ({business.totalReviews} reseñas)
+                    </span>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div class="space-y-4">
+                  <p class="text-muted-foreground">{business.description}</p>
+                  <div class="grid gap-2">
+                    {business.phone && (
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium">Teléfono:</span>
+                        <a
+                          href={`tel:${business.phone}`}
+                          class="text-primary hover:underline"
+                        >
+                          {business.phone}
+                        </a>
+                      </div>
+                    )}
+                    {business.email && (
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium">Email:</span>
+                        <a
+                          href={`mailto:${business.email}`}
+                          class="text-primary hover:underline"
+                        >
+                          {business.email}
+                        </a>
+                      </div>
+                    )}
+                    {business.address && (
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium">Dirección:</span>
+                        <span>{business.address}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
+
+            {/* Map */}
+            {hasValidCoordinates && (
+              <Card className="h-[400px] overflow-hidden">
+                <MapView client:only="react" businesses={[business]} />
+              </Card>
+            )}
           </div>
-        )}
-      </div>
-    </div>
-    
-    <!-- Productos y Servicios -->
-    <div class="pt-8">
-      <h2 class="text-2xl font-semibold mb-6">Productos & Servicios</h2>
-      <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {products.map(product => (
-          <ProductCard product={product} client:load />
-        ))}
-      </div>
-    </div>
-    
-    <!-- Reseñas -->
-    <div class="pt-8">
-      <h2 class="text-2xl font-semibold mb-4">Reseñas</h2>
-      <div class="space-y-4">
-        <div class="flex items-center gap-2 mb-6">
-          <div class="flex items-center gap-1 text-yellow-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 fill-current" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-            </svg>
-            <span class="text-2xl font-bold">{business.rating.toFixed(1)}</span>
-          </div>
-          <span class="text-muted-foreground">({reviews.length} reseñas)</span>
-        </div>
-        
-        {reviews.map(review => (
-          <ReviewCard review={review} client:load />
-        ))}
-        
-        <div class="text-center py-4">
-          <Button>Escribir Reseña</Button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Negocios similares -->
-    <div class="pt-8">
-      <h2 class="text-2xl font-semibold mb-4">Negocios Similares</h2>
-      <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {similarBusinesses.map(similarBusiness => (
-          <BusinessCard business={similarBusiness} client:load />
-        ))}
-      </div>
-    </div>
+
+          {/* Products Section */}
+          {business.products && business.products.length > 0 && (
+            <section class="mt-8">
+              <h2 class="text-2xl font-semibold mb-6">Productos y Servicios</h2>
+              <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {business.products.map((product: Product) => (
+                  <ProductCard
+                    client:load
+                    product={product}
+                    businessId={business.id}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Reviews Section */}
+          {business.reviews && business.reviews.length > 0 && (
+            <section class="mt-8">
+              <h2 class="text-2xl font-semibold mb-6">Reseñas de Clientes</h2>
+              <div class="space-y-4">
+                {business.reviews.map((review: Review) => (
+                  <ReviewCard client:load review={review} />
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )
+    }
   </div>
-</Layout> 
+</Layout>

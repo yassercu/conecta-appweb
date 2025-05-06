@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
 import { CheckCircle2, HelpCircle, Sparkles, Calendar, Trophy } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { usePayment } from '@/hooks/use-payment';
+import { PaymentForm } from './PaymentForm';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Planes de promoción
 const plans = [
+  {
+    id: 'free',
+    name: 'Plan Básico',
+    description: 'Comienza a mostrar tu negocio',
+    features: [
+      'Registro básico del negocio',
+      'Perfil básico en la plataforma',
+      'Aparición en resultados de búsqueda',
+      'Información de contacto básica',
+    ],
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    yearlyDiscount: 0,
+    popular: false,
+  },
   {
     id: 'basic',
     name: 'Destacado Local',
@@ -49,76 +61,59 @@ const plans = [
 export default function PaymentPlans() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [billingCycle, setBillingCycle] = useState('monthly');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const { toast } = useToast();
 
-  // Función simulada para procesar el pago con Stripe
-  const handlePayment = async (plan) => {
-    setIsProcessing(true);
-    setErrorMessage('');
-    
-    try {
-      console.log(`Procesando pago para plan ${plan.id} con ciclo ${billingCycle}`);
-      
-      // En una implementación real, aquí se llamaría a la API para crear una sesión de pago
-      // con Stripe y redirigir al usuario a la página de pago
-      
-      // Simulación de procesamiento
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulación de éxito (90% de probabilidad)
-      if (Math.random() < 0.9) {
-        setIsSuccess(true);
-      } else {
-        throw new Error('Error al procesar el pago');
-      }
-    } catch (error) {
-      setErrorMessage('Hubo un problema al procesar tu pago. Por favor, inténtalo de nuevo.');
-      console.error(error);
-    } finally {
-      setIsProcessing(false);
+  const {
+    isOpen: isPaymentFormOpen,
+    loading,
+    error,
+    handlePayment,
+    handlePaymentComplete,
+    setIsOpen: setIsPaymentFormOpen
+  } = usePayment({
+    onSuccess: (result) => {
+      toast({
+        title: "¡Pago exitoso!",
+        description: "Tu plan ha sido activado correctamente.",
+      });
+      window.location.href = '/business/dashboard';
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error en el pago",
+        description: error.message,
+      });
     }
-  };
+  });
 
-  // Si el pago fue exitoso, mostrar mensaje de confirmación
-  if (isSuccess) {
-    return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full mx-auto flex items-center justify-center mb-4">
-            <CheckCircle2 className="h-8 w-8 text-green-600" />
-          </div>
-          <CardTitle className="text-2xl">¡Pago Exitoso!</CardTitle>
-          <CardDescription>
-            Tu plan de promoción ha sido activado correctamente
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-center space-y-4">
-          <p className="text-muted-foreground">
-            Tu negocio ahora aparecerá como destacado en nuestra plataforma. Puedes comenzar a disfrutar de los beneficios inmediatamente.
-          </p>
-          <p className="font-medium">
-            Gracias por confiar en ConectaApp para hacer crecer tu negocio.
-          </p>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button asChild>
-            <a href="/business/dashboard">Ir a Mi Panel</a>
-          </Button>
-        </CardFooter>
-      </Card>
-    );
-  }
+  const handlePlanSelect = (plan) => {
+    if (plan.id === 'free') {
+      window.location.href = '/register';
+      return;
+    }
+
+    setSelectedPlan(plan);
+    handlePayment({
+      amount: billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice,
+      currency: 'USD',
+      concept: `Plan ${plan.name} (${billingCycle === 'monthly' ? 'Mensual' : 'Anual'})`,
+      metadata: {
+        planId: plan.id,
+        billingCycle,
+        type: 'plan_subscription'
+      }
+    });
+  };
 
   // Mostrar planes de promoción
   return (
     <div className="space-y-8">
       {/* Selector de ciclo de facturación */}
       <div className="flex justify-center mb-8">
-        <Tabs 
-          defaultValue="monthly" 
-          value={billingCycle} 
+        <Tabs
+          defaultValue="monthly"
+          value={billingCycle}
           onValueChange={setBillingCycle}
           className="w-[400px]"
         >
@@ -134,10 +129,10 @@ export default function PaymentPlans() {
       </div>
 
       {/* Planes de promoción */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         {plans.map((plan) => (
-          <Card 
-            key={plan.id} 
+          <Card
+            key={plan.id}
             className={`relative overflow-hidden flex flex-col h-full ${plan.popular ? 'border-primary shadow-md' : ''}`}
           >
             {/* Badge de popular */}
@@ -148,15 +143,17 @@ export default function PaymentPlans() {
                 </div>
               </div>
             )}
-            
-            <CardHeader>
+
+            <CardHeader className="px-2">
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-xl flex items-center gap-2">
                     {plan.id === 'premium' ? (
                       <Trophy className="h-5 w-5 text-yellow-500" />
-                    ) : (
+                    ) : plan.id === 'basic' ? (
                       <Sparkles className="h-5 w-5 text-blue-500" />
+                    ) : (
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
                     )}
                     {plan.name}
                   </CardTitle>
@@ -164,26 +161,36 @@ export default function PaymentPlans() {
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent className="space-y-4 flex-grow">
               {/* Precio */}
               <div className="mt-1">
                 <div className="flex items-baseline">
                   <span className="text-3xl font-bold">
-                    ${billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
+                    {plan.monthlyPrice === 0 ? 'Gratis' : `$${billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}`}
                   </span>
-                  <span className="text-muted-foreground ml-1.5">
-                    /{billingCycle === 'monthly' ? 'mes' : 'año'}
-                  </span>
+                  {plan.monthlyPrice > 0 && (
+                    <span className="text-muted-foreground ml-1.5">
+                      /{billingCycle === 'monthly' ? 'mes' : 'año'}
+                    </span>
+                  )}
                 </div>
-                {billingCycle === 'yearly' && (
-                  <p className="text-sm text-green-600 dark:text-green-400 mt-1 flex items-center">
-                    <Calendar className="h-3.5 w-3.5 mr-1" />
-                    Equivale a {12 - (plan.yearlyDiscount / 100) * 12} meses
+                {billingCycle === 'yearly' && plan.yearlyDiscount > 0 && (
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-1 flex flex-col items-start">
+                    <span className="flex items-center">
+                      <Calendar className="h-3.5 w-3.5 mr-1" />
+                      Equivale a {12 - (plan.yearlyDiscount / 100) * 12} meses
+                    </span>
+                    <span className="ml-5">
+                      Sin descuento: <span className="line-through">${plan.monthlyPrice * 12}</span> USD
+                    </span>
+                    <span className="ml-5 text-xs text-muted-foreground">
+                      (Ahorro de {plan.yearlyDiscount}% respecto al pago mensual)
+                    </span>
                   </p>
                 )}
               </div>
-              
+
               {/* Lista de características */}
               <ul className="space-y-2.5 mt-6">
                 {plan.features.map((feature, i) => (
@@ -194,29 +201,37 @@ export default function PaymentPlans() {
                 ))}
               </ul>
             </CardContent>
-            
+
             <CardFooter className="pt-4 mt-auto">
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 variant={plan.popular ? "default" : "outline"}
                 size="lg"
-                disabled={isProcessing}
-                onClick={() => handlePayment(plan)}
+                disabled={plan.id === 'free'}
+                onClick={() => handlePlanSelect(plan)}
               >
-                {isProcessing ? 'Procesando...' : `Contratar Plan ${billingCycle === 'monthly' ? 'Mensual' : 'Anual'}`}
+                {plan.id === 'free' ? 'Plan Actual' : `Contratar Plan ${billingCycle === 'monthly' ? 'Mensual' : 'Anual'}`}
               </Button>
             </CardFooter>
           </Card>
         ))}
       </div>
-      
-      {/* Mensaje de error */}
-      {errorMessage && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mt-6">
-          {errorMessage}
-        </div>
-      )}
-      
+
+      {/* Formulario de pago */}
+      <PaymentForm
+        isOpen={isPaymentFormOpen}
+        onClose={() => setIsPaymentFormOpen(false)}
+        amount={selectedPlan ? (billingCycle === 'monthly' ? selectedPlan.monthlyPrice : selectedPlan.yearlyPrice) : 0}
+        currency="USD"
+        concept={selectedPlan ? `Plan ${selectedPlan.name} (${billingCycle === 'monthly' ? 'Mensual' : 'Anual'})` : ''}
+        onPaymentComplete={handlePaymentComplete}
+        metadata={{
+          planId: selectedPlan?.id,
+          billingCycle,
+          type: 'plan_subscription'
+        }}
+      />
+
       {/* Información adicional */}
       <div className="mt-12 bg-muted/50 p-6 rounded-lg border">
         <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -239,11 +254,17 @@ export default function PaymentPlans() {
           <div>
             <h4 className="font-medium mb-1">¿Qué métodos de pago aceptan?</h4>
             <p className="text-sm text-muted-foreground">
-              Aceptamos todas las tarjetas de crédito y débito principales (Visa, Mastercard, American Express), así como PayPal y transferencias bancarias.
+              Aceptamos tarjetas de crédito y débito, pagos conciliados mediante WhatsApp y Tropipay.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-medium mb-1">¿Qué tipo de modenas y taza de cambio aceptan?</h4>
+            <p className="text-sm text-muted-foreground">
+              Aceptamos casi cuanquire moneda de curso legal en Cuban (USD,EUR, MLC, CUP) y cualqueir otra que se pacte directamente con nuestro equipo.
             </p>
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}

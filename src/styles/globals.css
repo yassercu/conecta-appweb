@@ -4,25 +4,26 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 220 90% 50%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220 70% 40%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220 70% 40%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 220 90% 50%;
+    /* Paleta más neutra para el tema claro con mejor contraste */
+    --background: 220 20% 97%;
+    --foreground: 220 45% 15%;
+    --card: 220 25% 98%;
+    --card-foreground: 220 45% 15%;
+    --popover: 220 25% 98%;
+    --popover-foreground: 220 45% 15%;
+    --primary: 220 90% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 218 18% 92%;
+    --secondary-foreground: 220 70% 35%;
+    --muted: 218 18% 92%;
+    --muted-foreground: 220 30% 40%;
+    --accent: 220 25% 90%;
+    --accent-foreground: 220 70% 35%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 85%;
+    --input: 220 15% 85%;
+    --ring: 220 90% 45%;
     --radius: 0.5rem;
 
     /* Gráficos */
@@ -41,6 +42,11 @@
     --sidebar-accent-foreground: 210 40% 15%;
     --sidebar-border: 210 17% 85%;
     --sidebar-ring: 207 70% 53%;
+
+    /* Variables para efectos espaciales */
+    --space-bg: radial-gradient(circle at center, #0B1026 0%, #050814 100%);
+    --space-stars: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='%23404' stroke-width='1'%3E%3Cpath d='M769 229L1037 260.9M927 880L731 737 520 660 309 538 40 599 295 764 126.5 879.5 40 599-197 493 102 382-31 229 126.5 79.5-69-63'/%3E%3Cpath d='M-31 229L237 261 390 382 603 493 308.5 537.5 101.5 381.5M370 905L295 764'/%3E%3Cpath d='M520 660L578 842 731 737 840 599 603 493 520 660 295 764 309 538 390 382 539 269 769 229 577.5 41.5 370 105 295 -36 126.5 79.5 237 261 102 382 40 599 -69 737 127 880'/%3E%3Cpath d='M520-140L578.5 42.5 731-63M603 493L539 269 237 261 370 105M902 382L539 269M390 382L102 382'/%3E%3Cpath d='M-222 42L126.5 79.5 370 105 539 269 577.5 41.5 927 80 769 229 902 382 603 493 731 737M295-36L577.5 41.5M578 842L295 764M40-201L127 80M102 382L-261 269'/%3E%3C/g%3E%3Cg fill='%23505'%3E%3Ccircle cx='769' cy='229' r='5'/%3E%3Ccircle cx='539' cy='269' r='5'/%3E%3Ccircle cx='603' cy='493' r='5'/%3E%3Ccircle cx='731' cy='737' r='5'/%3E%3Ccircle cx='520' cy='660' r='5'/%3E%3Ccircle cx='309' cy='538' r='5'/%3E%3Ccircle cx='295' cy='764' r='5'/%3E%3Ccircle cx='40' cy='599' r='5'/%3E%3Ccircle cx='102' cy='382' r='5'/%3E%3Ccircle cx='127' cy='80' r='5'/%3E%3Ccircle cx='370' cy='105' r='5'/%3E%3Ccircle cx='578' cy='42' r='5'/%3E%3Ccircle cx='237' cy='261' r='5'/%3E%3Ccircle cx='390' cy='382' r='5'/%3E%3C/g%3E%3C/svg%3E");
+    --orbit-curve: "M 0,100 C 200,0 800,200 1000,100";
   }
 
   .dark {
@@ -80,6 +86,9 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 210 15% 25%;
     --sidebar-ring: 207 70% 53%;
+
+    /* Variables espaciales para modo oscuro */
+    --space-bg: radial-gradient(circle at center, #0B1026 0%, #020307 100%);
   }
 }
 
@@ -87,8 +96,218 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .space-header {
+    @apply relative overflow-hidden;
+    background: var(--space-bg);
+    background-size: 400% 400%;
+    animation: space-bg 15s ease infinite;
+    min-height: 400px;
+  }
+
+  .space-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: var(--space-stars);
+    opacity: 0.3;
+    animation: twinkle 8s ease infinite;
+  }
+
+  .space-header::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 120px;
+    background: linear-gradient(to bottom,
+        transparent,
+        hsl(var(--primary) / 0.05));
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .space-nav {
+    @apply fixed top-0 z-50 w-full backdrop-blur-md;
+    background: linear-gradient(to bottom,
+        hsl(var(--background) / 0.95),
+        hsl(var(--background) / 0.85));
+    border-bottom: 1px solid hsl(var(--border) / 0.2);
+  }
+
+  .orbit-divider {
+    position: relative;
+    height: 150px;
+    margin-top: -80px;
+    z-index: 10;
+    overflow: hidden;
+  }
+
+  .orbit-divider::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    width: 200%;
+    height: 200px;
+    background: hsl(var(--background));
+    transform: translateX(-50%);
+    /* Curva parabólica más pronunciada para simular el horizonte de un planeta */
+    clip-path: path('M -200,200 Q 400,-90 1000,200 L 1000,201 L -200,201 Z');
+    box-shadow: 0 -20px 80px rgba(var(--primary), 0.15);
+  }
+
+  .orbit-divider::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 100%;
+    /* Gradiente para simular atmósfera */
+    background: linear-gradient(to bottom,
+        hsl(var(--primary) / 0.2),
+        hsl(215, 70%, 20%, 0.1) 30%,
+        transparent 70%);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  /* Ajustar el contenido principal para que parezca la superficie del planeta */
+  .planet-surface {
+    position: relative;
+    background: linear-gradient(180deg,
+        hsl(var(--background)) 0%,
+        hsl(var(--background)) 100%);
+    padding-top: 2rem;
+  }
+
+  .planet-surface::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% -50%,
+        hsl(var(--primary) / 0.07) 0%,
+        transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* Efecto de textura sutil para la superficie del planeta */
+  .planet-surface::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='currentColor' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+    opacity: 0.3;
+    z-index: -1;
+  }
+
+  /* Efectos de brillo para estrellas */
+  .glow-xs {
+    box-shadow: 0 0 2px 1px rgba(255, 255, 255, 0.3);
+  }
+
+  .glow-sm {
+    box-shadow: 0 0 4px 2px rgba(255, 255, 255, 0.4);
+  }
+
+  /* Campo de estrellas animadas */
+  .stars-field {
+    background-image: 
+      radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 40px 70px, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 160px 120px, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 230px 50px, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0));
+    background-repeat: repeat;
+    background-size: 250px 250px;
+    opacity: 0.2;
+    animation: stars-move 100s linear infinite;
+  }
+
+  @keyframes stars-move {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 250px 250px;
+    }
+  }
+
+  /* Animaciones de flotación para los elementos decorativos */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-float-slow {
+    animation: float 10s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  /* Animaciones adicionales para el efecto planetario */
+  .animate-orbit-small {
+    animation: orbit-small 8s linear infinite;
+  }
+
+  @keyframes orbit-small {
+    0% {
+      transform: translateY(0) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-2px) rotate(5deg);
+    }
+    50% {
+      transform: translateY(0) rotate(0deg);
+    }
+    75% {
+      transform: translateY(2px) rotate(-5deg);
+    }
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+  }
+}
+
+@keyframes space-bg {
+  0% {
+    background-position: 0% 50%
+  }
+
+  50% {
+    background-position: 100% 50%
+  }
+
+  100% {
+    background-position: 0% 50%
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.5;
   }
 }
 
@@ -103,5 +322,6 @@ html.dark img {
 }
 
 html.dark .bright-img {
-  filter: none; /* Excepción para imágenes que deben mantenerse brillantes */
+  filter: none;
+  /* Excepción para imágenes que deben mantenerse brillantes */
 }

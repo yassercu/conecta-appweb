@@ -1,4 +1,6 @@
 // src/types/business.ts
+import type { Product } from '@/components/business/ProductCard';
+import type { Review } from '@/components/business/ReviewCard';
 
 export interface Business {
   id: string;
@@ -15,4 +17,7 @@ export interface Business {
   address: string;
   phone?: string;
   email?: string;
+  totalReviews: number;
+  products?: Product[];
+  reviews?: Review[];
 }

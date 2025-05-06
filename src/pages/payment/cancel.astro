@@ -1,0 +1,70 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { Button } from "@/components/ui/button";
+
+// Obtener el ID de transacción de la URL
+const merchantOpId = Astro.url.searchParams.get('transaction_id');
+---
+
+<Layout title="Pago Cancelado - Orbita">
+  <div class="py-16 md:py-24">
+    <div class="container max-w-xl">
+      <div class="text-center mb-8">
+        <div class="space-y-4">
+          <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-10 w-10 text-red-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </div>
+          <h1 class="text-3xl font-bold">Pago Cancelado</h1>
+          <p class="text-xl text-muted-foreground">
+            El proceso de pago ha sido cancelado o ha ocurrido un error
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-card rounded-lg border p-6 mb-8">
+        <h2 class="text-xl font-semibold mb-4">¿Qué sucedió?</h2>
+        <div class="space-y-4 text-muted-foreground">
+          <p>
+            Tu pago no se ha completado. Esto puede deberse a:
+          </p>
+          <ul class="list-disc pl-5 space-y-2">
+            <li>Has cancelado voluntariamente el proceso de pago</li>
+            <li>Ha ocurrido un error en la pasarela de pago</li>
+            <li>Has cerrado la ventana durante el proceso de pago</li>
+            <li>Ha habido un problema de conexión</li>
+          </ul>
+          <p class="font-medium pt-2">
+            No te preocupes, no se ha realizado ningún cargo a tu cuenta.
+          </p>
+          {merchantOpId && (
+            <p class="text-sm border-t pt-3 mt-3">
+              Referencia de orden: <span class="font-mono">{merchantOpId}</span>
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <Button asChild>
+          <a href="/payment">Intentar de nuevo</a>
+        </Button>
+        <Button variant="outline" asChild>
+          <a href="/">Volver al Inicio</a>
+        </Button>
+      </div>
+    </div>
+  </div>
+</Layout> 

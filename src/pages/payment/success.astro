@@ -1,0 +1,131 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { Button } from "@/components/ui/button";
+import { enzonaService } from "@/services/enzona.service";
+
+// Obtener el ID de transacción de la URL
+const transactionId = Astro.url.searchParams.get('transaction_uuid');
+const merchantOpId = Astro.url.searchParams.get('transaction_id');
+
+// Variables para la información del pago
+let paymentInfo = null;
+let paymentError = null;
+
+// Intentar verificar el estado del pago
+if (transactionId) {
+  try {
+    // En un entorno real, aquí verificaríamos el status del pago
+    // paymentInfo = await enzonaService.checkPaymentStatus(transactionId);
+    
+    // Para este ejemplo, simulamos un pago exitoso
+    paymentInfo = {
+      status: "confirmado",
+      amount: {
+        total: "1200.00",
+        currency: "CUP"
+      },
+      description: "Plan Profesional por 3 meses - Orbita-Y",
+      transaction_uuid: transactionId,
+      merchant_op_id: merchantOpId || "unknown_op"
+    };
+  } catch (error) {
+    console.error("Error al verificar el pago:", error);
+    paymentError = "No pudimos verificar el estado de tu pago. Por favor contacta a soporte.";
+  }
+} else {
+  paymentError = "No se encontró información de la transacción.";
+}
+---
+
+<Layout title="Pago Exitoso - Orbita">
+  <div class="py-16 md:py-24">
+    <div class="container max-w-xl">
+      <div class="text-center mb-8">
+        {!paymentError ? (
+          <div class="space-y-4">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-10 w-10 text-green-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h1 class="text-3xl font-bold">¡Pago Exitoso!</h1>
+            <p class="text-xl text-muted-foreground">
+              Tu pago ha sido procesado correctamente
+            </p>
+          </div>
+        ) : (
+          <div class="space-y-4">
+            <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-10 w-10 text-yellow-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <h1 class="text-3xl font-bold">Información de Pago</h1>
+            <p class="text-lg text-yellow-600">{paymentError}</p>
+          </div>
+        )}
+      </div>
+
+      {!paymentError && paymentInfo && (
+        <div class="bg-card rounded-lg border p-6 mb-8">
+          <h2 class="text-xl font-semibold mb-4">Detalles de la Transacción</h2>
+          <div class="space-y-3">
+            <div class="flex justify-between border-b pb-2">
+              <span class="text-muted-foreground">Referencia:</span>
+              <span class="font-medium">{paymentInfo.transaction_uuid}</span>
+            </div>
+            <div class="flex justify-between border-b pb-2">
+              <span class="text-muted-foreground">Orden:</span>
+              <span class="font-medium">{paymentInfo.merchant_op_id}</span>
+            </div>
+            <div class="flex justify-between border-b pb-2">
+              <span class="text-muted-foreground">Concepto:</span>
+              <span class="font-medium">{paymentInfo.description}</span>
+            </div>
+            <div class="flex justify-between border-b pb-2">
+              <span class="text-muted-foreground">Estado:</span>
+              <span class="font-medium text-green-600">Confirmado</span>
+            </div>
+            <div class="flex justify-between pt-2">
+              <span class="text-muted-foreground">Monto:</span>
+              <span class="text-xl font-bold">
+                {paymentInfo.amount.total} {paymentInfo.amount.currency}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <Button asChild>
+          <a href="/">Volver al Inicio</a>
+        </Button>
+        <Button variant="outline" asChild>
+          <a href="/payment">Ver Planes</a>
+        </Button>
+      </div>
+    </div>
+  </div>
+</Layout> 

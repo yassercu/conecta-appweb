@@ -2,11 +2,17 @@
 interface Props {
   title: string;
   description?: string;
+  isHomePage?: boolean;
 }
 
-const { title, description = "Conecta App - Encuentra y promociona negocios locales" } = Astro.props;
-import '../styles/globals.css';
-import { Header } from '@/components/layout/header';
+const {
+  title,
+  description = "Orbita App - Encuentra y promociona negocios locales",
+  isHomePage = false,
+} = Astro.props;
+import "../styles/globals.css";
+import { Header } from "@/components/layout/header";
+import { Toaster } from "@/components/ui/toaster";
 ---
 
 <!doctype html>
@@ -22,12 +28,16 @@ import { Header } from '@/components/layout/header';
     <script is:inline>
       try {
         // Verificar si hay un tema guardado en localStorage
-        const savedTheme = localStorage.getItem('theme');
+        const savedTheme = localStorage.getItem("theme");
         // Aplicar tema guardado o usar la preferencia del sistema
-        if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.classList.add('dark');
+        if (
+          savedTheme === "dark" ||
+          (!savedTheme &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches)
+        ) {
+          document.documentElement.classList.add("dark");
         } else {
-          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.remove("dark");
         }
       } catch (e) {
         // Fallback silencioso en caso de error de localStorage o matchMedia
@@ -37,37 +47,46 @@ import { Header } from '@/components/layout/header';
   </head>
   <body>
     <div class="min-h-screen flex flex-col">
-      <Header client:load />
-
-      <main class="container flex-1 py-6">
-        <slot />
-      </main>
+      <Header client:load isHomePage={isHomePage}>
+        <main class="planet-surface">
+          <slot />
+        </main>
+      </Header>
 
       <footer class="border-t py-6 md:py-0">
-        <div class="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
+        <div
+          class="container mx-auto flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row"
+        >
           <p class="text-sm text-muted-foreground">
-            &copy; 2025 ConectaApp. Todos los derechos reservados.
+            &copy; 2025 Orbita. Todos los derechos reservados.
           </p>
           <nav class="flex items-center gap-4 text-sm">
-            <a href="/about" class="text-muted-foreground hover:text-foreground">
+            <a
+              href="/about"
+              class="text-muted-foreground hover:text-foreground"
+            >
               Sobre Nosotros
             </a>
-            <a href="/terms" class="text-muted-foreground hover:text-foreground">
+            <a
+              href="/terms"
+              class="text-muted-foreground hover:text-foreground"
+            >
               Términos
             </a>
-            <a href="/privacy" class="text-muted-foreground hover:text-foreground">
+            <a
+              href="/privacy"
+              class="text-muted-foreground hover:text-foreground"
+            >
               Privacidad
             </a>
           </nav>
         </div>
       </footer>
     </div>
+    <Toaster client:load />
   </body>
 </html>
 
 <style is:global>
-  /* Importar estilos de Tailwind */
-  @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
-</style> 
+  /* Los estilos de Tailwind ya están importados en globals.css */
+</style>
