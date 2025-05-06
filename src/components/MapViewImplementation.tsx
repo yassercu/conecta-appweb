@@ -105,61 +105,6 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         tilesLoaded.current[key] = true;
     }, []);
 
-    // Función para obtener la ubicación del usuario
-    const getUserLocation = useCallback(() => {
-        if (!navigator.geolocation) {
-            setLocationError("Tu navegador no soporta geolocalización");
-            return;
-        }
-
-        setIsLocating(true);
-        setLocationError(null);
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                setUserLocation([latitude, longitude]);
-
-                // Actualizar centro del mapa a la ubicación del usuario
-                currentCenterRef.current = [latitude, longitude];
-                setCurrentCenter([latitude, longitude]);
-                currentZoomRef.current = 13; // Zoom apropiado para ubicación de usuario
-                setCurrentZoom(13);
-
-                setIsLocating(false);
-
-                // Solicitar actualización del mapa
-                if (updateRequestRef.current) {
-                    cancelAnimationFrame(updateRequestRef.current);
-                }
-                updateRequestRef.current = requestAnimationFrame(calculateVisibleTiles);
-            },
-            (error) => {
-                let errorMsg;
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMsg = "Usuario denegó la solicitud de geolocalización";
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMsg = "Información de ubicación no disponible";
-                        break;
-                    case error.TIMEOUT:
-                        errorMsg = "La solicitud para obtener la ubicación del usuario expiró";
-                        break;
-                    default:
-                        errorMsg = "Error desconocido al obtener la ubicación";
-                }
-                setLocationError(errorMsg);
-                setIsLocating(false);
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 60000
-            }
-        );
-    }, []);
-
     // Convertir lat,lng a posición de píxeles (más preciso)
     const latLngToPixel = useCallback((lat: number, lng: number, zoom: number): [number, number] => {
         const scale = Math.pow(2, zoom);
@@ -258,6 +203,128 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
 
         setMapTiles(tiles);
     }, [getTileUrl]);
+
+    // Función auxiliar para manejar errores de geolocalización
+    const handleGeolocationError = useCallback((error: GeolocationPositionError) => {
+        let errorMsg;
+        switch (error.code) {
+            case error.PERMISSION_DENIED:
+                errorMsg = "Usuario denegó la solicitud de geolocalización";
+                break;
+            case error.POSITION_UNAVAILABLE:
+                errorMsg = "Información de ubicación no disponible. Intenta en un área con mejor cobertura GPS/WiFi";
+                break;
+            case error.TIMEOUT:
+                errorMsg = "La solicitud para obtener la ubicación del usuario expiró";
+                break;
+            default:
+                errorMsg = "Error desconocido al obtener la ubicación";
+        }
+        console.warn(`Error de geolocalización: ${errorMsg}`, error);
+        setLocationError(errorMsg);
+        setIsLocating(false);
+    }, []);
+
+    // Función para obtener la ubicación del usuario
+    const getUserLocation = useCallback(() => {
+        if (!navigator.geolocation) {
+            setLocationError("Tu navegador no soporta geolocalización");
+            return;
+        }
+
+        setIsLocating(true);
+        setLocationError(null);
+
+        // Intentar usar primero watchPosition para obtener actualizaciones continuas
+        // Esto puede ayudar en algunos dispositivos donde getCurrentPosition falla
+        try {
+            const watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    setUserLocation([latitude, longitude]);
+
+                    // Actualizar centro del mapa a la ubicación del usuario
+                    currentCenterRef.current = [latitude, longitude];
+                    setCurrentCenter([latitude, longitude]);
+                    currentZoomRef.current = 13; // Zoom apropiado para ubicación de usuario
+                    setCurrentZoom(13);
+
+                    setIsLocating(false);
+
+                    // Una vez obtenida la ubicación, dejar de observar
+                    navigator.geolocation.clearWatch(watchId);
+
+                    // Solicitar actualización del mapa
+                    if (updateRequestRef.current) {
+                        cancelAnimationFrame(updateRequestRef.current);
+                    }
+                    updateRequestRef.current = requestAnimationFrame(calculateVisibleTiles);
+                },
+                (error) => {
+                    // Si watchPosition falla, intentamos con getCurrentPosition
+                    handleGeolocationError(error);
+
+                    // Limpiar el observador
+                    navigator.geolocation.clearWatch(watchId);
+
+                    // Intentar con getCurrentPosition como respaldo
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const { latitude, longitude } = position.coords;
+                            setUserLocation([latitude, longitude]);
+                            currentCenterRef.current = [latitude, longitude];
+                            setCurrentCenter([latitude, longitude]);
+                            currentZoomRef.current = 13;
+                            setCurrentZoom(13);
+                            setIsLocating(false);
+
+                            // Actualizar mapa
+                            if (updateRequestRef.current) {
+                                cancelAnimationFrame(updateRequestRef.current);
+                            }
+                            updateRequestRef.current = requestAnimationFrame(calculateVisibleTiles);
+                        },
+                        handleGeolocationError,
+                        {
+                            enableHighAccuracy: false, // Intentar sin alta precisión como alternativa
+                            timeout: 15000,
+                            maximumAge: 60000
+                        }
+                    );
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0 // Siempre obtener una posición fresca
+                }
+            );
+        } catch (e) {
+            // Si watchPosition no está disponible o lanza un error, usamos getCurrentPosition directamente
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    setUserLocation([latitude, longitude]);
+                    currentCenterRef.current = [latitude, longitude];
+                    setCurrentCenter([latitude, longitude]);
+                    currentZoomRef.current = 13;
+                    setCurrentZoom(13);
+                    setIsLocating(false);
+
+                    // Actualizar mapa
+                    if (updateRequestRef.current) {
+                        cancelAnimationFrame(updateRequestRef.current);
+                    }
+                    updateRequestRef.current = requestAnimationFrame(calculateVisibleTiles);
+                },
+                handleGeolocationError,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        }
+    }, [calculateVisibleTiles, handleGeolocationError]);
 
     // Intentar obtener la ubicación del usuario al iniciar
     useEffect(() => {
