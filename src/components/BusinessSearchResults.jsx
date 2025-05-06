@@ -1,17 +1,17 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,21 +20,25 @@ import { Star, MapPin, Filter, ArrowDownUp, LocateFixed, List, Grid, Menu } from
 import { SearchBar } from '@/components/search-bar';
 import { categories, allBusinesses } from '@/lib/data';
 
-// Lazy load MapView to avoid SSR issues with Leaflet
-const MapView = lazy(() => import('@/components/map-view/map-view'));
+// Lazy load MapView para evitar problemas con SSR
+const MapView = lazy(() => {
+  return import('@/components/map-view');
+});
 
 // Simulate API call with filters
 async function fetchBusinesses(filters) {
+
   // Simulating API delay
   await new Promise(resolve => setTimeout(resolve, 800));
 
   let filtered = allBusinesses.filter(b =>
-    (b.name.toLowerCase().includes(filters.query.toLowerCase()) || 
-     b.category.toLowerCase().includes(filters.query.toLowerCase()) ||
-     b.description.toLowerCase().includes(filters.query.toLowerCase())) &&
+    (b.name.toLowerCase().includes(filters.query.toLowerCase()) ||
+      b.category.toLowerCase().includes(filters.query.toLowerCase()) ||
+      b.description.toLowerCase().includes(filters.query.toLowerCase())) &&
     (filters.category === 'Todas' || b.category === filters.category) &&
     (filters.rating === '0' || b.rating >= parseInt(filters.rating))
   );
+
 
   // Sorting logic - prioritize promoted businesses first
   if (filters.sortBy === 'rating') {
@@ -173,6 +177,7 @@ export default function BusinessSearchResults() {
       const urlView = urlParams.get('view') || 'list';
       const urlViewMode = urlParams.get('viewMode') || 'grid'; // Asegurar grid como predeterminado
 
+
       setQuery(urlQuery);
       setCategory(urlCategory);
       setRating(urlRating);
@@ -180,7 +185,6 @@ export default function BusinessSearchResults() {
       setIsMapView(urlView === 'map');
       setViewMode(urlViewMode);
     } catch (error) {
-      console.error("Error al procesar parámetros de URL:", error);
       // Usar valores predeterminados en caso de error
       setQuery('');
       setCategory('Todas');
@@ -193,6 +197,7 @@ export default function BusinessSearchResults() {
 
   // Fetch businesses when filters change
   useEffect(() => {
+
     async function loadBusinesses() {
       try {
         setIsLoading(true);
@@ -205,7 +210,6 @@ export default function BusinessSearchResults() {
         const fetchedBusinesses = await fetchBusinesses(filters);
         setBusinesses(fetchedBusinesses);
       } catch (error) {
-        console.error("Error al cargar los negocios:", error);
         setBusinesses([]);
       } finally {
         setIsLoading(false);
@@ -224,7 +228,7 @@ export default function BusinessSearchResults() {
       params.set('sort', sortBy);
       params.set('view', isMapView ? 'map' : 'list');
       params.set('viewMode', viewMode);
-      
+
       window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
     } catch (error) {
       console.error("Error al actualizar la URL:", error);
@@ -237,13 +241,18 @@ export default function BusinessSearchResults() {
     setViewMode(viewMode === 'grid' ? 'list' : 'grid');
   };
 
+  // Registrar cambios de estado de mapa
+  const handleMapViewToggle = (newValue) => {
+    setIsMapView(newValue);
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 space-y-6">
       {/* Filters and View Toggle */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 bg-muted/50 rounded-lg border">
         <div className="flex flex-wrap gap-4 items-center">
           <Filter className="h-5 w-5 text-muted-foreground hidden md:inline" />
-          
+
           {/* Category Filter */}
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger className="w-full sm:w-[180px] bg-background">
@@ -287,8 +296,8 @@ export default function BusinessSearchResults() {
         {/* View Toggle */}
         <div className="flex gap-2 w-full md:w-auto">
           {!isMapView && (
-            <Button 
-              variant={viewMode === 'grid' ? "default" : "outline"} 
+            <Button
+              variant={viewMode === 'grid' ? "default" : "outline"}
               onClick={toggleViewMode}
               className="flex-1 md:flex-initial"
             >
@@ -303,18 +312,16 @@ export default function BusinessSearchResults() {
               )}
             </Button>
           )}
-          <Button 
-            variant={!isMapView ? "default" : "outline"} 
-            onClick={() => {
-              setIsMapView(false);
-            }}
+          <Button
+            variant={!isMapView ? "default" : "outline"}
+            onClick={() => handleMapViewToggle(false)}
             className={`flex-1 md:flex-initial ${!isMapView ? "hidden" : ""}`}
           >
             <List className="mr-2 h-4 w-4" /> Resultados
           </Button>
-          <Button 
-            variant={isMapView ? "default" : "outline"} 
-            onClick={() => setIsMapView(true)}
+          <Button
+            variant={isMapView ? "default" : "outline"}
+            onClick={() => handleMapViewToggle(true)}
             className="flex-1 md:flex-initial"
           >
             <LocateFixed className="mr-2 h-4 w-4" /> Mapa
@@ -328,11 +335,19 @@ export default function BusinessSearchResults() {
           <h2 className="text-2xl font-semibold mb-4 sr-only">Vista de Mapa</h2>
           <Card className="h-[500px] flex items-center justify-center bg-muted text-muted-foreground rounded-lg overflow-hidden border">
             {isBrowser ? (
-              <Suspense fallback={<Skeleton className="h-[500px] w-full rounded-lg" />}>
-                <MapView businesses={businesses} />
+              <Suspense fallback={<div className="flex items-center justify-center w-full h-full">
+                <p>Cargando mapa...</p>
+                <Skeleton className="h-[500px] w-full rounded-lg" />
+              </div>}>
+                <div className="w-full h-full">
+                  <MapView businesses={businesses} />
+                </div>
               </Suspense>
             ) : (
-              <Skeleton className="h-[500px] w-full rounded-lg" />
+              <div className="flex items-center justify-center w-full h-full">
+                <p>Esperando navegador...</p>
+                <Skeleton className="h-[500px] w-full rounded-lg" />
+              </div>
             )}
           </Card>
         </section>
@@ -360,13 +375,13 @@ export default function BusinessSearchResults() {
           ) : (
             <div className="py-12 text-center">
               <p className="text-lg text-muted-foreground">No se encontraron negocios con los filtros seleccionados.</p>
-              <Button 
+              <Button
                 onClick={() => {
                   setQuery('');
                   setCategory('Todas');
                   setRating('0');
-                }} 
-                variant="link" 
+                }}
+                variant="link"
                 className="mt-2"
               >
                 Limpiar filtros

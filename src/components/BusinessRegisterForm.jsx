@@ -25,7 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Loader2 } from "lucide-react";
 
 // Lazy load MapView
-const MapView = lazy(() => import('@/components/map-view/map-view'));
+const MapView = lazy(() => import('@/components/map-view'));
 
 // Tipos de negocios
 const businessTypes = [
@@ -86,7 +86,6 @@ const registerFormSchema = z.object({
 
 // Función simulada para registrar negocio en API
 async function registerBusiness(data, coordinates) {
-  console.log("Registrando negocio:", data, "Coordenadas:", coordinates);
   // Simular API delay
   await new Promise(resolve => setTimeout(resolve, 1500));
 
@@ -103,10 +102,10 @@ async function getCoordinates({ province, municipality, address }) {
   // Simular API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  // Simulación - generar coordenadas aleatorias en Cuba
+  // Simulación - generar coordenadas aleatorias en Puerto Rico
   // En producción, usar un servicio real de geocodificación
-  const baseLat = 21.5 + Math.random() * 2;
-  const baseLng = -80 + Math.random() * 5;
+  const baseLat = 18.2 + Math.random() * 0.4; // Latitud para Puerto Rico
+  const baseLng = -66.8 + Math.random() * 0.6; // Longitud para Puerto Rico
 
   return {
     lat: baseLat,
