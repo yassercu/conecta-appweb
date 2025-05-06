@@ -1,0 +1,29 @@
+{
+    "name": "Conecta AppWeb",
+    "short_name": "Conecta",
+    "description": "Plataforma de negocios y servicios",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#181C2A",
+    "theme_color": "#2563eb",
+    "orientation": "portrait",
+    "lang": "es",
+    "icons": [
+        {
+            "src": "/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "/icons/icon-512x512-maskable.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

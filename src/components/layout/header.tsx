@@ -128,17 +128,17 @@ export function Header({ children, isHomePage = false }: HeaderProps) {
 
           {/* Divisor curvo - línea vectorial elegante y sutil */}
           <div className="absolute -bottom-[1px] left-0 right-0 overflow-hidden z-10 pointer-events-none">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              viewBox="0 0 1440 60" 
-              preserveAspectRatio="none" 
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 1440 60"
+              preserveAspectRatio="none"
               className="w-full"
               style={{ display: 'block', height: '60px' }}
             >
-              <path 
-                d="M0,59 C360,10 1080,10 1440,59" 
+              <path
+                d="M0,59 C360,10 1080,10 1440,59"
                 fill="none"
-                stroke="var(--background)" 
+                stroke="var(--background)"
                 strokeWidth="1"
                 vectorEffect="non-scaling-stroke"
                 strokeLinecap="round"
