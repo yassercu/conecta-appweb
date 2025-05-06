@@ -91,6 +91,7 @@ export function ProductCard({ product, businessId }: ProductCardProps) {
         onError={handlePaymentError}
         onQuantityChange={setQuantity}
         maxQuantity={product.maxQuantity}
+        businessId={businessId}
       />
     </>
   );

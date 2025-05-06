@@ -60,37 +60,36 @@ async function fetchBusinesses(filters) {
 // Card de negocio para vista en cuadrícula
 function BusinessGridCard({ business }) {
   return (
-    <Card className="overflow-hidden group relative border bg-card rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col">
+    <Card className="overflow-hidden group relative border-primary/10 bg-card/80 backdrop-blur-sm rounded-xl 
+      shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300 flex flex-col
+      hover:scale-[1.02] hover:-translate-y-1">
       <a href={`/business/${business.id}`} className="block">
-        <div className="relative aspect-video">
+        <div className="relative aspect-square">
           <img
             src={business.image}
             alt={business.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
+          {/* Efecto de brillo orbital */}
+          <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          {/* Destacado Badge */}
           {business.promoted && (
-            <Badge
-              className="absolute top-2 right-2 bg-yellow-500 text-black text-[10px] px-1.5 py-0.5 z-10 shadow-sm border border-yellow-600"
-            >
-              ★ DESTACADO
-            </Badge>
+            <div className="absolute top-2 right-2 animate-orbit-small">
+              <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground text-[8px] md:text-[10px] px-1.5 py-0.5 
+                rounded-full shadow-lg shadow-primary/20 border-none backdrop-blur-sm">
+                ★ DESTACADO
+              </Badge>
+            </div>
           )}
         </div>
-        <CardContent className="p-4 flex-grow space-y-1">
-          <CardTitle className="text-lg font-semibold text-card-foreground">{business.name}</CardTitle>
-          <Badge variant="secondary" className="text-xs">{business.category}</Badge>
-          <div className="flex justify-between items-center text-sm text-muted-foreground pt-1">
-            <div className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" /> {business.location}
-            </div>
-            <div className="flex items-center gap-1 text-yellow-500">
-              <Star className="h-4 w-4 fill-current" />
-              <span className="font-medium text-foreground">{business.rating.toFixed(1)}</span>
-            </div>
+        <CardContent className="p-2 md:p-3 flex-grow flex flex-col justify-end">
+          <h3 className="font-semibold text-xs md:text-sm truncate group-hover:text-primary transition-colors">{business.name}</h3>
+          <div className="flex items-center gap-1 text-[10px] md:text-xs mt-0.5">
+            <Star className="h-3 w-3 text-yellow-500 fill-current" />
+            <span className="font-medium">{business.rating.toFixed(1)}</span>
+            <span className="text-primary/40">•</span>
+            <span className="text-muted-foreground truncate">{business.category}</span>
           </div>
-          {business.description && (
-            <p className="text-sm text-muted-foreground pt-2 line-clamp-2">{business.description}</p>
-          )}
         </CardContent>
       </a>
     </Card>
@@ -100,40 +99,46 @@ function BusinessGridCard({ business }) {
 // Card de negocio para vista en lista (horizontal)
 function BusinessListCard({ business }) {
   return (
-    <Card className="overflow-hidden group relative border bg-card rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+    <Card className="overflow-hidden group relative border-primary/10 bg-card/80 backdrop-blur-sm rounded-xl 
+      shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300
+      hover:scale-[1.01] hover:-translate-y-1">
       <a href={`/business/${business.id}`} className="flex flex-col md:flex-row">
-        <div className="relative md:w-1/3 lg:w-1/4">
-          <div className="aspect-video md:h-full">
+        <div className="relative md:w-[120px] lg:w-[150px]">
+          <div className="aspect-square md:h-full">
             <img
               src={business.image}
               alt={business.name}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
+            {/* Efecto de brillo orbital */}
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </div>
           {business.promoted && (
-            <Badge
-              className="absolute top-2 right-2 bg-yellow-500 text-black text-[10px] px-1.5 py-0.5 z-10 shadow-sm border border-yellow-600"
-            >
-              ★ DESTACADO
-            </Badge>
+            <div className="absolute top-2 right-2 animate-orbit-small">
+              <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground text-[8px] md:text-[10px] px-1.5 py-0.5 
+                rounded-full shadow-lg shadow-primary/20 border-none backdrop-blur-sm">
+                ★ DESTACADO
+              </Badge>
+            </div>
           )}
         </div>
-        <CardContent className="p-4 flex-grow space-y-1 md:w-2/3 lg:w-3/4">
+        <CardContent className="p-3 flex-grow md:w-auto">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-lg font-semibold text-card-foreground">{business.name}</CardTitle>
-              <Badge variant="secondary" className="text-xs mt-1">{business.category}</Badge>
+              <h3 className="font-semibold text-xs md:text-sm truncate group-hover:text-primary transition-colors">{business.name}</h3>
+              <div className="flex items-center gap-1 text-[9px] md:text-xs mt-0.5">
+                <span className="text-muted-foreground truncate">{business.category}</span>
+                <span className="text-primary/40">•</span>
+                <MapPin className="h-3 w-3" /> <span className="truncate">{business.location}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-yellow-500">
-              <Star className="h-4 w-4 fill-current" />
+            <div className="flex items-center gap-0.5 text-yellow-500">
+              <Star className="h-3 w-3 fill-current" />
               <span className="font-medium text-foreground">{business.rating.toFixed(1)}</span>
             </div>
           </div>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground pt-1">
-            <MapPin className="h-4 w-4" /> {business.location}
-          </div>
           {business.description && (
-            <p className="text-sm text-muted-foreground pt-2 line-clamp-2">{business.description}</p>
+            <p className="text-[9px] md:text-xs text-muted-foreground pt-1 line-clamp-1">{business.description}</p>
           )}
         </CardContent>
       </a>
@@ -233,7 +238,7 @@ export default function BusinessSearchResults() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto px-4 space-y-6">
       {/* Filters and View Toggle */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-4 bg-muted/50 rounded-lg border">
         <div className="flex flex-wrap gap-4 items-center">
@@ -335,12 +340,12 @@ export default function BusinessSearchResults() {
         <section>
           <h2 className="text-2xl font-semibold mb-6 sr-only">Resultados</h2>
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(9)].map((_, i) => <Skeleton key={i} className="h-72 rounded-lg" />)}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+              {[...Array(10)].map((_, i) => <Skeleton key={i} className="h-56 rounded-lg" />)}
             </div>
           ) : businesses.length > 0 ? (
             viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                 {businesses.map(business => (
                   <BusinessGridCard key={business.id} business={business} />
                 ))}

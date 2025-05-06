@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import type { PaymentResult } from '@/services/payment-methods';
 import { Card } from '@/components/ui/card';
 import { Minus, Plus } from 'lucide-react';
 import { productPaymentMethods } from '@/services/payment-methods';
+import { allBusinesses } from '@/lib/data';
 
 export interface ProductPaymentFormProps {
     product: {
@@ -23,6 +24,7 @@ export interface ProductPaymentFormProps {
     onError?: (error: Error) => void;
     onQuantityChange?: (quantity: number) => void;
     maxQuantity?: number;
+    businessId?: string;
 }
 
 export function ProductPaymentForm({
@@ -33,12 +35,25 @@ export function ProductPaymentForm({
     onSuccess,
     onError,
     onQuantityChange,
-    maxQuantity = product.maxQuantity ?? 99
+    maxQuantity = product.maxQuantity ?? 99,
+    businessId
 }: ProductPaymentFormProps) {
     const { toast } = useToast();
     const [currentQuantity, setCurrentQuantity] = useState(quantity);
     const [showPaymentForm, setShowPaymentForm] = useState(false);
     const total = product.price * currentQuantity;
+
+    const business = businessId ? allBusinesses.find(b => b.id === businessId) : null;
+    
+    useEffect(() => {
+        if (business) {
+            console.log('Negocio encontrado:', business);
+            console.log('Teléfono del negocio:', business.phone);
+        } else if (businessId) {
+            console.error('No se encontró el negocio con ID:', businessId);
+            console.log('Todos los IDs disponibles:', allBusinesses.map(b => b.id));
+        }
+    }, [business, businessId]);
 
     const handleQuantityChange = (newQuantity: number) => {
         if (newQuantity >= 1 && newQuantity <= maxQuantity) {
@@ -68,6 +83,16 @@ export function ProductPaymentForm({
     };
 
     if (!isOpen) return null;
+    
+    const businessPhone = business?.phone ? String(business.phone) : '';
+    const businessContact = business?.email ? String(business.email) : '';
+    
+    console.log('Datos antes de renderizar PaymentForm:', {
+        businessId,
+        businessFound: !!business,
+        businessPhone,
+        businessContact,
+    });
 
     return (
         <>
@@ -135,6 +160,8 @@ export function ProductPaymentForm({
                     type: 'product_purchase'
                 }}
                 paymentMethods={productPaymentMethods}
+                businessPhone={businessPhone}
+                businessContact={businessContact}
             />
         </>
     );

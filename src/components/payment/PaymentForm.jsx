@@ -17,7 +17,9 @@ export function PaymentForm({
     onPaymentComplete,
     customerInfo = null,
     metadata,
-    paymentMethods: customPaymentMethods
+    paymentMethods: customPaymentMethods,
+    businessPhone,
+    businessContact
 }) {
     const [selectedMethod, setSelectedMethod] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -53,7 +55,9 @@ export function PaymentForm({
                 concept,
                 orderId: generatedOrderId,
                 customerInfo,
-                metadata
+                metadata,
+                businessPhone,
+                businessContact
             });
 
             if (result.transactionId) {
@@ -184,11 +188,21 @@ export function PaymentForm({
                         <div className="grid grid-cols-1 gap-4">
                             {paymentMethods
                                 .filter((method) => {
-                                    // Solo filtrar "Mensaje Directo" si no es un producto
-                                    if (metadata?.type !== 'product_purchase') {
+                                    // Filtrar métodos de pago según el tipo de transacción:
+                                    // - Para producto: mostrar WhatsApp y Mensaje Directo
+                                    // - Para plan: mostrar WhatsApp para contactar soporte
+                                    // - Para otras operaciones: no mostrar Mensaje Directo
+                                    
+                                    if (metadata?.type === 'product_purchase') {
+                                        // Mostrar todos los métodos para compras de productos
+                                        return true;
+                                    } else if (metadata?.type === 'plan_subscription') {
+                                        // Para planes, permitir WhatsApp para contactar soporte, pero no Mensaje Directo
+                                        return method.id !== 'directMessage';
+                                    } else {
+                                        // Para otros tipos, no mostrar mensaje directo
                                         return method.id !== 'directMessage';
                                     }
-                                    return true;
                                 })
                                 .map((method) => (
                                     <Card

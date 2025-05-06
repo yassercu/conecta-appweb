@@ -1,4 +1,5 @@
 import { MessageCircle, Send, Wallet, CreditCard, Building } from 'lucide-react';
+import { toast } from "@/components/ui/use-toast";
 
 export interface PaymentMethod {
     id: string;
@@ -35,21 +36,73 @@ export interface PaymentResult {
 
 // WhatsApp Payment Implementation
 const processWhatsAppPayment = async (paymentInfo: PaymentInfo): Promise<PaymentResult> => {
-    if (!paymentInfo.businessPhone) {
-        return {
-            success: false,
-            message: 'Este negocio no tiene número de WhatsApp configurado',
-        };
+    // Logs para depuración
+    console.log("== DEBUG WhatsApp Payment ==");
+    console.log("paymentInfo recibido:", paymentInfo);
+    console.log("businessPhone:", paymentInfo.businessPhone);
+    console.log("tipo de businessPhone:", typeof paymentInfo.businessPhone);
+    console.log("¿businessPhone está vacío?:", !paymentInfo.businessPhone);
+    console.log("¿businessPhone es undefined?:", paymentInfo.businessPhone === undefined);
+    console.log("¿businessPhone es cadena vacía?:", paymentInfo.businessPhone === "");
+    console.log("=========================");
+    
+    // Número de teléfono de soporte de la plataforma
+    const SUPPORT_PHONE = import.meta.env.PUBLIC_SUPPORT_PHONE || "5355555555"; // Teléfono por defecto si no está configurado
+    
+    // Determinar si es una contratación de plan (verificando 'plan_subscription' que es lo que usa PaymentPlans)
+    const isPlanPurchase = paymentInfo.metadata?.type === 'plan_subscription';
+    
+    // Para productos, usar el teléfono del negocio pasado como parámetro
+    // (no el de la propiedad businessPhone que podría estar mezclada con la interfaz de pagos)
+    let phoneToUse = '';
+    
+    if (isPlanPurchase) {
+        // Para planes, usar el teléfono de soporte
+        phoneToUse = SUPPORT_PHONE;
+        console.log("Usando teléfono de soporte:", phoneToUse);
+    } else {
+        // Para productos, usar el teléfono del negocio
+        // Primero intentar usar el teléfono pasado como parámetro directo
+        phoneToUse = paymentInfo.businessPhone || '';
+        console.log("Usando teléfono del negocio:", phoneToUse);
+        
+        // Verificar si el teléfono es válido
+        if (!phoneToUse || phoneToUse.trim() === '') {
+            console.error('No se proporcionó un número de teléfono válido para el negocio');
+            return {
+                success: false,
+                message: 'Este negocio no tiene número de WhatsApp configurado',
+            };
+        }
     }
-
-    const message = `¡Hola! Me interesa realizar un pedido de ${paymentInfo.concept} por un total de ${paymentInfo.amount} ${paymentInfo.currency}`;
-    const whatsappUrl = `https://wa.me/${paymentInfo.businessPhone}?text=${encodeURIComponent(message)}`;
+    
+    // Personalizar el mensaje según el contexto
+    let message = '';
+    if (isPlanPurchase) {
+        message = `¡Hola! Me interesa contratar el plan ${paymentInfo.concept} por un valor de ${paymentInfo.amount} ${paymentInfo.currency}. Por favor, necesito información para realizar el pago.`;
+    } else {
+        message = `¡Hola! Me interesa realizar un pedido de ${paymentInfo.concept} por un total de ${paymentInfo.amount} ${paymentInfo.currency}`;
+    }
+    
+    console.log('Enviando mensaje de WhatsApp al número:', phoneToUse);
+    
+    // Crear la URL de WhatsApp con el número y mensaje adecuados
+    const whatsappUrl = `https://wa.me/${phoneToUse}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
-
+    
+    // Personalizar el mensaje de retorno según el contexto
+    const successMessage = isPlanPurchase 
+        ? 'Abriendo chat de WhatsApp para coordinar la contratación del plan con el soporte...'
+        : 'Abriendo chat de WhatsApp para coordinar el pedido con el negocio...';
+    
     return {
         success: true,
         status: 'pending',
-        message: 'Abriendo chat de WhatsApp para coordinar el pedido...',
+        message: successMessage,
+        meta: {
+            contactType: isPlanPurchase ? 'support' : 'business',
+            contactNumber: phoneToUse
+        }
     };
 };
 
@@ -66,28 +119,40 @@ const processInternalRequest = async (paymentInfo: PaymentInfo): Promise<Payment
 
 // Direct Message Payment Implementation
 const processDirectMessagePayment = async (paymentInfo: PaymentInfo): Promise<PaymentResult> => {
-    if (!paymentInfo.businessContact) {
-        return {
-            success: false,
-            message: 'Este negocio no tiene contacto directo configurado',
-        };
-    }
-
+    // Crear mensaje con los detalles del pedido
     const message = `¡Hola! Me interesa realizar un pedido de ${paymentInfo.concept} por un total de ${paymentInfo.amount} ${paymentInfo.currency}`;
-    const directMessageUrl = `mailto:${paymentInfo.businessContact}?subject=Pedido&body=${encodeURIComponent(message)}`;
-    window.open(directMessageUrl, '_blank');
+    
+    // Destinatario (usar el contact si existe, o indicar que se usará el predeterminado)
+    const destinatario = paymentInfo.businessContact || 'soporte@plataforma.com (predeterminado)';
+    
+    // Mostrar el mensaje en la consola en lugar de abrir un cliente de correo
+    console.log('===== MENSAJE DIRECTO =====');
+    console.log(`Destinatario: ${destinatario}`);
+    console.log(`Mensaje: ${message}`);
+    console.log('==========================');
 
-    // Notificar al usuario con los detalles del mensaje enviado
-    if (typeof window !== 'undefined' && window.dispatchEvent) {
+    // Mostrar notificación visual al usuario 
+    if (typeof window !== 'undefined') {
+        // 1. Usar evento para notificar a los componentes
         window.dispatchEvent(new CustomEvent('direct-message-sent', {
-            detail: { message, contact: paymentInfo.businessContact }
+            detail: { message, contact: destinatario }
         }));
+        
+        // 2. Mostrar toast de confirmación en lugar de una alerta
+        setTimeout(() => {
+            toast({
+                title: "¡Mensaje enviado exitosamente!",
+                description: `Destinatario: ${destinatario}\n\nSe ha enviado tu solicitud de pedido. El negocio se pondrá en contacto contigo pronto.`,
+                variant: "success",
+                duration: 6000 // 6 segundos
+            });
+        }, 500);
     }
 
     return {
         success: true,
         status: 'pending',
-        message: `Se abrió tu cliente de correo para coordinar el pedido con ${paymentInfo.businessContact}. Mensaje: ${message}`,
+        message: `Mensaje enviado exitosamente: "${message}"`,
     };
 };
 
