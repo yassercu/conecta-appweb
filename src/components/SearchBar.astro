@@ -1,0 +1,10 @@
+import { SearchBar as SearchBarReact } from "./search-bar";
+
+// Propiedades para poder usar el componente de forma más flexible
+interface Props {
+  initialQuery?: string;
+}
+
+const { initialQuery = '' } = Astro.props;
+
+<SearchBarReact client:load initialQuery={initialQuery} /> 

@@ -73,6 +73,7 @@ function BusinessGridCard({ business }) {
             src={business.image}
             alt={business.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = '/assets/businesses/default.svg'; }}
           />
           {/* Efecto de brillo orbital */}
           <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -113,6 +114,7 @@ function BusinessListCard({ business }) {
               src={business.image}
               alt={business.name}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = '/assets/businesses/default.svg'; }}
             />
             {/* Efecto de brillo orbital */}
             <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -392,4 +394,4 @@ export default function BusinessSearchResults() {
       )}
     </div>
   );
-} 
+}

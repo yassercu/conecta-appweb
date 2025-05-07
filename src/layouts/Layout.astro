@@ -13,6 +13,7 @@ const {
 import "../styles/globals.css";
 import { Header } from "@/components/layout/header";
 import { Toaster } from "@/components/ui/toaster";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 ---
 
 <!doctype html>
@@ -42,6 +43,19 @@ import { Toaster } from "@/components/ui/toaster";
       } catch (e) {
         // Fallback silencioso en caso de error de localStorage o matchMedia
         console.warn("Error al inicializar el tema:", e);
+      }
+    </script>
+    <!-- Registro del Service Worker -->
+    <script is:inline>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js').then(reg => {
+            // Notificaciones push
+            if ('Notification' in window && Notification.permission !== 'granted') {
+              Notification.requestPermission();
+            }
+          });
+        });
       }
     </script>
   </head>
@@ -84,6 +98,7 @@ import { Toaster } from "@/components/ui/toaster";
       </footer>
     </div>
     <Toaster client:load />
+    <PwaInstallPrompt client:load />
   </body>
 </html>
 

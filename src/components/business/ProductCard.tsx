@@ -51,7 +51,7 @@ export function ProductCard({ product, businessId }: ProductCardProps) {
         <a href={businessId ? `/business/${businessId}?product=${product.id}` : '#'} className="block">
           <div className="relative aspect-video">
             <img
-              src={product.image}
+              src={product.image || '/assets/businesses/default.svg'}
               alt={product.name}
               className="w-full h-full object-cover"
             />

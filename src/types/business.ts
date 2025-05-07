@@ -6,6 +6,7 @@ export interface Business {
   id: string;
   name: string;
   category: string;
+  categoryId?: string; // ID de la categoría
   rating: number;
   location: string; // Neighborhood/Area
   image: string;
@@ -20,4 +21,12 @@ export interface Business {
   totalReviews: number;
   products?: Product[];
   reviews?: Review[];
+
+  // Información geográfica
+  country?: string;
+  countryId?: string;
+  province?: string;
+  provinceId?: string;
+  municipality?: string;
+  municipalityId?: string;
 }

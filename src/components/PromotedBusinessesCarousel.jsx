@@ -67,7 +67,7 @@ export default function PromotedBusinessesCarousel() {
                     transition-all duration-300"
                   >
                     <img
-                      src={business.image}
+                      src={business.image || '/assets/businesses/default.svg'}
                       alt={business.name}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />

@@ -29,18 +29,10 @@ export function getStaticPaths() {
 const { business } = Astro.props;
 
 // Get the selected product if there's an ID
-const selectedProduct = selectedProductId
-  ? business.products?.find(
-      (p: Product) => p.id.toString() === selectedProductId,
-    )
-  : null;
+const selectedProduct = selectedProductId ? business.products?.find((p: Product) => p.id.toString() === selectedProductId) : null;
 
 // Verificar si el negocio tiene coordenadas válidas (para evitar errores en el mapa)
-const hasValidCoordinates =
-  business.latitude &&
-  business.longitude &&
-  !isNaN(business.latitude) &&
-  !isNaN(business.longitude);
+const hasValidCoordinates = business.latitude && business.longitude && !isNaN(business.latitude) && !isNaN(business.longitude);
 
 // Client-side React components
 const ReactComponents = {
@@ -73,34 +65,20 @@ const ReactComponents = {
           </Button>
           <Card>
             <div class="relative aspect-video">
-              <img
-                src={selectedProduct.image}
-                alt={selectedProduct.name}
-                class="w-full h-full object-cover"
-              />
-              <Badge
-                client:load
-                variant={
-                  selectedProduct.inStock !== false ? "secondary" : "outline"
-                }
-                className="absolute top-4 right-4"
-              >
+              <img src={selectedProduct.image || "/assets/businesses/default.svg"} alt={selectedProduct.name} class="w-full h-full object-cover" />
+              <Badge client:load variant={selectedProduct.inStock !== false ? "secondary" : "outline"} className="absolute top-4 right-4">
                 {selectedProduct.inStock !== false ? "Disponible" : "Agotado"}
               </Badge>
             </div>
             <CardHeader>
               <div class="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-2xl">
-                    {selectedProduct.name}
-                  </CardTitle>
+                  <CardTitle className="text-2xl">{selectedProduct.name}</CardTitle>
                   <Badge client:load variant="secondary" className="mt-2">
                     {selectedProduct.category}
                   </Badge>
                 </div>
-                <div class="text-2xl font-bold">
-                  ${selectedProduct.price.toFixed(2)}
-                </div>
+                <div class="text-2xl font-bold">${selectedProduct.price.toFixed(2)}</div>
               </div>
             </CardHeader>
             <CardContent>
@@ -129,16 +107,10 @@ const ReactComponents = {
             {/* Datos del negocio con imagen pequeña */}
             <Card>
               <div class="flex items-center p-4 border-b">
-                <img
-                  src={business.image}
-                  alt={business.name}
-                  class="w-24 h-24 rounded-md object-cover mr-4"
-                />
+                <img src={business.image || "/assets/businesses/default.svg"} alt={business.name} class="w-24 h-24 rounded-md object-cover mr-4" />
                 <div>
                   <CardTitle className="text-lg">{business.name}</CardTitle>
-                  <p class="text-sm text-muted-foreground mt-1 line-clamp-2">
-                    {business.description}
-                  </p>
+                  <p class="text-sm text-muted-foreground mt-1 line-clamp-2">{business.description}</p>
                 </div>
               </div>
               <CardContent className="pt-4">
@@ -147,36 +119,57 @@ const ReactComponents = {
                   <div class="grid gap-2">
                     {business.phone && (
                       <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                        </svg>
-                        <a
-                          href={`tel:${business.phone}`}
-                          class="text-primary hover:underline"
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-5 w-5 text-muted-foreground"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
                         >
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                        <a href={`tel:${business.phone}`} class="text-primary hover:underline">
                           {business.phone}
                         </a>
                       </div>
                     )}
                     {business.email && (
                       <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                          <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                        <a
-                          href={`mailto:${business.email}`}
-                          class="text-primary hover:underline"
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-5 w-5 text-muted-foreground"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
                         >
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                          <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        <a href={`mailto:${business.email}`} class="text-primary hover:underline">
                           {business.email}
                         </a>
                       </div>
                     )}
                     {business.address && (
                       <div class="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                          <circle cx="12" cy="10" r="3"></circle>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="h-5 w-5 text-muted-foreground"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                          <circle cx="12" cy="10" r="3" />
                         </svg>
                         <span>{business.address}</span>
                       </div>
@@ -193,7 +186,7 @@ const ReactComponents = {
               </Card>
             )}
           </div>
-          
+
           {/* Columna derecha: Catálogo de productos */}
           <div class="space-y-6">
             {/* Título y descripción */}
@@ -204,48 +197,32 @@ const ReactComponents = {
                   {business.category}
                 </Badge>
                 <div class="flex items-center gap-1 text-yellow-500">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5 fill-current"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 fill-current" viewBox="0 0 24 24">
                     <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.4 7.4-6-4.6-6 4.6 2.4-7.4-6-4.6h7.6z" />
                   </svg>
-                  <span class="font-medium">
-                    {business.rating.toFixed(1)}
-                  </span>
-                  <span class="text-sm text-muted-foreground">
-                    ({business.totalReviews} reseñas)
-                  </span>
+                  <span class="font-medium">{business.rating.toFixed(1)}</span>
+                  <span class="text-sm text-muted-foreground">({business.totalReviews} reseñas)</span>
                 </div>
                 {business.promoted && (
-                  <Badge
-                    client:load
-                    variant="default"
-                    className="bg-yellow-500 text-black"
-                  >
+                  <Badge client:load variant="default" className="bg-yellow-500 text-black">
                     ★ DESTACADO
                   </Badge>
                 )}
               </div>
             </div>
-            
+
             {/* Catálogo de productos */}
             {business.products && business.products.length > 0 && (
               <section>
                 <h2 class="text-xl font-semibold mb-4">Catálogo de Productos y Servicios</h2>
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {business.products.map((product: Product) => (
-                    <ProductCard
-                      client:load
-                      product={product}
-                      businessId={business.id}
-                    />
+                    <ProductCard client:load product={product} businessId={business.id} />
                   ))}
                 </div>
               </section>
             )}
-            
+
             {/* Reviews Section */}
             {business.reviews && business.reviews.length > 0 && (
               <section class="mt-8">

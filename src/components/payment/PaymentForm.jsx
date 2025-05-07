@@ -48,7 +48,7 @@ export function PaymentForm({
         try {
             const methodToUse = selectedLocalMethod || selectedMethod;
             const generatedOrderId = Date.now().toString();
-            
+
             const result = await methodToUse.processor({
                 amount,
                 currency,
@@ -75,7 +75,7 @@ export function PaymentForm({
             onPaymentComplete(result);
         } catch (error) {
             console.error('Error al procesar el pago:', error);
-            
+
             // Detectar errores de configuración específicos
             if (error.message && error.message.includes('process is not defined')) {
                 setErrorCode('config_error');
@@ -84,7 +84,7 @@ export function PaymentForm({
                 setErrorCode('unknown_error');
                 setError(error.message || 'Hubo un error al procesar el pago');
             }
-            
+
             onPaymentComplete({
                 success: false,
                 message: error.message || 'Hubo un error al procesar el pago'
@@ -114,8 +114,8 @@ export function PaymentForm({
                             <Card
                                 key={localMethod.id}
                                 className={`p-4 cursor-pointer transition-all ${selectedLocalMethod?.id === localMethod.id
-                                        ? 'border-2 border-primary bg-primary/5 shadow-sm'
-                                        : 'border-transparent hover:border-primary/20 hover:bg-muted/50'
+                                    ? 'border-2 border-primary bg-primary/5 shadow-sm'
+                                    : 'border-transparent hover:border-primary/20 hover:bg-muted/50'
                                     }`}
                                 onClick={() => setSelectedLocalMethod(localMethod)}
                             >
@@ -192,7 +192,7 @@ export function PaymentForm({
                                     // - Para producto: mostrar WhatsApp y Mensaje Directo
                                     // - Para plan: mostrar WhatsApp para contactar soporte
                                     // - Para otras operaciones: no mostrar Mensaje Directo
-                                    
+
                                     if (metadata?.type === 'product_purchase') {
                                         // Mostrar todos los métodos para compras de productos
                                         return true;
@@ -208,8 +208,8 @@ export function PaymentForm({
                                     <Card
                                         key={method.id}
                                         className={`p-4 cursor-pointer transition-all ${selectedMethod?.id === method.id
-                                                ? 'border-2 border-primary bg-primary/5 shadow-sm'
-                                                : 'border-transparent hover:border-primary/20 hover:bg-muted/50'
+                                            ? 'border-2 border-primary bg-primary/5 shadow-sm'
+                                            : 'border-transparent hover:border-primary/20 hover:bg-muted/50'
                                             }`}
                                         onClick={() => handlePaymentMethodSelect(method)}
                                     >
@@ -241,9 +241,9 @@ export function PaymentForm({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            
+
             {/* Integrar el manejador de errores */}
-            <PaymentErrorHandler 
+            <PaymentErrorHandler
                 errorMessage={error}
                 errorCode={errorCode}
                 transactionId={transactionId}

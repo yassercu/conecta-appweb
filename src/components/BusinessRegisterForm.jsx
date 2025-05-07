@@ -24,32 +24,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Loader2 } from "lucide-react";
 
+// Importamos los datos y tipos de ubicaciones
+import {
+  countries,
+  provinces,
+  municipalities,
+  getProvincesByCountry,
+  getMunicipalitiesByProvince
+} from '@/lib/locations';
+
+// Importamos las categorías de negocios
+import {
+  businessCategories,
+  getCategoryById
+} from '@/lib/categories';
+
 // Lazy load MapView
 const MapView = lazy(() => import('@/components/map-view'));
-
-// Tipos de negocios
-const businessTypes = [
-  "Tiendas de ropa",
-  "Restaurantes",
-  "Veterinarias",
-  "Cafeterías",
-  "Librerías",
-  "Servicios Profesionales",
-  "Floristerías",
-  "Gimnasios",
-  "Cines",
-  "Panaderías",
-  "Reparación Electrónica",
-  "Otros",
-];
-
-// Provincias y municipios de ejemplo (reemplazar con datos reales)
-const provinces = ["Provincia A", "Provincia B", "Provincia C"];
-const municipalities = {
-  "Provincia A": ["Municipio A1", "Municipio A2", "Municipio A3"],
-  "Provincia B": ["Municipio B1", "Municipio B2", "Municipio B3"],
-  "Provincia C": ["Municipio C1", "Municipio C2", "Municipio C3"],
-};
 
 // Esquema de validación del formulario
 const registerFormSchema = z.object({
@@ -73,12 +64,13 @@ const registerFormSchema = z.object({
   password: z.string().min(8, {
     message: "La contraseña debe tener al menos 8 caracteres.",
   }),
+  country: z.string({
+    required_error: "Por favor, selecciona un país.",
+  }),
   province: z.string({
     required_error: "Por favor, selecciona una provincia.",
   }),
-  municipality: z.string({
-    required_error: "Por favor, selecciona un municipio.",
-  }),
+  municipality: z.string().optional(),
   address: z.string().min(5, {
     message: "Por favor, introduce una dirección postal válida.",
   }),
@@ -97,20 +89,77 @@ async function registerBusiness(data, coordinates) {
   }
 }
 
-// Obtener coordenadas a partir de dirección
-async function getCoordinates({ province, municipality, address }) {
-  // Simular API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
+// Obtener coordenadas a partir de dirección usando Nominatim (OpenStreetMap)
+async function getCoordinates({ country, province, municipality, address }) {
+  try {
+    // Construir la dirección completa
+    const countryName = countries.find(c => c.id === country)?.name || "";
+    const provinceName = provinces.find(p => p.id === province)?.name || "";
+    const municipalityName = municipalities.find(m => m.id === municipality)?.name || "";
 
-  // Simulación - generar coordenadas aleatorias en Puerto Rico
-  // En producción, usar un servicio real de geocodificación
-  const baseLat = 18.2 + Math.random() * 0.4; // Latitud para Puerto Rico
-  const baseLng = -66.8 + Math.random() * 0.6; // Longitud para Puerto Rico
+    // Construir cadena de búsqueda para Nominatim
+    let searchQuery = '';
+    if (address) searchQuery += `${address}, `;
+    if (municipalityName) searchQuery += `${municipalityName}, `;
+    if (provinceName) searchQuery += `${provinceName}, `;
+    if (countryName) searchQuery += countryName;
 
-  return {
-    lat: baseLat,
-    lng: baseLng
-  };
+    // Limpieza de la consulta
+    searchQuery = searchQuery.trim().replace(/(^,)|(,$)/g, '');
+
+    // Construir URL para consulta a Nominatim
+    // Formato: https://nominatim.openstreetmap.org/search?q={direccion}&format=json&limit=1
+    const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`;
+
+    // Añadir User-Agent personalizado (requerido por la política de uso de Nominatim)
+    const headers = {
+      'User-Agent': 'OrbitaApp/1.0'
+    };
+
+    // Realizar la consulta
+    const response = await fetch(nominatimUrl, { headers });
+    const data = await response.json();
+
+    // Verificar si se encontraron resultados
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon)
+      };
+    }
+
+    // Si Nominatim no encuentra resultados, usar valores por defecto según el país
+    throw new Error("No se encontraron coordenadas para esta dirección");
+  } catch (error) {
+    console.error("Error al obtener coordenadas:", error);
+
+    // Coordenadas por defecto según el país (como fallback)
+    let baseLat = 23.1;
+    let baseLng = -82.3;
+
+    if (country === "cu") {
+      // Cuba
+      baseLat = 23.1 + Math.random() * 0.1;
+      baseLng = -82.3 + Math.random() * 0.1;
+    } else if (country === "es") {
+      // España
+      baseLat = 40.4 + Math.random() * 0.1;
+      baseLng = -3.7 + Math.random() * 0.1;
+    } else if (country === "mx") {
+      // México
+      baseLat = 19.4 + Math.random() * 0.1;
+      baseLng = -99.1 + Math.random() * 0.1;
+    } else if (country === "us") {
+      // Estados Unidos
+      baseLat = 40.7 + Math.random() * 0.1;
+      baseLng = -74.0 + Math.random() * 0.1;
+    }
+
+    return {
+      lat: baseLat,
+      lng: baseLng
+    };
+  }
 }
 
 export default function BusinessRegisterForm() {
@@ -122,6 +171,10 @@ export default function BusinessRegisterForm() {
   const [showMap, setShowMap] = useState(false);
   const [isBrowser, setIsBrowser] = useState(false);
 
+  // Estados para las listas dependientes
+  const [availableProvinces, setAvailableProvinces] = useState([]);
+  const [availableMunicipalities, setAvailableMunicipalities] = useState([]);
+
   const form = useForm({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
@@ -130,17 +183,49 @@ export default function BusinessRegisterForm() {
       phone: "",
       email: "",
       password: "",
+      country: "cu", // Cuba por defecto
+      province: "",
+      municipality: "",
       address: "",
     },
   });
 
+  const selectedCountry = form.watch("country");
   const selectedProvince = form.watch("province");
+
+  // Actualizar provincias cuando cambia el país
+  useEffect(() => {
+    if (selectedCountry) {
+      const filteredProvinces = getProvincesByCountry(selectedCountry);
+      setAvailableProvinces(filteredProvinces);
+
+      // Limpiar provincia y municipio si cambia el país
+      if (selectedProvince && !filteredProvinces.find(p => p.id === selectedProvince)) {
+        form.setValue("province", "");
+        form.setValue("municipality", "");
+      }
+    }
+  }, [selectedCountry, form]);
+
+  // Actualizar municipios cuando cambia la provincia
+  useEffect(() => {
+    if (selectedProvince) {
+      const filteredMunicipalities = getMunicipalitiesByProvince(selectedProvince);
+      setAvailableMunicipalities(filteredMunicipalities);
+
+      // Limpiar municipio si cambia la provincia y el municipio seleccionado no está en la lista
+      const currentMunicipality = form.getValues("municipality");
+      if (currentMunicipality && !filteredMunicipalities.find(m => m.id === currentMunicipality)) {
+        form.setValue("municipality", "");
+      }
+    }
+  }, [selectedProvince, form]);
 
   // Resetear coordenadas cuando cambian los campos de dirección
   useEffect(() => {
     setMapCoordinates(null);
     setShowMap(false);
-  }, [form.watch("province"), form.watch("municipality"), form.watch("address")]);
+  }, [form.watch("country"), form.watch("province"), form.watch("municipality"), form.watch("address")]);
 
   // Check if running in browser
   useEffect(() => {
@@ -174,29 +259,82 @@ export default function BusinessRegisterForm() {
   // Manejar geocodificación de dirección
   async function handleGeocode() {
     const location = {
+      country: form.getValues("country"),
       province: form.getValues("province"),
       municipality: form.getValues("municipality"),
       address: form.getValues("address"),
     };
 
-    if (location.province && location.municipality && location.address) {
-      setIsGeocoding(true);
-      setShowMap(true);
+    // Validar campos mínimos requeridos
+    if (!location.country || !location.province || !location.address) {
+      setErrorMessage("Por favor, completa al menos el país, la provincia y la dirección para ubicar en el mapa.");
+      return;
+    }
 
-      try {
-        const coords = await getCoordinates(location);
+    setIsGeocoding(true);
+    setShowMap(false); // Ocultamos el mapa mientras se busca la nueva ubicación
+    setErrorMessage(""); // Limpiamos mensajes de error previos
+
+    try {
+      // Obtenemos el nombre de los lugares seleccionados para el mensaje
+      const countryName = countries.find(c => c.id === location.country)?.name || "";
+      const provinceName = provinces.find(p => p.id === location.province)?.name || "";
+      const municipalityName = location.municipality ?
+        municipalities.find(m => m.id === location.municipality)?.name || "" : "";
+
+      // Mostrar un mensaje de carga con la dirección que se está buscando
+      setErrorMessage(`Buscando dirección: ${location.address}, ${municipalityName ? municipalityName + ", " : ""}${provinceName}, ${countryName}...`);
+
+      const coords = await getCoordinates(location);
+
+      if (coords) {
         setMapCoordinates(coords);
-      } catch (error) {
-        setErrorMessage("No se pudieron obtener las coordenadas para la dirección proporcionada.");
-        setShowMap(false);
-        console.error(error);
-      } finally {
-        setIsGeocoding(false);
+        setShowMap(true);
+        setErrorMessage(""); // Limpiar mensaje cuando se encuentra la ubicación
       }
-    } else {
-      setErrorMessage("Por favor, completa todos los campos de ubicación para obtener las coordenadas.");
+    } catch (error) {
+      console.error("Error en geocodificación:", error);
+      setErrorMessage(
+        "No se pudo encontrar la ubicación exacta con los datos proporcionados. " +
+        "Se mostrará una ubicación aproximada basada en la provincia. " +
+        "Intenta con una dirección más específica o verifica que sea correcta."
+      );
+
+      // Intentar obtener coordenadas aproximadas como fallback
+      try {
+        const aproximateCoords = await getCoordinates(location);
+        setMapCoordinates(aproximateCoords);
+        setShowMap(true);
+      } catch (secondError) {
+        setShowMap(false);
+        setErrorMessage("No se pudo determinar la ubicación. Por favor, revisa la dirección e intenta nuevamente.");
+      }
+    } finally {
+      setIsGeocoding(false);
     }
   }
+
+  // Manejar cambio de categoría
+  const handleCategoryChange = (id, category) => {
+    setCategoryId(id);
+    setCategoryName(category.name);
+  };
+
+  // Manejar cambios de ubicación
+  const handleCountryChange = (id, country) => {
+    setCountryId(id);
+    setCountryName(country.name);
+  };
+
+  const handleProvinceChange = (id, province) => {
+    setProvinceId(id);
+    setProvinceName(province.name);
+  };
+
+  const handleMunicipalityChange = (id, municipality) => {
+    setMunicipalityId(id);
+    setMunicipalityName(municipality.name);
+  };
 
   if (isSuccess) {
     return (
@@ -253,12 +391,14 @@ export default function BusinessRegisterForm() {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un tipo" />
+                          <SelectValue placeholder="Selecciona un tipo de negocio" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {businessTypes.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        {businessCategories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -275,24 +415,18 @@ export default function BusinessRegisterForm() {
                     <FormLabel>Descripción*</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Describe tu negocio en pocas palabras..."
+                        placeholder="Describe tu negocio, servicios o productos que ofreces..."
                         className="resize-none"
-                        rows={4}
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      Máximo 500 caracteres
+                      Puedes escribir hasta 500 caracteres
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-
-            {/* Información de contacto */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Datos de Contacto</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -302,7 +436,7 @@ export default function BusinessRegisterForm() {
                     <FormItem>
                       <FormLabel>Teléfono*</FormLabel>
                       <FormControl>
-                        <Input type="tel" placeholder="Número de teléfono" {...field} />
+                        <Input placeholder="+53 55123456" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -316,7 +450,7 @@ export default function BusinessRegisterForm() {
                     <FormItem>
                       <FormLabel>Correo Electrónico*</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="tu@email.com" {...field} />
+                        <Input placeholder="tu@correo.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -331,10 +465,10 @@ export default function BusinessRegisterForm() {
                   <FormItem>
                     <FormLabel>Contraseña*</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" placeholder="********" {...field} />
                     </FormControl>
                     <FormDescription>
-                      Mínimo 8 caracteres
+                      Al menos 8 caracteres
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -344,67 +478,82 @@ export default function BusinessRegisterForm() {
 
             {/* Ubicación */}
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Ubicación</h2>
+              <h2 className="text-xl font-semibold">Ubicación de tu Negocio</h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="province"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Provincia*</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona provincia" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {provinces.map((province) => (
-                            <SelectItem key={province} value={province}>
-                              {province}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>País*</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un país" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {countries.map((country) => (
+                          <SelectItem key={country.id} value={country.id}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="municipality"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Municipio*</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={!selectedProvince}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona municipio" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {selectedProvince &&
-                            municipalities[selectedProvince].map((municipality) => (
-                              <SelectItem key={municipality} value={municipality}>
-                                {municipality}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="province"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Provincia*</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={availableProvinces.length === 0}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una provincia" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableProvinces.map((province) => (
+                          <SelectItem key={province.id} value={province.id}>
+                            {province.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="municipality"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Municipio</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={availableMunicipalities.length === 0}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un municipio" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableMunicipalities.map((municipality) => (
+                          <SelectItem key={municipality.id} value={municipality.id}>
+                            {municipality.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -413,114 +562,87 @@ export default function BusinessRegisterForm() {
                   <FormItem>
                     <FormLabel>Dirección*</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: Calle 23 #504 entre D y E" {...field} />
+                      <Input placeholder="Calle 23 #105 entre L y M" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="flex justify-end">
+              <div className="pt-2">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleGeocode}
                   disabled={isGeocoding}
-                  className="gap-2"
+                  className="flex gap-2"
                 >
                   {isGeocoding ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Obteniendo coordenadas...</span>
+                      <span>Buscando ubicación...</span>
                     </>
                   ) : (
                     <>
                       <MapPin className="h-4 w-4" />
-                      <span>Verificar ubicación</span>
+                      <span>Verificar ubicación en el mapa</span>
                     </>
                   )}
                 </Button>
               </div>
 
-              {showMap && (
-                <div className="mt-4 rounded-md overflow-hidden border h-60">
-                  {isBrowser ? (
-                    <Suspense fallback={<div className="h-60 bg-muted flex items-center justify-center text-muted-foreground">Cargando mapa...</div>}>
-                      <MapView
-                        client:only="react"
-                        center={mapCoordinates ? [mapCoordinates.lat, mapCoordinates.lng] : undefined}
-                        zoom={16}
-                        businesses={mapCoordinates ? [
-                          {
-                            id: "preview",
-                            name: form.getValues("businessName"),
-                            category: form.getValues("businessType"),
-                            latitude: mapCoordinates.lat,
-                            longitude: mapCoordinates.lng,
-                          }
-                        ] : []}
-                      />
-                    </Suspense>
-                  ) : null}
+              {showMap && isBrowser && (
+                <div className="rounded-md border border-input overflow-hidden h-64 md:h-80">
+                  <Suspense fallback={
+                    <div className="h-full flex items-center justify-center bg-muted">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <span className="ml-2">Cargando mapa...</span>
+                    </div>
+                  }>
+                    <MapView
+                      center={mapCoordinates ? [mapCoordinates.lat, mapCoordinates.lng] : undefined}
+                      businesses={mapCoordinates ? [
+                        {
+                          id: 'preview',
+                          name: form.getValues("businessName") || "Mi Negocio",
+                          category: businessCategories.find(c => c.id === form.getValues("businessType"))?.name || "Negocio",
+                          latitude: mapCoordinates.lat,
+                          longitude: mapCoordinates.lng,
+                          rating: 5,
+                          totalReviews: 0,
+                          promoted: false,
+                          location: `${form.getValues("address") || ""}, ${municipalities.find(m => m.id === form.getValues("municipality"))?.name || ""
+                            }, ${provinces.find(p => p.id === form.getValues("province"))?.name || ""
+                            }`,
+                          image: "",
+                          description: form.getValues("description") || "Ubicación del negocio"
+                        }
+                      ] : []}
+                      zoom={16}
+                    />
+                  </Suspense>
                 </div>
               )}
             </div>
 
-            {/* Datos de acceso */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold">Datos de Acceso</h2>
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Correo Electrónico*</FormLabel>
-                    <FormControl>
-                      <Input type="email" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Usarás este correo para acceder a tu cuenta.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contraseña*</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Mínimo 8 caracteres.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             {errorMessage && (
-              <div className="px-4 py-3 rounded-md bg-red-50 text-red-500 text-sm">
+              <div className="p-3 bg-destructive/15 text-destructive rounded-md">
                 {errorMessage}
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Registrando...
-                </>
-              ) : (
-                "Registrar Negocio"
-              )}
-            </Button>
+            <div className="flex justify-end pt-4">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Registrando...
+                  </>
+                ) : (
+                  "Registrar mi Negocio"
+                )}
+              </Button>
+            </div>
           </form>
         </Form>
       </CardContent>

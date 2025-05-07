@@ -14,7 +14,7 @@ function BusinessCard({ business, layout }) {
         {/* Image Container */}
         <div className={`relative ${layout === 'compact' ? 'aspect-square' : 'aspect-[4/3]'}`}>
           <img
-            src={business.image}
+            src={business.image || '/assets/businesses/default.svg'}
             alt={business.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
