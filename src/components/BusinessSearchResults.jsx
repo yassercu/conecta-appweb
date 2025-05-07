@@ -80,8 +80,8 @@ function BusinessGridCard({ business }) {
           {/* Destacado Badge */}
           {business.promoted && (
             <div className="absolute top-2 right-2 animate-orbit-small">
-              <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground text-[8px] md:text-[10px] px-1.5 py-0.5 
-                rounded-full shadow-lg shadow-primary/20 border-none backdrop-blur-sm">
+              <Badge className="bg-amber-500/90 hover:bg-amber-500 text-black text-[8px] md:text-[10px] px-1.5 py-0.5 
+                rounded-full shadow-lg shadow-amber-500/20 border border-amber-300 backdrop-blur-sm font-semibold">
                 ★ DESTACADO
               </Badge>
             </div>
@@ -108,7 +108,7 @@ function BusinessListCard({ business }) {
       shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300
       hover:scale-[1.01] hover:-translate-y-1">
       <a href={`/business/${business.id}`} className="flex flex-col md:flex-row">
-        <div className="relative md:w-[120px] lg:w-[150px]">
+        <div className="relative md:w-[100px] lg:w-[120px]">
           <div className="aspect-square md:h-full">
             <img
               src={business.image}
@@ -121,14 +121,14 @@ function BusinessListCard({ business }) {
           </div>
           {business.promoted && (
             <div className="absolute top-2 right-2 animate-orbit-small">
-              <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground text-[8px] md:text-[10px] px-1.5 py-0.5 
-                rounded-full shadow-lg shadow-primary/20 border-none backdrop-blur-sm">
+              <Badge className="bg-amber-500/90 hover:bg-amber-500 text-black text-[8px] md:text-[10px] px-1.5 py-0.5 
+                rounded-full shadow-lg shadow-amber-500/20 border border-amber-300 backdrop-blur-sm font-semibold">
                 ★ DESTACADO
               </Badge>
             </div>
           )}
         </div>
-        <CardContent className="p-3 flex-grow md:w-auto">
+        <CardContent className="p-2 md:p-3 flex-grow md:w-auto">
           <div className="flex justify-between items-start">
             <div>
               <h3 className="font-semibold text-xs md:text-sm truncate group-hover:text-primary transition-colors">{business.name}</h3>

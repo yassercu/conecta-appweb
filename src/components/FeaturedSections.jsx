@@ -23,8 +23,10 @@ function BusinessCard({ business, layout }) {
           {/* Destacado Badge */}
           {business.promoted && (
             <div className="absolute top-2 right-2 animate-orbit-small">
-              <Badge className="bg-primary/90 hover:bg-primary text-primary-foreground text-xs px-1.5 py-0.5 
-                rounded-full shadow-lg shadow-primary/20 border-none backdrop-blur-sm text-[8px] md:text-[10px]">
+              <Badge
+                className="bg-amber-300/90 hover:bg-amber-300 text-black text-xs px-1.5 py-0.5 
+                rounded-full shadow-lg shadow-amber-500/20 border border-amber-300/80 backdrop-blur-sm font-semibold text-[8px] md:text-[10px]"
+              >
                 ★ DESTACADO
               </Badge>
             </div>
@@ -74,7 +76,7 @@ export default function FeaturedSections() {
   return (
     <div className="max-w-6xl mx-auto">
       {featuredSections.map((section, index) => (
-        <section key={index} className="space-y-6 mb-12">
+        <section key={index} className="space-y-4 mb-8">
           {/* Título de sección con efecto de destello */}
           <div className="relative">
             <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-primary/10 rounded-full blur-xl"></div>
@@ -84,21 +86,21 @@ export default function FeaturedSections() {
           </div>
           {section.title === "Novedades en el Barrio" ? (
             // Grid para Novedades - más columnas para mostrar más negocios por fila
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3 md:gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-2 md:gap-3">
               {section.businesses.map((business) => (
                 <BusinessCard key={business.id} business={business} layout="compact" />
               ))}
             </div>
           ) : (
             // Grid para Populares - más columnas en pantallas grandes
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
               {section.businesses.map((business) => (
                 <BusinessCard key={business.id} business={business} layout="detailed" />
               ))}
             </div>
           )}
           {/* Optional "See More" button */}
-          <div className="text-center pt-4">
+          <div className="text-center pt-2">
             <a
               href={`/search?category=${encodeURIComponent(section.businesses[0]?.category || '')}`}
               className="inline-flex items-center justify-center rounded-full text-xs md:text-sm font-medium 

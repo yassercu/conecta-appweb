@@ -119,7 +119,7 @@ function generarNegocios(cantidad: number, promocionados: number) {
   return negocios;
 }
 
-export const allBusinesses: Business[] = generarNegocios(55, 15);
+export const allBusinesses: Business[] = generarNegocios(55, 8);
 
 // Extract categories from categories module
 export const categories = ["Todas", ...categoryNames];
@@ -132,7 +132,7 @@ export const featuredSections = [
   {
     title: "Novedades en el Barrio",
     // Use 4 businesses for a 2x2 grid (forcing 2 rows on medium+)
-    businesses: allBusinesses.filter(b => ['1', '4', '6', '8'].includes(b.id))
+    businesses: allBusinesses.filter(b => ['1', '6', '6', '8'].includes(b.id))
   },
   {
     title: "Populares Cerca de Ti",

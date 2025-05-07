@@ -5,32 +5,24 @@ import FeaturedSections from "@/components/FeaturedSections.jsx";
 ---
 
 <Layout title="Orbita - Descubre negocios locales" isHomePage={true}>
-  <div class="space-y-16">
+  <div class="space-y-8">
     <!-- Promoted Business Carousel -->
     <section class="container mx-auto px-4">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl font-bold tracking-tight mb-4">
-          Negocios Destacados
-        </h2>
-        <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Estos negocios brillan con luz propia en nuestra órbita comercial
-        </p>
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold tracking-tight mb-2">Negocios Destacados</h2>
+        <p class="text-base text-muted-foreground max-w-2xl mx-auto">Estos negocios brillan con luz propia en nuestra órbita comercial</p>
       </div>
 
       <PromotedBusinessesCarousel client:load />
     </section>
 
     <!-- Featured Sections with space theme -->
-    <section class="relative py-16">
+    <section class="relative py-8">
       <div class="absolute inset-0 bg-accent/5 -z-10"></div>
       <div class="container mx-auto px-4">
-        <div class="text-center mb-12">
-          <h2 class="text-3xl font-bold tracking-tight mb-4">
-            Explora el Universo Comercial
-          </h2>
-          <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Descubre diferentes constelaciones de negocios por categoría
-          </p>
+        <div class="text-center mb-6">
+          <h2 class="text-2xl font-bold tracking-tight mb-2">Explora el Universo Comercial</h2>
+          <p class="text-base text-muted-foreground max-w-2xl mx-auto">Descubre diferentes constelaciones de negocios por categoría</p>
         </div>
 
         <FeaturedSections client:load />
