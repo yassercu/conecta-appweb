@@ -32,7 +32,7 @@ export default function PromotedBusinessesCarousel() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 px-4 sm:px-0">
           <h2 className="text-lg md:text-xl font-semibold text-foreground flex items-center gap-2 mb-3 md:mb-0 relative">
             <span className="absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-primary/10 rounded-full blur-xl"></span>
-            <Sparkles className="text-primary h-5 w-5 animate-pulse" />
+            <Sparkles className="text-amber-300 h-5 w-5 animate-pulse" />
             Negocios Destacados
           </h2>
           <a
@@ -76,14 +76,14 @@ export default function PromotedBusinessesCarousel() {
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-primary/20 via-transparent to-transparent"></div>
 
                     {/* Destacado Badge with orbit animation - Cambiado a dorado */}
-                    <div className="absolute top-1 right-1 animate-orbit-small">
+                    {/* <div className="absolute top-1 right-1 animate-orbit-small">
                       <Badge
                         className="bg-amber-300/90 hover:bg-amber-300 text-black text-[8px] md:text-[10px] px-1.5 py-0.5 rounded-full 
                           shadow-md shadow-amber-500/20 border border-amber-300/80 backdrop-blur-sm font-semibold"
                       >
                         ★ DESTACADO
                       </Badge>
-                    </div>
+                    </div> */}
                   </div>
                   <h3 className="font-medium text-xs text-foreground truncate group-hover:text-primary transition-colors">
                     {business.name}
