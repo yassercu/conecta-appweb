@@ -44,7 +44,7 @@ const PwaInstallPrompt: React.FC = () => {
             textAlign: "center"
         }}>
             <div style={{ marginBottom: 8, fontWeight: 500 }}>
-                Instala Conecta AppWeb en tu dispositivo
+                Instala Orbita App en tu dispositivo
             </div>
             <button
                 style={{

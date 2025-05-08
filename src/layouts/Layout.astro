@@ -5,11 +5,7 @@ interface Props {
   isHomePage?: boolean;
 }
 
-const {
-  title,
-  description = "Orbita App - Encuentra y promociona negocios locales",
-  isHomePage = false,
-} = Astro.props;
+const { title, description = "Orbita App - Encuentra y promociona negocios locales", isHomePage = false } = Astro.props;
 import "../styles/globals.css";
 import { Header } from "@/components/layout/header";
 import { Toaster } from "@/components/ui/toaster";
@@ -24,6 +20,11 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>{title}</title>
     <!-- Script para inicializar el tema antes de la carga para evitar flash -->
     <script is:inline>
@@ -31,11 +32,7 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
         // Verificar si hay un tema guardado en localStorage
         const savedTheme = localStorage.getItem("theme");
         // Aplicar tema guardado o usar la preferencia del sistema
-        if (
-          savedTheme === "dark" ||
-          (!savedTheme &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches)
-        ) {
+        if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
           document.documentElement.classList.add("dark");
         } else {
           document.documentElement.classList.remove("dark");
@@ -47,11 +44,11 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
     </script>
     <!-- Registro del Service Worker -->
     <script is:inline>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js').then(reg => {
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/service-worker.js").then((reg) => {
             // Notificaciones push
-            if ('Notification' in window && Notification.permission !== 'granted') {
+            if ("Notification" in window && Notification.permission !== "granted") {
               Notification.requestPermission();
             }
           });
@@ -68,31 +65,12 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
       </Header>
 
       <footer class="border-t py-6 md:py-0">
-        <div
-          class="container mx-auto flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row"
-        >
-          <p class="text-sm text-muted-foreground">
-            &copy; 2025 Orbita. Todos los derechos reservados.
-          </p>
+        <div class="container mx-auto flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
+          <p class="text-sm text-muted-foreground">&copy; 2025 Orbita. Todos los derechos reservados.</p>
           <nav class="flex items-center gap-4 text-sm">
-            <a
-              href="/about"
-              class="text-muted-foreground hover:text-foreground"
-            >
-              Sobre Nosotros
-            </a>
-            <a
-              href="/terms"
-              class="text-muted-foreground hover:text-foreground"
-            >
-              Términos
-            </a>
-            <a
-              href="/privacy"
-              class="text-muted-foreground hover:text-foreground"
-            >
-              Privacidad
-            </a>
+            <a href="/about" class="text-muted-foreground hover:text-foreground"> Sobre Nosotros </a>
+            <a href="/terms" class="text-muted-foreground hover:text-foreground"> Términos </a>
+            <a href="/privacy" class="text-muted-foreground hover:text-foreground"> Privacidad </a>
           </nav>
         </div>
       </footer>
