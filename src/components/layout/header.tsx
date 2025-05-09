@@ -109,7 +109,7 @@ export function Header({ children, isHomePage = false }: HeaderProps) {
                 <p className="mt-6 text-lg leading-8 text-gray-300">
                   Descubre y conecta con los mejores negocios locales. Tu próxima experiencia extraordinaria está a solo un clic de distancia.
                 </p>
-                <div className="mt-10 flex items-center justify-center gap-x-6">
+                <div className="mt-10 flex items-center justify-center sm:gap-x-6 gap-2">
                   <Button size="lg" className="relative group" asChild>
                     <a href="/register">
                       Registra tu Negocio

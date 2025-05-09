@@ -33,11 +33,11 @@ export default function PromotedBusinessesCarousel() {
           <h2 className="text-lg md:text-xl font-semibold text-foreground flex items-center gap-2 mb-3 md:mb-0 relative">
             <span className="absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-primary/10 rounded-full blur-xl"></span>
             <Sparkles className="text-amber-300 h-5 w-5 animate-pulse" />
-            Negocios Destacados
+            Promocionados
           </h2>
           <a
             href="/payment"
-            className="inline-flex items-center justify-center rounded-full text-xs md:text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-primary/20 bg-background/80 hover:bg-primary/10 hover:border-primary h-7 md:h-9 py-1 px-3 md:px-5 group"
+            className="text-amber-300 inline-flex items-center justify-center rounded-full text-xs md:text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-primary/20 bg-background/80 hover:bg-primary/10 hover:border-primary h-7 md:h-9 py-1 px-3 md:px-5 group"
           >
             Promociona Tu Negocio
             <ArrowRight className="ml-1 md:ml-2 h-3 w-3 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
