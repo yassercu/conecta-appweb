@@ -8,7 +8,7 @@ import type { PaymentResult } from '@/services/payment-methods';
 import { Card } from '@/components/ui/card';
 import { Minus, Plus } from 'lucide-react';
 import { productPaymentMethods } from '@/services/payment-methods';
-import { allBusinesses } from '@/lib/data';
+import { useBusiness } from '@/hooks/useApi';
 
 export interface ProductPaymentFormProps {
     product: {
@@ -43,17 +43,25 @@ export function ProductPaymentForm({
     const [showPaymentForm, setShowPaymentForm] = useState(false);
     const total = product.price * currentQuantity;
 
-    const business = businessId ? allBusinesses.find(b => b.id === businessId) : null;
-    
+    // Usar el hook de API para obtener los datos del negocio
+    const {
+        data: business,
+        loading: loadingBusiness,
+        error: businessError
+    } = useBusiness(businessId || '', {
+        skip: !businessId, // No realizar la petición si no hay ID de negocio
+        useCache: true,
+        cacheKey: businessId ? `businesses:${businessId}` : undefined
+    });
+
     useEffect(() => {
         if (business) {
             console.log('Negocio encontrado:', business);
             console.log('Teléfono del negocio:', business.phone);
-        } else if (businessId) {
+        } else if (businessId && !loadingBusiness && !businessError) {
             console.error('No se encontró el negocio con ID:', businessId);
-            console.log('Todos los IDs disponibles:', allBusinesses.map(b => b.id));
         }
-    }, [business, businessId]);
+    }, [business, businessId, loadingBusiness, businessError]);
 
     const handleQuantityChange = (newQuantity: number) => {
         if (newQuantity >= 1 && newQuantity <= maxQuantity) {
@@ -83,16 +91,19 @@ export function ProductPaymentForm({
     };
 
     if (!isOpen) return null;
-    
+
     const businessPhone = business?.phone ? String(business.phone) : '';
     const businessContact = business?.email ? String(business.email) : '';
-    
-    console.log('Datos antes de renderizar PaymentForm:', {
-        businessId,
-        businessFound: !!business,
-        businessPhone,
-        businessContact,
-    });
+
+    // Si estamos cargando los datos del negocio y se necesita para el pago, mostrar un estado de carga
+    if (loadingBusiness && businessId && showPaymentForm) {
+        return (
+            <Card className="p-6 flex justify-center items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <span className="ml-2">Cargando información del negocio...</span>
+            </Card>
+        );
+    }
 
     return (
         <>

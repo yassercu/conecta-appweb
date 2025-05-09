@@ -8,16 +8,38 @@ import {
 } from "@/components/ui/carousel";
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { carouselBusinesses } from '@/lib/data';
+import { usePromotedBusinesses } from '@/hooks/useApi';
 
 export default function PromotedBusinessesCarousel() {
   const [isClient, setIsClient] = useState(false);
+
+  // Usar hook para obtener negocios promocionados desde la API con caché
+  const { data: businesses, loading, error } = usePromotedBusinesses({
+    useCache: true,
+    cacheKey: 'businesses:promoted'
+  });
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  if (!isClient || carouselBusinesses.length === 0) {
+  // Mostrar un estado de carga
+  if (loading) {
+    return (
+      <div className="py-20 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Manejar errores
+  if (error) {
+    console.error("Error cargando negocios promocionados:", error);
+    return null; // O mostrar un mensaje de error amigable
+  }
+
+  // Comprobar si hay datos disponibles
+  if (!isClient || !businesses || businesses.length === 0) {
     return null;
   }
 
@@ -53,7 +75,7 @@ export default function PromotedBusinessesCarousel() {
           className="w-full"
         >
           <CarouselContent className="-ml-2 md:-ml-3">
-            {carouselBusinesses.map((business, index) => (
+            {businesses.map((business, index) => (
               <CarouselItem
                 key={business.id}
                 className="pl-2 md:pl-3 basis-[33.33%] sm:basis-1/4 md:basis-1/5 lg:basis-[16.66%] xl:basis-[14.28%]"

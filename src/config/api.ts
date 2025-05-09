@@ -1,0 +1,146 @@
+/**
+ * Configuración central para la API de Orbita-Y
+ */
+
+// URL base de la API
+export const API_CONFIG = {
+    BASE_URL: 'http://localhost:3001/api',
+    VERSION: 'v1',
+    TIMEOUT: 30000,
+    DEFAULT_HEADERS: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    },
+    // Tiempo de caché para respuestas (en milisegundos)
+    CACHE_TIME: 5 * 60 * 1000, // 5 minutos
+};
+
+// URL completa de la API con versión
+export const API_URL = `${API_CONFIG.BASE_URL}/${API_CONFIG.VERSION}`;
+
+// Log para depuración
+console.log('API_URL configurada:', API_URL);
+
+// Configuración por defecto para las peticiones fetch
+export const DEFAULT_FETCH_OPTIONS: RequestInit = {
+    headers: {
+        ...API_CONFIG.DEFAULT_HEADERS,
+    },
+    // Eliminar 'include' si tienes problemas con CORS
+    // credentials: 'include',
+};
+
+// Endpoints de la API
+export const ENDPOINTS = {
+    // Negocios
+    BUSINESSES: '/businesses',
+    BUSINESS_BY_ID: (id: string) => `/businesses/${id}`,
+    FEATURED_BUSINESSES: '/businesses/featured',
+    PROMOTED_BUSINESSES: '/businesses/promoted',
+
+    // Categorías
+    CATEGORIES: '/categories',
+    CATEGORY_BY_ID: (id: string) => `/categories/${id}`,
+
+    // Productos
+    PRODUCTS: '/products',
+    PRODUCTS_BY_BUSINESS: (businessId: string) => `/businesses/${businessId}/products`,
+    PRODUCT_BY_ID: (id: string) => `/products/${id}`,
+
+    // Ubicaciones
+    COUNTRIES: '/locations/countries',
+    PROVINCES: '/locations/provinces',
+    PROVINCES_BY_COUNTRY: (countryId: string) => `/locations/countries/${countryId}/provinces`,
+    MUNICIPALITIES: '/locations/municipalities',
+    MUNICIPALITIES_BY_PROVINCE: (provinceId: string) => `/locations/provinces/${provinceId}/municipalities`,
+
+    // Usuarios
+    USER_PROFILE: '/user/profile',
+    USER_LOGIN: '/auth/login',
+    USER_REGISTER: '/auth/register',
+    USER_LOGOUT: '/auth/logout',
+
+    // Reseñas
+    REVIEWS: '/reviews',
+    REVIEWS_BY_BUSINESS: (businessId: string) => `/businesses/${businessId}/reviews`,
+
+    // Búsqueda
+    SEARCH: '/search',
+};
+
+// Caché de respuestas de la API
+interface CacheItem {
+    data: any;
+    timestamp: number;
+}
+
+const apiCache: Record<string, CacheItem> = {};
+
+/**
+ * Obtiene un elemento del caché si está disponible y no ha expirado
+ * @param key Clave del caché
+ * @returns Datos del caché o null si no existe o ha expirado
+ */
+export const getCachedData = (key: string): any => {
+    const item = apiCache[key];
+    if (!item) return null;
+
+    const now = Date.now();
+    if (now - item.timestamp > API_CONFIG.CACHE_TIME) {
+        // La caché ha expirado
+        delete apiCache[key];
+        return null;
+    }
+
+    return item.data;
+};
+
+/**
+ * Guarda datos en el caché
+ * @param key Clave del caché
+ * @param data Datos a guardar
+ */
+export const setCachedData = (key: string, data: any): void => {
+    apiCache[key] = {
+        data,
+        timestamp: Date.now()
+    };
+};
+
+/**
+ * Limpia todo el caché o una clave específica
+ * @param key Clave específica a limpiar (opcional)
+ */
+export const clearCache = (key?: string): void => {
+    if (key) {
+        delete apiCache[key];
+    } else {
+        Object.keys(apiCache).forEach(k => delete apiCache[k]);
+    }
+};
+
+// Estado global de carga de la API
+let isLoadingCounter = 0;
+
+export const apiLoadingState = {
+    /**
+     * Incrementa el contador de carga
+     */
+    startLoading: () => {
+        isLoadingCounter++;
+    },
+
+    /**
+     * Decrementa el contador de carga
+     */
+    stopLoading: () => {
+        if (isLoadingCounter > 0) {
+            isLoadingCounter--;
+        }
+    },
+
+    /**
+     * Verifica si hay operaciones de API en curso
+     */
+    isLoading: () => isLoadingCounter > 0
+}; 

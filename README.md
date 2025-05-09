@@ -1,117 +1,171 @@
-# Firebase Studio
+# Orbita-Y
 
-This is a NextJS starter in Firebase Studio.
+Aplicación web para catalgos de productos y servicios.
 
-To get started, take a look at src/app/page.tsx.
+## Estructura del Proyecto
 
-# Orbita App
-
-Plataforma para encontrar y promocionar negocios locales.
-
-## Variables de entorno
-
-La aplicación requiere ciertas variables de entorno para funcionar correctamente. Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
-
-### Variables públicas (accesibles desde el navegador)
-
-Estas variables deben tener el prefijo `PUBLIC_`:
+El proyecto se ha actualizado para consumir datos dinámicos a través de una API REST. La estructura de la aplicación es la siguiente:
 
 ```
-# Información de la aplicación
-PUBLIC_APP_URL=https://orbita.app
-
-# Configuración de pasarelas de pago
-PUBLIC_ENZONA_ACCESS_TOKEN=tu_token_de_acceso
-PUBLIC_ENZONA_MERCHANT_UUID=tu_merchant_uuid
-PUBLIC_TROPIPAY_API_KEY=tu_api_key
-PUBLIC_TRANSFERMOVIL_API_KEY=tu_api_key
-
-# Número de teléfono de soporte (para compras de planes)
-PUBLIC_SUPPORT_PHONE=5355555555
+orbita-y/
+├── src/
+│   ├── components/         # Componentes de la aplicación
+│   ├── lib/                # Utilidades y configuraciones
+│   ├── pages/              # Páginas de la aplicación
+│   ├── services/           # Servicios para comunicación con API
+│   │   └── api/            # Servicios específicos para la API
+│   └── types/              # Definiciones de tipos TypeScript
+├── mock-api/              # Servidor de API de prueba
+├── public/                # Archivos estáticos
+└── ...
 ```
 
-### Variables privadas (solo accesibles desde el servidor)
+## Servicios de API
 
-Estas variables se mantienen privadas y solo están disponibles en el servidor:
+Los servicios de API están organizados en una estructura modular:
 
-```
-# Configuración de la base de datos
-DB_HOST=localhost
-DB_USER=usuario
-DB_PASSWORD=contraseña
-DB_NAME=orbita_db
+- `api/config.ts` - Configuración global para la API
+- `api/httpClient.ts` - Cliente HTTP central para todas las peticiones
+- `api/businessService.ts` - Servicio para operaciones con negocios
+- `api/categoryService.ts` - Servicio para operaciones con categorías
+- `api/locationService.ts` - Servicio para operaciones con ubicaciones
 
-# Configuración de API
-ENZONA_CONSUMER_SECRET=tu_consumer_secret
-API_SECRET_KEY=tu_clave_secreta
-```
+## API Mock para desarrollo
 
-## Instalación y ejecución
+Se ha incluido un servidor de API Mock para desarrollo. Para iniciarlo:
 
 ```bash
-# Instalar dependencias
+cd mock-api
 npm install
-
-# Ejecutar en modo desarrollo
 npm run dev
-
-# Compilar para producción
-npm run build
-
-# Previsualizar la build de producción
-npm run preview
 ```
 
-# Conecta AppWeb
+El servidor se ejecutará en `http://localhost:3001`.
 
-## Descripción del Proyecto
+## Endpoints de la API
 
-Conecta AppWeb es una aplicación diseñada para facilitar la conexión entre usuarios y servicios a través de una plataforma intuitiva y fácil de usar. La aplicación permite a los usuarios buscar, comparar y contratar servicios de manera eficiente.
+La API provee los siguientes endpoints:
 
-## Tecnologías Utilizadas
+### Negocios
 
-- **Frontend**: React, TypeScript
-- **Backend**: Node.js, Express
-- **Base de Datos**: MongoDB
-- **Autenticación**: JWT (JSON Web Tokens)
-- **Estilos**: CSS, Bootstrap
-- **Control de Versiones**: Git
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/v1/businesses` | Obtener todos los negocios |
+| GET | `/api/v1/businesses/:id` | Obtener un negocio por ID |
+| GET | `/api/v1/businesses/featured` | Obtener negocios destacados |
+| GET | `/api/v1/businesses/promoted` | Obtener negocios promocionados |
+| GET | `/api/v1/search` | Buscar negocios con filtros |
+| POST | `/api/v1/businesses` | Crear un nuevo negocio |
+| PUT | `/api/v1/businesses/:id` | Actualizar un negocio existente |
+| DELETE | `/api/v1/businesses/:id` | Eliminar un negocio |
 
-## Guía de Uso
+#### Parámetros de búsqueda
 
-### Instalación
+El endpoint `/api/v1/search` acepta los siguientes parámetros:
 
-1. Clona el repositorio:
-   ```bash
-   git clone https://github.com/tu-usuario/conecta-appweb.git
-   ```
-2. Navega al directorio del proyecto:
-   ```bash
-   cd conecta-appweb
-   ```
-3. Instala las dependencias:
-   ```bash
-   npm install
-   ```
+- `query` - Texto de búsqueda (nombre, categoría, descripción)
+- `category` - ID o nombre de la categoría
+- `rating` - Valoración mínima (1-5)
+- `distance` - Distancia máxima en km
+- `latitude` - Latitud para búsqueda por ubicación
+- `longitude` - Longitud para búsqueda por ubicación
+- `sortBy` - Campo para ordenar resultados (rating, name, distance)
+- `page` - Número de página para paginación
+- `limit` - Elementos por página
 
-### Ejecución
+### Categorías
 
-1. Inicia el servidor de desarrollo:
-   ```bash
-   npm start
-   ```
-2. Abre tu navegador y visita `http://localhost:3000` para ver la aplicación en acción.
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/v1/categories` | Obtener todas las categorías |
+| GET | `/api/v1/categories/:id` | Obtener una categoría por ID |
+| POST | `/api/v1/categories` | Crear una nueva categoría |
+| PUT | `/api/v1/categories/:id` | Actualizar una categoría existente |
+| DELETE | `/api/v1/categories/:id` | Eliminar una categoría |
 
-### Contribución
+### Ubicaciones
 
-Si deseas contribuir al proyecto, por favor sigue estos pasos:
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/v1/locations/countries` | Obtener todos los países |
+| GET | `/api/v1/locations/provinces` | Obtener todas las provincias |
+| GET | `/api/v1/locations/countries/:countryId/provinces` | Obtener provincias por país |
+| GET | `/api/v1/locations/municipalities` | Obtener todos los municipios |
+| GET | `/api/v1/locations/provinces/:provinceId/municipalities` | Obtener municipios por provincia |
 
-1. Haz un fork del repositorio.
-2. Crea una nueva rama (`git checkout -b feature/nueva-funcionalidad`).
-3. Realiza tus cambios y haz commit (`git commit -m 'Añadir nueva funcionalidad'`).
-4. Sube tus cambios a la rama (`git push origin feature/nueva-funcionalidad`).
-5. Abre un Pull Request.
+### Productos
 
----
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/v1/products` | Obtener todos los productos |
+| GET | `/api/v1/products/:id` | Obtener un producto por ID |
+| GET | `/api/v1/businesses/:businessId/products` | Obtener productos de un negocio |
 
-¡Gracias por usar Conecta AppWeb! Si tienes alguna pregunta o sugerencia, no dudes en contactarnos.
+### Reseñas
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| GET | `/api/v1/reviews` | Obtener todas las reseñas |
+| GET | `/api/v1/businesses/:businessId/reviews` | Obtener reseñas de un negocio |
+
+## Configuración del entorno
+
+Para configurar el entorno de desarrollo:
+
+1. Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
+```
+
+2. Iniciar el servidor de API Mock:
+
+```bash
+cd mock-api
+npm run dev
+```
+
+3. Iniciar la aplicación web:
+
+```bash
+npm run dev
+```
+
+## Integración con componentes existentes
+
+Los componentes existentes deben ser actualizados para utilizar los servicios de API en lugar de los datos estáticos. Por ejemplo:
+
+```jsx
+// Antes
+import { allBusinesses } from '@/lib/data';
+
+// Después
+import { businessService } from '@/services/api';
+import { useEffect, useState } from 'react';
+
+function Component() {
+  const [businesses, setBusinesses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await businessService.getAllBusinesses();
+        setBusinesses(data);
+      } catch (error) {
+        console.error('Error fetching businesses:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
+  
+  if (loading) return <div>Cargando...</div>;
+  
+  return (
+    // Usar los datos obtenidos de la API
+  );
+}
+```

@@ -1,6 +1,6 @@
 {
-    "name": "Conecta AppWeb",
-    "short_name": "Conecta",
+    "name": "Orbita-Y",
+    "short_name": "Orbita-Y",
     "description": "Plataforma de catálogos de productos y servicios",
     "start_url": "/",
     "display": "standalone",

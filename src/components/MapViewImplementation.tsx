@@ -38,6 +38,8 @@ interface MapViewProps {
     zoom?: number;
     className?: string;
     forceFitBounds?: boolean;
+    userLocation?: { latitude: number, longitude: number } | null;
+    distance?: string; // Distancia en km para mostrar el radio
 }
 
 // Tipo para los tiles del mapa
@@ -61,12 +63,13 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
     zoom: initialZoom,
     className = "h-full w-full",
     forceFitBounds = true,
+    userLocation = null,
+    distance = '0',
 }: MapViewProps) => {
     const mapRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [loadingProgress, setLoadingProgress] = useState<number>(0);
     const [showPopup, setShowPopup] = useState<string | null>(null);
-    const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
     const [locationError, setLocationError] = useState<string | null>(null);
     const [isLocating, setIsLocating] = useState<boolean>(false);
 
@@ -100,6 +103,18 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         ), [businesses]
     );
 
+    // Convertir coordenadas del usuario a formato interno
+    const userLocationCoords = useMemo(() => {
+        if (!userLocation) return null;
+        return [userLocation.latitude, userLocation.longitude] as [number, number];
+    }, [userLocation]);
+
+    // Radio para el círculo de distancia en metros
+    const distanceRadius = useMemo(() => {
+        if (distance === '0' || !userLocation) return 0;
+        return parseInt(distance) * 1000; // Convertir km a metros
+    }, [distance, userLocation]);
+
     // Función para manejar cuando cada tile se carga completamente
     const handleTileLoad = useCallback((key: string) => {
         tilesLoaded.current[key] = true;
@@ -118,6 +133,20 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             y - mapOrigin[1]
         ];
     }, [mapOrigin]);
+
+    // Calcular el radio del círculo en píxeles basado en la distancia y el zoom
+    const calculateRadiusInPixels = useCallback((radiusInMeters: number, lat: number, zoom: number): number => {
+        // En el ecuador, 1 grado = 111.32 km
+        // El factor cambia con la latitud debido a la proyección Mercator
+        const metersPerDegree = 111320 * Math.cos(lat * Math.PI / 180);
+        const degreesRadius = radiusInMeters / metersPerDegree;
+
+        // Convertir a píxeles basado en el zoom
+        const scale = Math.pow(2, zoom);
+        const pixelsPerDegree = scale * 256 / 360;
+
+        return degreesRadius * pixelsPerDegree;
+    }, []);
 
     // Obtener URL del mosaico de OpenStreetMap
     const getTileUrl = useCallback((x: number, y: number, z: number): string => {
@@ -241,7 +270,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             const watchId = navigator.geolocation.watchPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    setUserLocation([latitude, longitude]);
+                    setUserLocation({ latitude, longitude });
 
                     // Actualizar centro del mapa a la ubicación del usuario
                     currentCenterRef.current = [latitude, longitude];
@@ -271,7 +300,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
                             const { latitude, longitude } = position.coords;
-                            setUserLocation([latitude, longitude]);
+                            setUserLocation({ latitude, longitude });
                             currentCenterRef.current = [latitude, longitude];
                             setCurrentCenter([latitude, longitude]);
                             currentZoomRef.current = 13;
@@ -303,7 +332,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    setUserLocation([latitude, longitude]);
+                    setUserLocation({ latitude, longitude });
                     currentCenterRef.current = [latitude, longitude];
                     setCurrentCenter([latitude, longitude]);
                     currentZoomRef.current = 13;
@@ -488,6 +517,31 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         }
     }, [isLoading, calculateVisibleTiles, mapTiles.length]);
 
+    // Efecto para centrar el mapa en la ubicación del usuario cuando esté disponible
+    useEffect(() => {
+        if (userLocation && userLocationCoords) {
+            // Centrar el mapa en la ubicación del usuario
+            console.log("Centrando mapa en la ubicación del usuario:", userLocationCoords);
+            currentCenterRef.current = userLocationCoords;
+            setCurrentCenter(userLocationCoords);
+
+            if (!initialZoom) {
+                // Si no hay un zoom inicial, usar uno adecuado para visualizar el radio
+                const newZoom = distance !== '0' ?
+                    (parseInt(distance) <= 5 ? 14 : parseInt(distance) <= 10 ? 13 : 12) :
+                    13;
+                currentZoomRef.current = newZoom;
+                setCurrentZoom(newZoom);
+            }
+
+            // Solicitar actualización del mapa
+            if (updateRequestRef.current) {
+                cancelAnimationFrame(updateRequestRef.current);
+            }
+            updateRequestRef.current = requestAnimationFrame(calculateVisibleTiles);
+        }
+    }, [userLocation, userLocationCoords, calculateVisibleTiles, distance, initialZoom]);
+
     // Manejadores de eventos
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         if (e.button === 0) { // Solo botón izquierdo
@@ -618,212 +672,192 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         [validBusinesses, latLngToPixel, currentZoom, mapSize]
     );
 
-    // Renderizado de carga mejorado
-    if (isLoading) {
-        return (
-            <div className={`${className} border rounded-md bg-gray-50 flex flex-col justify-center items-center relative overflow-hidden`} style={{ minHeight: '400px' }}>
-                {/* Fondo del mapa simulado durante la carga */}
-                <div className="absolute inset-0 bg-blue-50/80"></div>
-
-                {/* Contenido de carga */}
-                <div className="flex flex-col items-center justify-center space-y-4 z-10">
-                    <div className="text-primary flex items-center justify-center flex-col">
-                        <Globe className="h-16 w-16 text-primary/60 animate-pulse" />
-                        <div className="animate-spin mt-2">
-                            <Loader2 className="h-8 w-8 text-primary" />
-                        </div>
-                    </div>
-
-                    <h3 className="text-base font-medium text-gray-700">Cargando mapa...</h3>
-
-                    {/* Barra de progreso */}
-                    <div className="w-64 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-primary transition-all duration-300 ease-out"
-                            style={{ width: `${loadingProgress}%` }}
-                        ></div>
-                    </div>
-
-                    <p className="text-xs text-gray-500 mt-1">Preparando visualización del mapa {loadingProgress}%</p>
-                </div>
-
-                {/* Skeleton del mapa para mostrar la estructura */}
-                <div className="absolute inset-0 z-0">
-                    <Skeleton className="h-full w-full opacity-30" />
-                </div>
-            </div>
-        );
-    }
-
-    // Cuando el mapa no está cargando, mostramos el mapa real
+    // Renderizar el mapa
     return (
         <div
             ref={mapRef}
-            className={`${className} relative overflow-hidden bg-blue-50 border rounded-md select-none`}
-            style={{ minHeight: '400px' }}
+            className={`relative overflow-hidden ${className}`}
             onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            onWheel={handleZoomIn}
+            onTouchStart={handleMouseDown}
+            onTouchEnd={handleMouseUp}
+            onTouchMove={handleMouseMove}
+            style={{ cursor: isDraggingRef.current ? 'grabbing' : 'grab' }}
         >
-            {/* Fondo del mapa */}
-            <div className="absolute inset-0 bg-blue-100"></div>
-
-            {/* Capa de tiles */}
-            <div className="absolute inset-0 overflow-hidden">
-                {mapTiles.map((tile: MapTile) => (
-                    <img
+            {/* Contenedor para los tiles del mapa */}
+            <div className="absolute inset-0">
+                {mapTiles.map(tile => (
+                    <div
                         key={tile.key}
-                        src={tile.url}
-                        alt=""
-                        crossOrigin="anonymous"
-                        referrerPolicy="origin"
-                        className="absolute select-none pointer-events-none"
+                        className="absolute"
                         style={{
                             left: `${tile.left}px`,
                             top: `${tile.top}px`,
                             width: '256px',
-                            height: '256px'
+                            height: '256px',
                         }}
-                        onLoad={() => handleTileLoad(tile.key)}
-                        onDragStart={e => e.preventDefault()}
-                    />
+                    >
+                        <img
+                            src={tile.url}
+                            alt={`Map tile ${tile.z}-${tile.x}-${tile.y}`}
+                            className="w-full h-full select-none"
+                            onLoad={() => handleTileLoad(tile.key)}
+                            draggable={false}
+                        />
+                    </div>
                 ))}
             </div>
 
-            {/* Marcador de ubicación del usuario */}
-            {userLocation && (
+            {/* Marcadores de negocios */}
+            {validBusinesses.map((business) => {
+                const pixelPos = latLngToPixel(
+                    Number(business.latitude),
+                    Number(business.longitude),
+                    currentZoom
+                );
+
+                // Asignar colores diferentes según el tipo de negocio
+                const getBusinessColor = () => {
+                    if (business.promoted) return 'bg-amber-500';
+
+                    // Determinar color según la categoría
+                    switch (business.category) {
+                        case 'Restaurante':
+                            return 'bg-red-500';
+                        case 'Salud y Belleza':
+                            return 'bg-pink-500';
+                        case 'Tecnología':
+                            return 'bg-blue-500';
+                        case 'Hogar y Decoración':
+                            return 'bg-green-500';
+                        case 'Moda':
+                            return 'bg-purple-500';
+                        case 'Alimentos':
+                            return 'bg-orange-500';
+                        default:
+                            return 'bg-primary';
+                    }
+                };
+
+                return (
+                    <div
+                        key={business.id}
+                        className="absolute transform -translate-x-1/2 -translate-y-full cursor-pointer z-10"
+                        style={{
+                            left: `${pixelPos[0]}px`,
+                            top: `${pixelPos[1]}px`,
+                        }}
+                        onClick={() => handleBusinessClick(business.id)}
+                    >
+                        <div className="relative flex flex-col items-center">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${getBusinessColor()} shadow-md animate-bounce-small`}>
+                                <MapPin className="w-4 h-4 text-white" />
+                            </div>
+                            <div className="w-2 h-2 bg-black opacity-30 rounded-full mt-1" />
+                        </div>
+                    </div>
+                );
+            })}
+
+            {/* Círculo de radio para la distancia filtrada */}
+            {userLocationCoords && distanceRadius > 0 && (
                 <div
-                    className="absolute z-40 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                    className="absolute z-5 rounded-full border-2 border-primary/60 bg-primary/10 pointer-events-none"
                     style={{
-                        left: `${latLngToPixel(userLocation[0], userLocation[1], currentZoom)[0]}px`,
-                        top: `${latLngToPixel(userLocation[0], userLocation[1], currentZoom)[1]}px`,
+                        left: `${latLngToPixel(userLocationCoords[0], userLocationCoords[1], currentZoom)[0]}px`,
+                        top: `${latLngToPixel(userLocationCoords[0], userLocationCoords[1], currentZoom)[1]}px`,
+                        width: `${calculateRadiusInPixels(distanceRadius, userLocationCoords[0], currentZoom) * 2}px`,
+                        height: `${calculateRadiusInPixels(distanceRadius, userLocationCoords[0], currentZoom) * 2}px`,
+                        transform: 'translate(-50%, -50%)',
+                    }}
+                />
+            )}
+
+            {/* Marcador de ubicación del usuario */}
+            {userLocationCoords && (
+                <div
+                    className="absolute z-20 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{
+                        left: `${latLngToPixel(userLocationCoords[0], userLocationCoords[1], currentZoom)[0]}px`,
+                        top: `${latLngToPixel(userLocationCoords[0], userLocationCoords[1], currentZoom)[1]}px`,
                     }}
                 >
-                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center animate-pulse">
-                        <div className="w-3 h-3 bg-white rounded-full"></div>
+                    <div className="relative flex flex-col items-center">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-500 shadow-md animate-pulse">
+                            <Navigation className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="w-3 h-3 bg-black opacity-30 rounded-full mt-1" />
                     </div>
-                    <div className="w-12 h-12 bg-blue-500/30 rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
                 </div>
             )}
 
-            {/* Marcadores para los negocios */}
-            <div className="absolute inset-0 pointer-events-none">
-                {markersPositions
-                    .filter(m => m.isVisible)
-                    .map(({ business, x, y }) => (
-                        <div
-                            key={business.id}
-                            className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-auto"
-                            style={{
-                                left: `${x}px`,
-                                top: `${y}px`
-                            }}
-                            onClick={() => handleBusinessClick(business.id)}
-                        >
-                            <div className={`flex flex-col items-center group ${showPopup === business.id ? 'z-30' : 'z-20'}`}>
-                                <div className={`bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md cursor-pointer 
-                                    hover:bg-red-600 transition-all duration-200 ${business.promoted ? 'animate-pulse' : ''} 
-                                    ${showPopup === business.id ? 'ring-4 ring-primary/50' : ''}`}>
-                                    <MapPin className="h-4 w-4" />
-                                </div>
-
-                                {/* Nombre del negocio al hacer hover */}
-                                <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-white px-2 py-0.5 rounded shadow-md 
-                                    text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-max">
-                                    {business.name}
-                                </div>
-
-                                {/* Popup de información */}
-                                {showPopup === business.id && (
-                                    <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-50 w-[280px]">
-                                        <div className="bg-white rounded-md shadow-lg p-3 max-w-xs">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <div className="flex-1">
-                                                    <BusinessPopup business={business} />
-                                                </div>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    className="h-6 w-6 -mt-1 -mr-1"
-                                                    onClick={(e: React.MouseEvent) => {
-                                                        e.stopPropagation();
-                                                        setShowPopup(null);
-                                                    }}
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+            {/* Popup con información de negocio en el mapa */}
+            {showPopup && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 bg-black/40" onClick={() => setShowPopup(null)} style={{ cursor: 'pointer', pointerEvents: 'all' }} />
+                    <div className="relative max-w-md w-full mx-4 pointer-events-auto">
+                        <div className="bg-white rounded-lg shadow-xl p-4">
+                            <BusinessPopup
+                                business={validBusinesses.find(b => b.id === showPopup)!}
+                            />
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="absolute -top-2 -right-2 rounded-full bg-white shadow-md"
+                                onClick={() => setShowPopup(null)}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
                         </div>
-                    ))
-                }
-            </div>
-
-            {/* Información de atribución (requerida por OpenStreetMap) */}
-            <div className="absolute bottom-0 right-0 bg-white/80 px-2 py-0.5 text-[10px] z-50">
-                &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                    OpenStreetMap
-                </a> contributors
-            </div>
+                    </div>
+                </div>
+            )}
 
             {/* Controles del mapa */}
-            <div className="absolute top-2 right-2 flex flex-col gap-1 z-50">
-                <Button size="icon" variant="secondary" onClick={handleZoomIn} title="Acercar">
+            <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-20">
+                <Button variant="outline" size="icon" className="bg-white/90" onClick={handleZoomIn}>
                     <ZoomIn className="h-4 w-4" />
                 </Button>
-                <Button size="icon" variant="secondary" onClick={handleZoomOut} title="Alejar">
+                <Button variant="outline" size="icon" className="bg-white/90" onClick={handleZoomOut}>
                     <ZoomOut className="h-4 w-4" />
                 </Button>
-                <Button size="icon" variant="secondary" onClick={handleResetView} title="Centrar en Cuba">
+                <Button variant="outline" size="icon" className="bg-white/90" onClick={handleResetView}>
                     <Home className="h-4 w-4" />
-                </Button>
-                <Button
-                    size="icon"
-                    variant="secondary"
-                    onClick={handleLocateUser}
-                    title="Mi ubicación"
-                    disabled={isLocating}
-                    className={`${userLocation ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : ''} ${isLocating ? 'animate-pulse' : ''}`}
-                >
-                    <Navigation className="h-4 w-4" />
                 </Button>
             </div>
 
-            {/* Error de ubicación */}
-            {locationError && (
-                <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-3 py-1.5 rounded z-50 text-xs flex items-center gap-1.5">
-                    <AlertCircle className="h-4 w-4" />
-                    {locationError}
+            {/* Indicador de carga */}
+            {isLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-50">
+                    <Skeleton className="h-[250px] w-[90%] rounded-lg" />
+                    <div className="mt-4">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">Cargando mapa...</p>
+                    <div className="w-48 h-2 bg-muted rounded-full mt-2 overflow-hidden">
+                        <div
+                            className="h-full bg-primary transition-all duration-300"
+                            style={{ width: `${loadingProgress}%` }}
+                        />
+                    </div>
                 </div>
             )}
 
-            {/* Lista de negocios */}
-            {validBusinesses.length > 0 && (
-                <div className="absolute top-2 left-2 bg-white rounded-md shadow-md p-2 max-w-xs z-40">
-                    <div className="flex justify-between items-center mb-1">
-                        <h4 className="font-semibold text-sm text-gray-800">Negocios ({validBusinesses.length})</h4>
-                    </div>
-                    <div className="max-h-40 overflow-y-auto">
-                        <ul className="space-y-1">
-                            {validBusinesses.map((business: Business) => (
-                                <li
-                                    key={business.id}
-                                    className={`text-xs flex items-center gap-1 px-1.5 py-1 rounded cursor-pointer ${showPopup === business.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-                                    onClick={() => handleBusinessClick(business.id)}
-                                >
-                                    <MapPin className="h-3 w-3 text-red-500 flex-shrink-0" />
-                                    <span className="truncate font-semibold text-gray-700">{business.name}</span>
-                                    <span className="ml-1 text-[10px] text-gray-500 font-medium">{business.location}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+            {/* Error de ubicación */}
+            {locationError && isLocating && (
+                <div className="absolute top-4 left-4 right-4 bg-destructive/90 text-white p-3 rounded-md shadow-lg z-50 flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 shrink-0" />
+                    <p className="text-sm">{locationError}</p>
                 </div>
             )}
+
+            {/* Atribución */}
+            <div className="absolute bottom-2 left-2 text-[8px] text-muted-foreground p-1 bg-white/60 rounded z-10">
+                <span>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" className="hover:underline">OpenStreetMap</a> contributors</span>
+            </div>
         </div>
     );
 };

@@ -89,6 +89,10 @@ function generarNegocios(cantidad: number, promocionados: number) {
     const cantidadReseñas = Math.floor(Math.random() * 11);
     const reseñas = generarReseñas(cantidadReseñas);
 
+    // Generar coordenadas geográficas para Cuba (dentro de un rango realista)
+    const latitude = 21.5 + (Math.random() * 2); // Entre 21.5 y 23.5 (aproximadamente para Cuba)
+    const longitude = -84.0 + (Math.random() * 6); // Entre -84.0 y -78.0 (aproximadamente para Cuba)
+
     negocios.push({
       id: `${i}`,
       name: nombreNegocio,
@@ -99,8 +103,13 @@ function generarNegocios(cantidad: number, promocionados: number) {
       image: ``, // Usará la imagen SVG de fallback
       promoted: i <= promocionados,
       description: `${nombreNegocio} ofrece los mejores servicios de ${category.name.toLowerCase()} en ${municipio.name}, ${provincia.name}. Visítenos para disfrutar de la mejor calidad y atención.`,
-      latitude: 23.1 + (Math.random() * 0.1),
-      longitude: -82.3 - (Math.random() * 0.1),
+      latitude: latitude,
+      longitude: longitude,
+      // Añadir el campo coordinates para el filtro de distancia
+      coordinates: {
+        latitude: latitude,
+        longitude: longitude
+      },
       address: `Calle ${10 + Math.floor(Math.random() * 50)} #${Math.floor(Math.random() * 100)}, ${municipio.name}`,
       phone: `+53 ${5000 + Math.floor(Math.random() * 5000)}`,
       email: `contacto@${nombreNegocio.toLowerCase().replace(/\s+/g, '')}.cu`,

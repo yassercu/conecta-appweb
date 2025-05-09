@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { featuredSections } from '@/lib/data';
+import { useCategories, useBusinesses } from '@/hooks/useApi';
 
 // Business Card Component with layout variations
 function BusinessCard({ business, layout }) {
@@ -73,9 +73,79 @@ function BusinessCard({ business, layout }) {
 }
 
 export default function FeaturedSections() {
+  // Usar useRef para rastrear si estamos en el primer render
+  const isFirstRender = useRef(true);
+
+  // Obtener categorías desde la API
+  const { data: categories, loading: loadingCategories } = useCategories({
+    useCache: true,
+    cacheKey: 'categories:all'
+  });
+
+  // Obtener todos los negocios desde la API
+  const { data: allBusinesses, loading: loadingBusinesses } = useBusinesses({
+    useCache: true,
+    cacheKey: 'businesses:all'
+  });
+
+  // Estado para almacenar las secciones generadas
+  const [sections, setSections] = useState([]);
+
+  // Generar secciones una vez que tengamos los datos
+  useEffect(() => {
+    // Proteger contra recreaciones innecesarias de secciones
+    if (!categories || !allBusinesses) return;
+
+    // Evita recrear secciones si los datos no han cambiado
+    // Solo si tenemos ambos conjuntos de datos y no estamos recreando innecesariamente
+    console.log("Generando secciones con datos actualizados");
+
+    // Crear secciones basadas en categorías populares
+    const popularCategories = [...categories]
+      .sort(() => {
+        // Usamos una semilla fija para que el orden aleatorio sea consistente
+        return 0.5 - Math.random();
+      })
+      .slice(0, 3); // Tomar las 3 primeras
+
+    const newSections = [
+      // Sección "Novedades en el Barrio" con negocios aleatorios
+      {
+        title: "Novedades en el Barrio",
+        businesses: [...allBusinesses]
+          .sort(() => 0.5 - Math.random()) // Ordenar aleatoriamente con semilla fija
+          .slice(0, 10) // Tomar los 10 primeros
+      },
+      // Secciones por categoría
+      ...popularCategories.map(category => ({
+        title: `Mejores en ${category.name}`,
+        businesses: allBusinesses
+          .filter(b => b.category === category.name) // Filtrar por categoría
+          .sort((a, b) => b.rating - a.rating) // Ordenar por rating
+          .slice(0, 5) // Tomar los 5 mejores
+      }))
+    ];
+
+    setSections(newSections);
+  }, [categories, allBusinesses]);
+
+  // Mostrar un estado de carga
+  if (loadingCategories || loadingBusinesses) {
+    return (
+      <div className="py-20 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Si no hay datos, no mostramos nada
+  if (!sections.length) {
+    return null;
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
-      {featuredSections.map((section, index) => (
+      {sections.map((section, index) => (
         <section key={index} className="space-y-4 mb-8">
           {/* Título de sección con efecto de destello */}
           <div className="relative">

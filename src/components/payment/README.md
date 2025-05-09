@@ -1,6 +1,6 @@
 # Sistema de Pagos Orbita-Y
 
-Este módulo implementa un sistema de pagos modular y reutilizable para ConectaApp.
+Este módulo implementa un sistema de pagos modular y reutilizable para Orbita-Y.
 
 ## Métodos de Pago Disponibles
 

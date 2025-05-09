@@ -16,7 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Star, MapPin, Filter, ArrowDownUp, LocateFixed, List, Grid, Menu, AlertCircle, Navigation } from 'lucide-react';
+import { Star, MapPin, Filter, ArrowDownUp, LocateFixed, Map, List, Grid, Menu, AlertCircle, Navigation, Search } from 'lucide-react';
 import { categories, allBusinesses } from '@/lib/data';
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -28,23 +28,72 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Lazy load MapView para evitar problemas con SSR
 const MapView = lazy(() => {
   return import('@/components/map-view');
 });
 
+// Función para obtener la geolocalización aproximada por IP
+async function getLocationByIP() {
+  try {
+    // Usamos un servicio gratuito para obtener la ubicación aproximada por IP
+    const response = await fetch('https://ipapi.co/json/');
+    if (!response.ok) throw new Error('Error al obtener ubicación por IP');
+
+    const data = await response.json();
+    console.log("Ubicación por IP obtenida:", data);
+
+    // Devolvemos los datos relevantes
+    return {
+      latitude: data.latitude,
+      longitude: data.longitude,
+      city: data.city,
+      region: data.region,
+      country: data.country_name
+    };
+  } catch (error) {
+    console.error("Error al obtener ubicación por IP:", error);
+    return null;
+  }
+}
+
 // Función para calcular la distancia entre dos puntos geográficos usando la fórmula haversine
 function calculateDistance(lat1, lon1, lat2, lon2) {
+  // Asegurar que todos los parámetros son números
+  lat1 = parseFloat(lat1);
+  lon1 = parseFloat(lon1);
+  lat2 = parseFloat(lat2);
+  lon2 = parseFloat(lon2);
+
+  // Validar coordenadas - si no son válidas, devolver una distancia infinita
+  if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+    console.warn("Coordenadas inválidas en calculateDistance:", { lat1, lon1, lat2, lon2 });
+    return Infinity;
+  }
+
   const R = 6371; // Radio de la Tierra en km
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c; // Distancia en km
+
   return distance;
 }
 
@@ -54,6 +103,7 @@ async function fetchBusinesses(filters) {
   // Simulating API delay
   await new Promise(resolve => setTimeout(resolve, 800));
 
+  // Primero aplicamos todos los filtros excepto el de distancia
   let filtered = allBusinesses.filter(b =>
     (b.name.toLowerCase().includes(filters.query.toLowerCase()) ||
       b.category.toLowerCase().includes(filters.query.toLowerCase()) ||
@@ -65,24 +115,48 @@ async function fetchBusinesses(filters) {
   // Aplicar filtro de distancia si están disponibles las coordenadas del usuario
   if (filters.distance !== '0' && filters.userLocation?.latitude && filters.userLocation?.longitude) {
     const maxDistance = parseInt(filters.distance);
+    console.log(`Filtrando por distancia: máximo ${maxDistance}km desde [${filters.userLocation.latitude}, ${filters.userLocation.longitude}]`);
+
+    // Guardar la cantidad de negocios antes del filtro de distancia
+    const beforeFilterCount = filtered.length;
+
     filtered = filtered.filter(business => {
-      // Verificar si el negocio tiene coordenadas
+      // Primero verificamos que las coordenadas de negocio existan
       if (!business.coordinates?.latitude || !business.coordinates?.longitude) {
         return false;
       }
-      
+
+      // Asegurar que las coordenadas son numéricas
+      const lat1 = parseFloat(filters.userLocation.latitude);
+      const lon1 = parseFloat(filters.userLocation.longitude);
+      const lat2 = parseFloat(business.coordinates.latitude);
+      const lon2 = parseFloat(business.coordinates.longitude);
+
+      // Verificar que las coordenadas sean válidas
+      if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
+        console.warn("Coordenadas inválidas para:", business.name);
+        return false;
+      }
+
       // Calcular distancia entre el usuario y el negocio
-      const distance = calculateDistance(
-        filters.userLocation.latitude,
-        filters.userLocation.longitude,
-        business.coordinates.latitude,
-        business.coordinates.longitude
-      );
-      
+      const distance = calculateDistance(lat1, lon1, lat2, lon2);
+
+      // Para depuración
+      if (distance <= maxDistance) {
+        console.log(`Negocio "${business.name}" dentro del rango (${distance.toFixed(2)}km)`);
+      }
+
       return distance <= maxDistance;
     });
-  }
 
+    const afterFilterCount = filtered.length;
+    console.log(`Se filtraron por distancia: ${beforeFilterCount} negocios -> ${afterFilterCount} negocios dentro del rango de ${maxDistance}km`);
+
+    // Si no hay resultados después del filtro, mostramos un mensaje o simplemente devolvemos todos
+    if (filtered.length === 0) {
+      console.warn("No se encontraron negocios dentro del rango especificado");
+    }
+  }
 
   // Sorting logic - prioritize promoted businesses first
   if (filters.sortBy === 'rating') {
@@ -98,26 +172,26 @@ async function fetchBusinesses(filters) {
   } else if (filters.sortBy === 'distance' && filters.userLocation) {
     filtered.sort((a, b) => {
       if (a.promoted !== b.promoted) return a.promoted ? -1 : 1;
-      
+
       // Si algún negocio no tiene coordenadas, ponerlo al final
       if (!a.coordinates && !b.coordinates) return 0;
       if (!a.coordinates) return 1;
       if (!b.coordinates) return -1;
-      
+
       const distanceA = calculateDistance(
         filters.userLocation.latitude,
         filters.userLocation.longitude,
         a.coordinates.latitude,
         a.coordinates.longitude
       );
-      
+
       const distanceB = calculateDistance(
         filters.userLocation.latitude,
         filters.userLocation.longitude,
         b.coordinates.latitude,
         b.coordinates.longitude
       );
-      
+
       return distanceA - distanceB;
     });
   } else {
@@ -228,13 +302,13 @@ async function getAddressFromCoordinates(latitude, longitude) {
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
     );
     const data = await response.json();
-    
+
     if (data && data.address) {
       // Extraer información relevante de la dirección
       const { road, neighbourhood, suburb, city, town, village, state } = data.address;
       const locality = city || town || village || suburb || neighbourhood || state || '';
       const street = road || '';
-      
+
       if (street && locality) {
         return `${street}, ${locality}`;
       } else if (street) {
@@ -250,6 +324,164 @@ async function getAddressFromCoordinates(latitude, longitude) {
   }
 }
 
+// Componente para el diálogo de ubicación manual
+function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
+  const [locationOption, setLocationOption] = useState(ipLocation ? 'ip' : 'manual');
+  const [manualAddress, setManualAddress] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedCoordinates, setSelectedCoordinates] = useState(ipLocation ? {
+    latitude: ipLocation.latitude,
+    longitude: ipLocation.longitude,
+    display: `${ipLocation.city}, ${ipLocation.region}, ${ipLocation.country}`
+  } : null);
+
+  // Búsqueda de dirección usando OpenStreetMap Nominatim
+  const searchAddress = async () => {
+    if (!manualAddress.trim()) return;
+
+    try {
+      setIsSearching(true);
+      // Usamos el servicio gratuito de Nominatim para geocodificación
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(manualAddress)}&limit=5`
+      );
+
+      if (!response.ok) throw new Error('Error en la búsqueda');
+
+      const data = await response.json();
+      setSearchResults(data.map(item => ({
+        latitude: parseFloat(item.lat),
+        longitude: parseFloat(item.lon),
+        display: item.display_name
+      })));
+
+      // Si hay resultados, seleccionamos el primero automáticamente
+      if (data.length > 0) {
+        setSelectedCoordinates({
+          latitude: parseFloat(data[0].lat),
+          longitude: parseFloat(data[0].lon),
+          display: data[0].display_name
+        });
+      }
+    } catch (error) {
+      console.error("Error al buscar dirección:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Manejar la confirmación
+  const handleConfirm = () => {
+    if (selectedCoordinates) {
+      onConfirm(selectedCoordinates);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Configura tu ubicación</DialogTitle>
+          <DialogDescription>
+            Necesitamos tu ubicación para mostrarte negocios cercanos. Selecciona una opción:
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4 py-4">
+          <RadioGroup
+            value={locationOption}
+            onValueChange={setLocationOption}
+            className="grid gap-3"
+          >
+            {ipLocation && (
+              <div className="flex items-start space-x-3 space-y-0">
+                <RadioGroupItem value="ip" id="r1" />
+                <div className="grid gap-1.5">
+                  <Label htmlFor="r1" className="font-medium">
+                    Usar ubicación aproximada basada en tu conexión
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {ipLocation.city}, {ipLocation.region}, {ipLocation.country}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-start space-x-3 space-y-0">
+              <RadioGroupItem value="manual" id="r2" />
+              <div className="grid gap-1.5 w-full">
+                <Label htmlFor="r2" className="font-medium">
+                  Indicar una ubicación manualmente
+                </Label>
+                <div className="flex w-full items-center space-x-2">
+                  <Input
+                    value={manualAddress}
+                    onChange={(e) => setManualAddress(e.target.value)}
+                    placeholder="Escribe una dirección o lugar"
+                    disabled={locationOption !== 'manual'}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={searchAddress}
+                    disabled={locationOption !== 'manual' || !manualAddress.trim() || isSearching}
+                  >
+                    {isSearching ? "..." : <Search className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </RadioGroup>
+
+          {/* Resultados de búsqueda */}
+          {locationOption === 'manual' && searchResults.length > 0 && (
+            <div className="mt-2 max-h-32 overflow-y-auto border rounded-md">
+              {searchResults.map((result, idx) => (
+                <div
+                  key={idx}
+                  className={cn(
+                    "px-2 py-1.5 text-xs cursor-pointer hover:bg-muted",
+                    selectedCoordinates?.display === result.display && "bg-muted"
+                  )}
+                  onClick={() => setSelectedCoordinates(result)}
+                >
+                  {result.display}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {selectedCoordinates && (
+            <div className="mt-2 px-3 py-2 text-xs bg-muted rounded-md">
+              <p className="font-medium">Ubicación seleccionada:</p>
+              <p className="text-muted-foreground mt-1">{selectedCoordinates.display}</p>
+              <p className="text-xs mt-1">
+                Lat: {selectedCoordinates.latitude.toFixed(5)}, Lon: {selectedCoordinates.longitude.toFixed(5)}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            disabled={!selectedCoordinates}
+          >
+            Confirmar ubicación
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function BusinessSearchResults() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('Todas');
@@ -260,8 +492,8 @@ export default function BusinessSearchResults() {
   const [businesses, setBusinesses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isBrowser, setIsBrowser] = useState(false);
-  
-  // Nuevos estados para el filtro de distancia
+
+  // Estados para el filtro de distancia
   const [distance, setDistance] = useState('0');
   const [distanceValue, setDistanceValue] = useState([0]); // Para el slider
   const [userLocation, setUserLocation] = useState(null);
@@ -269,6 +501,12 @@ export default function BusinessSearchResults() {
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [locationError, setLocationError] = useState(null);
   const locationRequested = useRef(false);
+
+  // Nuevos estados para la ubicación manual
+  const [showManualLocationDialog, setShowManualLocationDialog] = useState(false);
+  const [ipLocation, setIpLocation] = useState(null);
+  const [isLoadingIpLocation, setIsLoadingIpLocation] = useState(false);
+
   const { toast } = useToast();
 
   // Mapeo de valores del slider a distancias en km
@@ -279,13 +517,58 @@ export default function BusinessSearchResults() {
     10: '10 km',
     20: '20 km'
   };
-  
+
   const distanceSteps = [0, 1, 5, 10, 20]; // Valores posibles en el slider
 
   // Check if running in browser
   useEffect(() => {
     setIsBrowser(true);
+
+    // Intentar cargar la ubicación guardada del localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const savedLocationString = localStorage.getItem('userLocation');
+        const savedAddressString = localStorage.getItem('userAddress');
+
+        if (savedLocationString) {
+          const savedLocation = JSON.parse(savedLocationString);
+          if (savedLocation && savedLocation.latitude && savedLocation.longitude) {
+            console.log("Cargando ubicación guardada:", savedLocation);
+            setUserLocation(savedLocation);
+          }
+        }
+
+        if (savedAddressString) {
+          setUserAddress(savedAddressString);
+        }
+      } catch (error) {
+        console.error("Error al cargar ubicación guardada:", error);
+      }
+    }
   }, []);
+
+  // Guardar ubicación en localStorage cuando cambie
+  useEffect(() => {
+    if (userLocation && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('userLocation', JSON.stringify(userLocation));
+        console.log("Ubicación guardada en localStorage:", userLocation);
+      } catch (error) {
+        console.error("Error al guardar ubicación:", error);
+      }
+    }
+  }, [userLocation]);
+
+  // Guardar dirección en localStorage cuando cambie
+  useEffect(() => {
+    if (userAddress && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('userAddress', userAddress);
+      } catch (error) {
+        console.error("Error al guardar dirección:", error);
+      }
+    }
+  }, [userAddress]);
 
   // Parse URL search params on component mount
   useEffect(() => {
@@ -306,7 +589,7 @@ export default function BusinessSearchResults() {
       setIsMapView(urlView === 'map');
       setViewMode(urlViewMode);
       setDistance(urlDistance);
-      
+
       // Configurar el valor del slider basado en la distancia de la URL
       const distanceNum = parseInt(urlDistance);
       const sliderIndex = distanceSteps.indexOf(distanceNum);
@@ -315,7 +598,7 @@ export default function BusinessSearchResults() {
       } else {
         setDistanceValue([0]); // Valor predeterminado (sin límite)
       }
-      
+
       // Si hay un filtro de distancia en la URL, solicitar la ubicación
       if (urlDistance !== '0') {
         requestUserLocation();
@@ -336,51 +619,131 @@ export default function BusinessSearchResults() {
   // Función para solicitar la ubicación del usuario
   const requestUserLocation = () => {
     if (!navigator.geolocation) {
-      setLocationError('Tu navegador no soporta geolocalización');
+      // Si no hay soporte para geolocalización, verificar si ya tenemos ubicación guardada
+      if (userLocation) {
+        toast({
+          title: "Usando ubicación guardada",
+          description: "Se está utilizando tu ubicación guardada anteriormente.",
+        });
+        return;
+      }
+
+      // Si no hay ubicación guardada, iniciar proceso alternativo
+      handleGeolocationFailure('Tu navegador no soporta geolocalización');
       return;
     }
-    
-    if (locationRequested.current) return;
-    locationRequested.current = true;
-    
+
     setIsLoadingLocation(true);
     setLocationError(null);
-    
+    locationRequested.current = true;
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const coords = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude
         };
+        console.log("Ubicación obtenida por geolocalización:", coords);
+
+        // Actualizar el estado con las nuevas coordenadas
         setUserLocation(coords);
-        
+
         // Intentar obtener la dirección de las coordenadas
         const address = await getAddressFromCoordinates(coords.latitude, coords.longitude);
         setUserAddress(address);
-        
+
         setIsLoadingLocation(false);
+
+        // Si hay un filtro de distancia activo, mantenerlo con la nueva ubicación
+        if (distance !== '0') {
+          console.log(`Ubicación actualizada, recalculando negocios con filtro de distancia: ${distance}km`);
+        }
+
         toast({
-          title: "Ubicación obtenida",
-          description: "Se utilizará tu ubicación para filtrar negocios cercanos.",
+          title: "Ubicación actualizada",
+          description: "Se utilizará tu ubicación actual para filtrar negocios cercanos.",
         });
       },
-      (error) => {
-        setLocationError('No se pudo obtener tu ubicación. ' + 
-          (error.code === 1 
-            ? 'Has denegado el permiso.' 
-            : error.code === 2 
-              ? 'Ubicación no disponible.' 
-              : 'Tiempo de espera agotado.'));
-        setIsLoadingLocation(false);
-        setDistance('0'); // Resetear distancia si no se puede obtener ubicación
-        toast({
-          variant: "destructive",
-          title: "Error de ubicación",
-          description: "No se pudo obtener tu ubicación. Los resultados no se filtrarán por distancia.",
-        });
+      async (error) => {
+        console.error("Error de geolocalización:", error);
+
+        // Verificar si ya tenemos una ubicación guardada
+        if (userLocation) {
+          console.log("Usando ubicación guardada previamente:", userLocation);
+          setIsLoadingLocation(false);
+          toast({
+            variant: "warning",
+            title: "Usando ubicación guardada",
+            description: "No se pudo obtener tu ubicación actual. Se utilizará la ubicación guardada anteriormente.",
+          });
+          return;
+        }
+
+        // Si no hay ubicación guardada, iniciar proceso alternativo
+        await handleGeolocationFailure(
+          'No se pudo obtener tu ubicación. ' +
+          (error.code === 1
+            ? 'Has denegado el permiso.'
+            : error.code === 2
+              ? 'Ubicación no disponible.'
+              : 'Tiempo de espera agotado.')
+        );
       },
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
+  };
+
+  // Función para manejar el fallo de geolocalización
+  const handleGeolocationFailure = async (errorMessage) => {
+    setLocationError(errorMessage);
+    setIsLoadingLocation(false);
+
+    // Intentar obtener ubicación por IP
+    setIsLoadingIpLocation(true);
+    try {
+      const ipLocationData = await getLocationByIP();
+      setIpLocation(ipLocationData);
+
+      // Mostrar diálogo para selección manual o confirmación de ubicación por IP
+      setShowManualLocationDialog(true);
+    } catch (error) {
+      console.error("Error al obtener ubicación por IP:", error);
+    } finally {
+      setIsLoadingIpLocation(false);
+    }
+
+    // Por ahora, desactivamos el filtro de distancia
+    setDistance('0');
+    setDistanceValue([0]);
+
+    toast({
+      variant: "destructive",
+      title: "Error de ubicación",
+      description: "No se pudo obtener tu ubicación automáticamente. Por favor, ingresa tu ubicación manualmente.",
+    });
+  };
+
+  // Función para manejar la confirmación de ubicación manual
+  const handleManualLocationConfirm = (locationData) => {
+    // Actualizar estados con la ubicación elegida
+    setUserLocation({
+      latitude: locationData.latitude,
+      longitude: locationData.longitude
+    });
+
+    setUserAddress(locationData.display);
+    setShowManualLocationDialog(false);
+
+    // Si había una distancia seleccionada, la mantenemos
+    if (distanceValue[0] > 0) {
+      const selectedDistance = distanceSteps[distanceValue[0]].toString();
+      setDistance(selectedDistance);
+    }
+
+    toast({
+      title: "Ubicación actualizada",
+      description: "Se utilizará la ubicación seleccionada para filtrar negocios cercanos.",
+    });
   };
 
   // Fetch businesses when filters change
@@ -430,12 +793,28 @@ export default function BusinessSearchResults() {
   const handleDistanceSliderChange = (value) => {
     const sliderPosition = value[0];
     const selectedDistance = distanceSteps[sliderPosition].toString();
+
+    console.log(`Cambio en slider de distancia: ${selectedDistance}km, posición: ${sliderPosition}`);
     setDistanceValue(value);
-    setDistance(selectedDistance);
-    
-    // Si se selecciona un valor de distancia mayor a 0 y aún no tenemos la ubicación del usuario
-    if (selectedDistance !== '0' && !userLocation && !isLoadingLocation && !locationError) {
-      requestUserLocation();
+
+    // Si se selecciona un valor de distancia mayor a 0 
+    if (selectedDistance !== '0') {
+      // Si ya tenemos ubicación (guardada o actual), aplicar filtro directamente
+      if (userLocation) {
+        console.log("Aplicando filtro de distancia con ubicación existente:", selectedDistance);
+        setDistance(selectedDistance);
+      }
+      // Si no tenemos ubicación, intentar obtenerla
+      else if (!isLoadingLocation) {
+        console.log("Solicitando ubicación para filtrar por distancia");
+        requestUserLocation();
+        // Guardamos la distancia seleccionada para aplicarla cuando tengamos ubicación
+        setDistance(selectedDistance);
+      }
+    } else {
+      // Si se selecciona "Sin límite", actualizar distance directamente
+      console.log("Desactivando filtro de distancia");
+      setDistance('0');
     }
   };
 
@@ -468,7 +847,7 @@ export default function BusinessSearchResults() {
               </SelectContent>
             </Select>
           </div>
-          
+
           {/* Segunda fila en móvil: Rating y Sort */}
           <div className="flex w-full gap-2 items-center">
             {/* Rating Filter */}
@@ -503,7 +882,7 @@ export default function BusinessSearchResults() {
               </Select>
             </div>
           </div>
-          
+
           {/* Tercera fila en móvil: Distancia */}
           <div className={cn(
             "flex flex-col gap-2 bg-background p-3 rounded-md border",
@@ -554,29 +933,41 @@ export default function BusinessSearchResults() {
                 <span>20 km</span>
               </div>
             </div>
-            
+
             {!userLocation && distance !== '0' && !isLoadingLocation ? (
               <div className="text-xs text-muted-foreground flex justify-between items-center">
                 <span>
                   {locationError ? "No se pudo obtener tu ubicación" : "Esperando ubicación..."}
                 </span>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={requestUserLocation}
-                >
-                  Reintentar
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={requestUserLocation}
+                  >
+                    Reintentar
+                  </Button>
+                  {locationError && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setShowManualLocationDialog(true)}
+                    >
+                      Configurar manualmente
+                    </Button>
+                  )}
+                </div>
               </div>
             ) : userLocation && (
               <div className="text-xs flex items-center gap-1 text-primary-foreground/80">
-                <Navigation className="h-3 w-3" />
+                <LocateFixed className="h-3 w-3" />
                 <span className="truncate">{userAddress || `${userLocation.latitude.toFixed(5)}, ${userLocation.longitude.toFixed(5)}`}</span>
               </div>
             )}
           </div>
-          
+
           {/* Cuarta fila en móvil: Botones de vista */}
           <div className="flex gap-2 w-full">
             {!isMapView && (
@@ -608,15 +999,29 @@ export default function BusinessSearchResults() {
               onClick={() => handleMapViewToggle(true)}
               className="flex-1"
             >
-              <LocateFixed className="mr-2 h-4 w-4" /> Mapa
+              <Map className="mr-2 h-4 w-4" /> Mapa
+            </Button>
+
+            {/* Botón Mi ubicación (solo icono) */}
+            <Button
+              variant="outline"
+              onClick={requestUserLocation}
+              disabled={isLoadingLocation}
+              className="w-10 px-0"
+            >
+              {isLoadingLocation ? (
+                <span className="animate-spin text-xs">↻</span>
+              ) : (
+                <LocateFixed className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>
-        
+
         {/* Vista escritorio: todos los elementos en línea horizontal */}
         <div className="hidden sm:flex flex-wrap items-center gap-3">
           <Filter className="h-5 w-5 text-muted-foreground hidden lg:block" />
-          
+
           {/* Contenedor flexible para los filtros */}
           <div className="flex flex-1 flex-wrap gap-2 items-center">
             {/* Category Filter */}
@@ -658,7 +1063,7 @@ export default function BusinessSearchResults() {
                 {userLocation && <SelectItem value="distance">Más cercanos</SelectItem>}
               </SelectContent>
             </Select>
-            
+
             {/* Distance Compact */}
             <div className="flex-1 min-w-[180px] md:min-w-[240px] max-w-[280px] flex items-center gap-2 p-2 bg-background rounded-md border">
               <div className="flex items-center gap-1">
@@ -666,7 +1071,7 @@ export default function BusinessSearchResults() {
                 <span className="text-xs whitespace-nowrap">Distancia:</span>
                 {isLoadingLocation && <span className="animate-spin text-xs">↻</span>}
               </div>
-              
+
               <div className="flex-1 px-1">
                 <Slider
                   value={distanceValue}
@@ -680,28 +1085,37 @@ export default function BusinessSearchResults() {
                   disabled={isLoadingLocation}
                 />
               </div>
-              
+
               <div>
                 <Badge variant={distance === '0' ? "outline" : "default"} className="text-xs whitespace-nowrap">
                   {distanceMarks[distanceSteps[distanceValue[0]]]}
                 </Badge>
               </div>
-              
-              {locationError && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <AlertCircle className="h-4 w-4 text-destructive cursor-help shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-[250px]">
-                      {locationError}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+
+              {locationError ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0"
+                  onClick={() => setShowManualLocationDialog(true)}
+                >
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertCircle className="h-4 w-4 text-destructive" />
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[250px]">
+                        {locationError}
+                        <br />
+                        Haz clic para configurar tu ubicación manualmente.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Button>
+              ) : null}
             </div>
           </div>
-          
+
           {/* View Toggle Buttons */}
           <div className="flex gap-2">
             {!isMapView && (
@@ -734,15 +1148,39 @@ export default function BusinessSearchResults() {
               onClick={() => handleMapViewToggle(true)}
               size="sm"
             >
-              <LocateFixed className="mr-2 h-4 w-4" /> Mapa
+              <Map className="mr-2 h-4 w-4" /> Mapa
             </Button>
+
+            {/* Botón Mi Ubicación (solo icono) */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={requestUserLocation}
+                    disabled={isLoadingLocation}
+                  >
+                    {isLoadingLocation ? (
+                      <span className="animate-spin text-xs">↻</span>
+                    ) : (
+                      <LocateFixed className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Mi ubicación</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
-        
+
         {/* Mostrar información de la ubicación en modo escritorio */}
         {userLocation && !isLoadingLocation && (
           <div className="hidden sm:flex text-xs items-center gap-1 mt-1 text-muted-foreground">
-            <Navigation className="h-3 w-3" />
+            <LocateFixed className="h-3 w-3" />
             <span className="truncate">Tu ubicación: {userAddress || `${userLocation.latitude.toFixed(5)}, ${userLocation.longitude.toFixed(5)}`}</span>
           </div>
         )}
@@ -759,7 +1197,11 @@ export default function BusinessSearchResults() {
                 <Skeleton className="h-[500px] w-full rounded-lg" />
               </div>}>
                 <div className="w-full h-full">
-                  <MapView businesses={businesses} userLocation={userLocation} />
+                  <MapView
+                    businesses={businesses}
+                    userLocation={userLocation}
+                    distance={distance}
+                  />
                 </div>
               </Suspense>
             ) : (
@@ -810,6 +1252,14 @@ export default function BusinessSearchResults() {
           )}
         </section>
       )}
+
+      {/* Agregar el diálogo de ubicación manual */}
+      <ManualLocationDialog
+        open={showManualLocationDialog}
+        onOpenChange={setShowManualLocationDialog}
+        onConfirm={handleManualLocationConfirm}
+        ipLocation={ipLocation}
+      />
     </div>
   );
 }

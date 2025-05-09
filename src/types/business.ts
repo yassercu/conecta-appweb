@@ -15,6 +15,10 @@ export interface Business {
   description: string;
   latitude: number;
   longitude: number;
+  coordinates?: { // Campo para facilitar filtrado por distancia
+    latitude: number;
+    longitude: number;
+  };
   address: string;
   phone?: string;
   email?: string;
