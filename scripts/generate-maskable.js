@@ -5,10 +5,13 @@ const path = require('path');
 async function generateMaskableIcon() {
     try {
         const size = 512;
-        const svgBuffer = fs.readFileSync(path.join(__dirname, '../public/favicon.svg'));
+        const imageBuffer = fs.readFileSync(path.join(__dirname, '../public/logo.png'));
         const padding = Math.floor(size * 0.1);
-        await sharp(svgBuffer)
-            .resize(size - padding * 2, size - padding * 2)
+        await sharp(imageBuffer)
+            .resize(size - padding * 2, size - padding * 2, {
+                fit: 'contain',
+                background: { r: 0, g: 0, b: 0, alpha: 0 }
+            })
             .extend({
                 top: padding,
                 bottom: padding,
@@ -25,4 +28,4 @@ async function generateMaskableIcon() {
     }
 }
 
-generateMaskableIcon(); 
+generateMaskableIcon();

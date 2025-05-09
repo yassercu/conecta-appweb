@@ -10,16 +10,19 @@ if (!fs.existsSync(iconsDir)) {
 
 async function generatePWAIcons() {
     try {
-        // Leer el archivo SVG existente
-        const svgBuffer = fs.readFileSync(path.join(__dirname, '../public/favicon.svg'));
+        // Leer el archivo PNG existente
+        const imageBuffer = fs.readFileSync(path.join(__dirname, '../public/logo.png'));
 
         // Generar tamaños de iconos PWA
         const sizes = [192, 512];
 
         for (const size of sizes) {
             // Icono normal
-            await sharp(svgBuffer)
-                .resize(size, size)
+            await sharp(imageBuffer)
+                .resize(size, size, {
+                    fit: 'contain',
+                    background: { r: 0, g: 0, b: 0, alpha: 0 }
+                })
                 .png()
                 .toFile(path.join(iconsDir, `icon-${size}x${size}.png`));
 
@@ -29,7 +32,7 @@ async function generatePWAIcons() {
             if (size === 512) {
                 // Para máscaras PWA, agregamos padding del 10%
                 const padding = Math.floor(size * 0.1);
-                await sharp(svgBuffer)
+                await sharp(imageBuffer)
                     .resize(size - padding * 2, size - padding * 2)
                     .extend({
                         top: padding,
@@ -46,7 +49,7 @@ async function generatePWAIcons() {
         }
 
         // Generar ícono para Apple
-        await sharp(svgBuffer)
+        await sharp(imageBuffer)
             .resize(180, 180)
             .png()
             .toFile(path.join(iconsDir, 'apple-touch-icon.png'));
@@ -59,4 +62,4 @@ async function generatePWAIcons() {
     }
 }
 
-generatePWAIcons(); 
+generatePWAIcons();
