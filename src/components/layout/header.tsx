@@ -19,14 +19,18 @@ export function Header({ children, isHomePage = false }: HeaderProps) {
       {/* Barra de navegación - visible en todas las páginas */}
       <nav className="space-nav">
         <div className="container mx-auto h-16 px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center ">
             <a href="/" className="flex items-center gap-2 text-xl font-bold whitespace-nowrap">
-              <Sparkles className="h-6 w-6 text-accent" />
-              <span className="hidden sm:inline">Orbita-Y</span>
+              {/* <span className="text-white   w-auto hidden sm:block">Orbita-Y ~</span> */}
+              <img
+                src="/assets/logo_conTexto.webp"
+                alt="Orbita-Y Logo"
+                className="h-24 pt-4 w-auto hidden sm:block"
+              />
             </a>
           </div>
 
-          <div className="flex-1 px-4 max-w-xl mx-auto">
+          <div className="flex-1  sm:px-10 mx-full">
             <SearchBar />
           </div>
 
@@ -99,28 +103,39 @@ export function Header({ children, isHomePage = false }: HeaderProps) {
             <div className="absolute bottom-40 right-[10%] w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-700/20 blur-sm animate-float hidden lg:block"></div>
 
             <div className="container mx-auto px-4 relative z-10">
-              <div className="text-center max-w-2xl mx-auto">
-                <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
-                  <span className="inline-block relative">
-                    Orbita de Negocios
-                    <span className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/10 blur-lg -z-10"></span>
-                  </span>
-                </h1>
-                <p className="mt-6 text-lg leading-8 text-gray-300">
-                  Descubre y conecta con los mejores negocios locales. Tu próxima experiencia extraordinaria está a solo un clic de distancia.
-                </p>
-                <div className="mt-10 flex items-center justify-center sm:gap-x-6 gap-2">
-                  <Button size="lg" className="relative group" asChild>
-                    <a href="/register">
-                      Registra tu Negocio
-                      <span className="absolute -inset-0.5 bg-primary rounded-lg blur opacity-30 group-hover:opacity-70 transition duration-300 -z-10"></span>
-                    </a>
-                  </Button>
-                  <Button variant="outline" size="lg" className="text-blue border-white hover:bg-white/10" asChild>
-                    <a href="/search">
-                      Explorar Negocios
-                    </a>
-                  </Button>
+              <div className="text-center max-w-2xl mx-auto relative">
+                {/* Logo hero reposicionado */}
+                <div className="flex justify-center md:absolute md:-top-20 md:inset-x-0 md:z-0">
+                  <img
+                    src="/assets/logo_hero.webp"
+                    alt="Orbita-Y Hero"
+                    className="w-auto h-60 sm:h-32 md:h-96 object-cover mask-radial-at-center mask-radial-from-50% mask-radial-to-70% animate-float-slow md:opacity-20"
+                  />
+                </div>
+                {/* Contenido del hero con z-index para estar sobre el logo en md */}
+                <div className="relative md:z-10">
+                  <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
+                    <span className="inline-block relative">
+                      Orbita de Negocios
+                      <span className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/10 blur-lg -z-10"></span>
+                    </span>
+                  </h1>
+                  <p className="mt-6 text-lg leading-8 text-gray-300">
+                    Descubre y conecta con los mejores negocios locales. Tu próxima experiencia extraordinaria está a solo un clic de distancia.
+                  </p>
+                  <div className="mt-10 flex items-center justify-center sm:gap-x-6 gap-2">
+                    <Button size="lg" className="relative group" asChild>
+                      <a href="/register">
+                        Registra tu Negocio
+                        <span className="absolute -inset-0.5 bg-primary rounded-lg blur opacity-30 group-hover:opacity-70 transition duration-300 -z-10"></span>
+                      </a>
+                    </Button>
+                    <Button variant="outline" size="lg" className="text-blue border-white hover:bg-white/10" asChild>
+                      <a href="/search">
+                        Explorar Negocios
+                      </a>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
