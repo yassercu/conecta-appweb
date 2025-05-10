@@ -1,5 +1,5 @@
 import { httpClient } from './httpClient';
-import { ENDPOINTS } from './config';
+import { ENDPOINTS } from '@/config/api';
 
 /**
  * Interfaz para países

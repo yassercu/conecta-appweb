@@ -1,136 +1,101 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArrowRight, Star } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { useCategories, useBusinesses } from '@/hooks/useApi';
-
-// Business Card Component with layout variations
-function BusinessCard({ business, layout }) {
-  return (
-    <Card className="overflow-hidden group relative border-primary/10 bg-card/80 backdrop-blur-sm rounded-xl 
-      shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300 flex flex-col
-      hover:scale-[1.02] hover:-translate-y-1">
-      <a href={`/business/${business.id}`} className="block">
-        {/* Image Container */}
-        <div className={`relative ${layout === 'compact' ? 'aspect-square' : 'aspect-[4/3]'}`}>
-          <img
-            src={business.image || '/assets/businesses/default.svg'}
-            alt={business.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-          {/* Efecto de brillo orbital */}
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          {/* Destacado Badge */}
-          {business.promoted && (
-            <div className="absolute top-2 right-2 animate-orbit-small">
-              <Badge
-                className="bg-amber-300/90 hover:bg-amber-300 text-black text-xs px-1.5 py-0.5 
-                rounded-full shadow-lg shadow-amber-500/20 border border-amber-300/80 backdrop-blur-sm font-semibold text-[8px] md:text-[10px]"
-              >
-                ★ DESTACADO
-              </Badge>
-            </div>
-          )}
-        </div>
-        {/* Content Container */}
-        <CardContent className={`p-3 flex-grow flex flex-col ${layout === 'compact' ? 'justify-end' : 'space-y-1'}`}>
-          {/* Compact Layout: Overlay style */}
-          {layout === 'compact' && (
-            <div className="relative z-10">
-              <h3 className="font-semibold text-xs md:text-sm truncate group-hover:text-primary transition-colors">
-                {business.name}
-              </h3>
-              <div className="flex items-center gap-1 text-[10px] md:text-xs mt-0.5">
-                <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                <span className="font-medium">{business.rating.toFixed(1)}</span>
-                <span className="text-primary/40">•</span>
-                <span className="text-muted-foreground truncate">{business.category}</span>
-              </div>
-            </div>
-          )}
-          {/* Detailed Layout: Below image */}
-          {layout === 'detailed' && (
-            <>
-              <h3 className="font-semibold text-xs md:text-sm truncate text-card-foreground group-hover:text-primary transition-colors">
-                {business.name}
-              </h3>
-              <p className="text-[10px] md:text-xs text-muted-foreground line-clamp-2 flex-grow">{business.description}</p>
-              <div className="flex justify-between items-center text-[10px] md:text-xs pt-1">
-                <Badge variant="secondary" className="text-[8px] md:text-[10px] bg-primary/10 hover:bg-primary/20 transition-colors px-1.5 py-0.5">
-                  {business.category}
-                </Badge>
-                <div className="flex items-center gap-0.5 text-yellow-500">
-                  <Star className="h-3 w-3 fill-current" />
-                  <span className="font-medium text-foreground">{business.rating.toFixed(1)}</span>
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </a>
-    </Card>
-  );
-}
+import BusinessCard from './BusinessCard';
 
 export default function FeaturedSections() {
-  // Usar useRef para rastrear si estamos en el primer render
-  const isFirstRender = useRef(true);
+  // Usar un flag para evitar múltiples reconstrucciones
+  const [hasFetchedData, setHasFetchedData] = useState(false);
 
-  // Obtener categorías desde la API
+  // Usar opciones de caché más agresivas para reducir peticiones
   const { data: categories, loading: loadingCategories } = useCategories({
     useCache: true,
-    cacheKey: 'categories:all'
+    cacheKey: 'categories:all',
+    skip: hasFetchedData // Evitar peticiones adicionales si ya tenemos datos
   });
 
-  // Obtener todos los negocios desde la API
+  // Obtener todos los negocios desde la API con la misma estrategia
   const { data: allBusinesses, loading: loadingBusinesses } = useBusinesses({
     useCache: true,
-    cacheKey: 'businesses:all'
+    cacheKey: 'businesses:all',
+    skip: hasFetchedData // Evitar peticiones adicionales si ya tenemos datos
   });
 
   // Estado para almacenar las secciones generadas
   const [sections, setSections] = useState([]);
 
-  // Generar secciones una vez que tengamos los datos
-  useEffect(() => {
-    // Proteger contra recreaciones innecesarias de secciones
-    if (!categories || !allBusinesses) return;
+  // Agregar estado para depuración
+  const [debugInfo, setDebugInfo] = useState({
+    promotedCount: 0,
+    totalBusinesses: 0
+  });
 
-    // Evita recrear secciones si los datos no han cambiado
-    // Solo si tenemos ambos conjuntos de datos y no estamos recreando innecesariamente
-    console.log("Generando secciones con datos actualizados");
-
-    // Crear secciones basadas en categorías populares
-    const popularCategories = [...categories]
-      .sort(() => {
-        // Usamos una semilla fija para que el orden aleatorio sea consistente
-        return 0.5 - Math.random();
-      })
-      .slice(0, 3); // Tomar las 3 primeras
-
-    const newSections = [
-      // Sección "Novedades en el Barrio" con negocios aleatorios
+  // Usar useMemo para calcular las secciones solo cuando los datos cambien
+  // y evitar recreaciones en cada renderizado
+  const memoizedSections = useMemo(() => {
+    if (!categories || !allBusinesses) return [];
+    
+    console.log("Generando secciones (memoizadas)");
+    
+    // Verificar cuántos negocios tienen la propiedad promoted=true
+    const promotedBusinesses = allBusinesses.filter(b => b.promoted === true);
+    setDebugInfo({
+      promotedCount: promotedBusinesses.length,
+      totalBusinesses: allBusinesses.length
+    });
+    
+    console.log("Negocios promocionados:", promotedBusinesses.length, "de", allBusinesses.length);
+    // Si hay negocios promocionados, mostrar el primero para depuración
+    if (promotedBusinesses.length > 0) {
+      console.log("Ejemplo de negocio promocionado:", promotedBusinesses[0]);
+    }
+    
+    // Elegir categorías populares de manera determinista
+    // Usamos un array de índices fijos en lugar de orden aleatorio
+    const categoryIndices = [1, 3, 5];  // Índices específicos para seleccionar categorías consistentes
+    const popularCategories = categoryIndices
+      .filter(index => categories[index])  // Asegurar que existan esas categorías
+      .map(index => categories[index]);
+    
+    // Si no tenemos suficientes categorías con el enfoque determinista, tomamos las primeras
+    const selectedCategories = popularCategories.length >= 3 ? 
+      popularCategories : categories.slice(0, 3);
+    
+    // Crear secciones de manera determinista
+    return [
+      // "Novedades en el Barrio" - Usar los 10 negocios mejor calificados en lugar de aleatorios
       {
         title: "Novedades en el Barrio",
         businesses: [...allBusinesses]
-          .sort(() => 0.5 - Math.random()) // Ordenar aleatoriamente con semilla fija
-          .slice(0, 10) // Tomar los 10 primeros
+          .sort((a, b) => b.rating - a.rating)
+          .slice(0, 10)
       },
       // Secciones por categoría
-      ...popularCategories.map(category => ({
-        title: `Mejores en ${category.name}`,
+      ...selectedCategories.map(category => ({
+        title: `Mejores en ${typeof category === 'object' ? category.name : category}`,
         businesses: allBusinesses
-          .filter(b => b.category === category.name) // Filtrar por categoría
-          .sort((a, b) => b.rating - a.rating) // Ordenar por rating
-          .slice(0, 5) // Tomar los 5 mejores
+          .filter(b => b.category === (typeof category === 'object' ? category.name : category))
+          .sort((a, b) => b.rating - a.rating)
+          .slice(0, 5)
       }))
     ];
-
-    setSections(newSections);
   }, [categories, allBusinesses]);
 
-  // Mostrar un estado de carga
-  if (loadingCategories || loadingBusinesses) {
+  // Generar secciones solo cuando los datos estén disponibles y no se hayan procesado antes
+  useEffect(() => {
+    if (!categories || !allBusinesses || hasFetchedData) return;
+    
+    console.log("Actualizando secciones desde efectos");
+    setSections(memoizedSections);
+    
+    // Marcar que ya hemos procesado los datos para evitar reprocesamiento
+    if (memoizedSections.length > 0) {
+      setHasFetchedData(true);
+    }
+  }, [categories, allBusinesses, memoizedSections, hasFetchedData]);
+
+  // Mostrar un estado de carga solo durante la carga inicial
+  if ((loadingCategories || loadingBusinesses) && !hasFetchedData) {
     return (
       <div className="py-20 flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -139,13 +104,23 @@ export default function FeaturedSections() {
   }
 
   // Si no hay datos, no mostramos nada
-  if (!sections.length) {
+  if (sections.length === 0 && memoizedSections.length === 0) {
     return null;
   }
 
+  // Usar las secciones calculadas o memorizadas, lo que esté disponible
+  const displaySections = sections.length > 0 ? sections : memoizedSections;
+
   return (
     <div className="max-w-6xl mx-auto">
-      {sections.map((section, index) => (
+      {/* Mostrar información de depuración */}
+      {debugInfo.promotedCount > 0 && (
+        <div className="text-xs text-muted-foreground mb-2 p-2 bg-primary/5 rounded-md">
+          Hay {debugInfo.promotedCount} negocios promocionados de un total de {debugInfo.totalBusinesses}.
+        </div>
+      )}
+      
+      {displaySections.map((section, index) => (
         <section key={index} className="space-y-4 mb-8">
           {/* Título de sección con efecto de destello */}
           <div className="relative">

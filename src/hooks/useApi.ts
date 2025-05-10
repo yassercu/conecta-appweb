@@ -2,9 +2,12 @@
  * Hook para utilizar el servicio API en componentes React
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import apiService from '@/services/apiService';
 import { ApiError } from '@/services/api/httpClient';
+
+// Cache de tiempo de vida de página para reducir peticiones entre navegaciones
+const PAGE_LIFETIME_CACHE = new Map();
 
 /**
  * Tipo para el estado de la solicitud API
@@ -25,6 +28,10 @@ interface UseApiOptions {
     useCache?: boolean;
     cacheKey?: string;
     forceRefresh?: boolean;
+    // Nueva opción para usar caché de tiempo de vida de página
+    usePageCache?: boolean;
+    // Tiempo de expiración de caché (en ms)
+    cacheExpiration?: number;
 }
 
 /**
@@ -43,9 +50,11 @@ function useApi<T, P extends any[]>(
         skip = false,
         onSuccess,
         onError,
-        useCache,
+        useCache = true,
         cacheKey,
-        forceRefresh
+        forceRefresh = false,
+        usePageCache = true,
+        cacheExpiration = 5 * 60 * 1000 // 5 minutos por defecto
     } = options;
 
     // Estado de la solicitud
@@ -55,9 +64,64 @@ function useApi<T, P extends any[]>(
         error: null
     });
 
+    // Referencia para evitar actualizaciones de estado en componentes desmontados
+    const mounted = useRef(true);
+    
+    // Referencia para rastrear el momento de la última petición
+    const lastFetchTime = useRef<number | null>(null);
+
+    // Registrar montaje/desmontaje del componente
+    useEffect(() => {
+        mounted.current = true;
+        return () => {
+            mounted.current = false;
+        };
+    }, []);
+
+    // Verificar caché de tiempo de vida de página primero
+    useEffect(() => {
+        if (skip || forceRefresh || !usePageCache || !cacheKey) return;
+        
+        const cachedData = PAGE_LIFETIME_CACHE.get(cacheKey);
+        if (cachedData) {
+            const { data, timestamp } = cachedData;
+            
+            // Verificar si el caché ha expirado
+            const now = Date.now();
+            if (now - timestamp < cacheExpiration) {
+                console.log(`Usando datos en caché de página para: ${cacheKey}`);
+                if (mounted.current) {
+                    setState({ data, loading: false, error: null });
+                    if (onSuccess) onSuccess(data);
+                }
+            } else {
+                // Caché expirado, eliminarlo
+                PAGE_LIFETIME_CACHE.delete(cacheKey);
+            }
+        }
+    }, [cacheKey, skip, forceRefresh, usePageCache, onSuccess, cacheExpiration]);
+
     // Función para ejecutar la solicitud API con reintentos
     const execute = useCallback(async (...args: P) => {
+        // No actualizar el estado si el componente está desmontado
+        if (!mounted.current) return null;
+        
+        // Si tenemos un cacheKey, verificar si ya hemos hecho una petición reciente
+        if (cacheKey && usePageCache && lastFetchTime.current) {
+            const now = Date.now();
+            const timeSinceLastFetch = now - lastFetchTime.current;
+            
+            // Si han pasado menos de 2 segundos desde la última petición y tenemos datos en caché
+            if (timeSinceLastFetch < 2000 && PAGE_LIFETIME_CACHE.has(cacheKey)) {
+                console.log(`Petición descartada (muy reciente): ${cacheKey}`);
+                return PAGE_LIFETIME_CACHE.get(cacheKey).data;
+            }
+        }
+        
         setState(prev => ({ ...prev, loading: true, error: null }));
+        
+        // Registrar el momento de la petición
+        lastFetchTime.current = Date.now();
 
         // Configuración de reintentos
         const maxRetries = 2;
@@ -75,7 +139,18 @@ function useApi<T, P extends any[]>(
 
                 const result = await apiFunction(...apiParams);
 
+                // No actualizar el estado si el componente está desmontado
+                if (!mounted.current) return result;
+
                 setState({ data: result, loading: false, error: null });
+
+                // Guardar en caché de tiempo de vida de página
+                if (cacheKey && usePageCache) {
+                    PAGE_LIFETIME_CACHE.set(cacheKey, { 
+                        data: result, 
+                        timestamp: Date.now() 
+                    });
+                }
 
                 if (onSuccess) {
                     onSuccess(result);
@@ -104,7 +179,9 @@ function useApi<T, P extends any[]>(
             }
         }
 
-        // Si llegamos aquí, se agotaron los reintentos o es un error diferente a timeout
+        // No actualizar el estado si el componente está desmontado
+        if (!mounted.current) return null;
+        
         setState({ data: null, loading: false, error: lastError });
 
         if (onError && lastError) {
@@ -112,16 +189,44 @@ function useApi<T, P extends any[]>(
         }
 
         throw lastError;
-    }, [apiFunction, params, onSuccess, onError]);
+    }, [apiFunction, params, onSuccess, onError, cacheKey, usePageCache]);
 
     // Función para recargar los datos
     const refresh = useCallback(() => {
         return execute(...params);
     }, [execute, params]);
 
+    // Función para limpiar un elemento específico de la caché de página
+    const clearPageCache = useCallback((key?: string) => {
+        if (key) {
+            PAGE_LIFETIME_CACHE.delete(key);
+        } else if (cacheKey) {
+            PAGE_LIFETIME_CACHE.delete(cacheKey);
+        }
+    }, [cacheKey]);
+
     // Cargar datos automáticamente a menos que se indique lo contrario
     useEffect(() => {
-        if (!skip) {
+        // Si se debe omitir la carga, no hacer nada
+        if (skip) return;
+        
+        // Si hay datos en caché de página, no hacer petición
+        if (usePageCache && cacheKey && PAGE_LIFETIME_CACHE.has(cacheKey) && !forceRefresh) {
+            const { data, timestamp } = PAGE_LIFETIME_CACHE.get(cacheKey);
+            const now = Date.now();
+            
+            // Si el caché aún es válido, usarlo
+            if (now - timestamp < cacheExpiration) {
+                console.log(`useEffect: Usando datos en caché de página para: ${cacheKey}`);
+                setState({ data, loading: false, error: null });
+                if (onSuccess) onSuccess(data);
+                return;
+            } else {
+                // Caché expirado, eliminarlo
+                PAGE_LIFETIME_CACHE.delete(cacheKey);
+            }
+        }
+        
             // Envolvemos en un callback inmediato para proteger contra cambios de referencia
             (async () => {
                 try {
@@ -131,17 +236,17 @@ function useApi<T, P extends any[]>(
                     console.log('Error capturado en useEffect:', (error as Error).message);
                 }
             })();
-        }
         // Dependencias estables: evitar re-ejecución cuando params no cambia realmente
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [skip, execute]);
+    }, [skip, execute, forceRefresh]);
 
     return {
         ...state,
         execute,
         refresh,
+        clearPageCache,
         // Exponer funciones útiles del servicio API
-        clearCache: apiService.cache.clear
+        clearApiCache: apiService.cache.clear
     };
 }
 
@@ -163,32 +268,96 @@ export function useBusiness(id: string, options: UseApiOptions = {}) {
  * Hook para obtener negocios destacados
  */
 export function useFeaturedBusinesses(options: UseApiOptions = {}) {
-    return useApi(apiService.businesses.getFeatured, [], options);
+    return useApi(apiService.businesses.getFeatured, [], {
+        usePageCache: true,
+        cacheExpiration: 10 * 60 * 1000, // 10 minutos
+        ...options
+    });
 }
 
 /**
  * Hook para obtener negocios promocionados
  */
 export function usePromotedBusinesses(options: UseApiOptions = {}) {
-    return useApi(apiService.businesses.getPromoted, [], options);
+    return useApi(apiService.businesses.getPromoted, [], {
+        usePageCache: true,
+        cacheExpiration: 10 * 60 * 1000, // 10 minutos
+        ...options
+    });
 }
 
 /**
  * Hook para buscar negocios con filtros
  */
-export function useBusinessSearch(filters: any, options: UseApiOptions = {}) {
-    return useApi(apiService.businesses.search, [filters], {
+export function useBusinessSearch(filters?: any, options: UseApiOptions = {}) {
+    // Proporcionar un objeto vacío por defecto si filters es undefined
+    const safeFilters = filters || {};
+    
+    // Crear un objeto para el filtro que asegure que tiene valores por defecto
+    const normalizedFilters = {
+        query: '',
+        category: 'Todas',
+        rating: '0',
+        sortBy: 'rating',
+        ...(typeof safeFilters === 'object' ? safeFilters : {})
+    };
+    
+    // Verificar si el filtro está vacío (todos los valores son default)
+    const isEmptyFilter = !normalizedFilters.query && 
+                         normalizedFilters.category === 'Todas' && 
+                         normalizedFilters.rating === '0';
+    
+    // Si el filtro está vacío, podríamos optimizar para no realizar la búsqueda
+    const shouldSkip = options.skip || isEmptyFilter;
+    
+    const apiCall = useApi(
+        apiService.businesses.search, 
+        [normalizedFilters], 
+        {
         ...options,
+            skip: shouldSkip,
         // No cachear búsquedas por defecto
-        useCache: options.useCache ?? false
-    });
+            useCache: options.useCache ?? false,
+            usePageCache: options.usePageCache ?? false,
+            // Manejar errores específicos de búsqueda si es necesario
+            onError: (error) => {
+                console.error("Error en búsqueda de negocios:", error);
+                if (options.onError) options.onError(error);
+            }
+        }
+    );
+    
+    return {
+        ...apiCall,
+        // Exponer apiService para uso directo - aplanar la estructura para facilitar acceso
+        apiService
+    };
 }
 
 /**
  * Hook para utilizar el servicio de categorías
  */
 export function useCategories(options: UseApiOptions = {}) {
-    return useApi(apiService.categories.getAll, [], options);
+    const result = useApi(apiService.categories.getAll, [], {
+        usePageCache: true,
+        cacheExpiration: 30 * 60 * 1000, // 30 minutos para categorías (cambian poco)
+        ...options
+    });
+    
+    // Procesar las categorías para devolver un formato utilizable
+    const processedData = result.data 
+        ? result.data.map((cat: any) => 
+            // Si es un objeto con propiedad name, usar esa propiedad
+            typeof cat === 'object' && cat !== null && 'name' in cat 
+                ? cat.name 
+                : cat
+          )
+        : ['Todas'];
+    
+    return {
+        ...result,
+        data: processedData
+    };
 }
 
 /**
@@ -202,35 +371,55 @@ export function useCategory(id: string, options: UseApiOptions = {}) {
  * Hook para obtener todos los países
  */
 export function useCountries(options: UseApiOptions = {}) {
-    return useApi(apiService.locations.getCountries, [], options);
+    return useApi(apiService.locations.getCountries, [], {
+        usePageCache: true,
+        cacheExpiration: 60 * 60 * 1000, // 1 hora para datos geográficos
+        ...options
+    });
 }
 
 /**
  * Hook para obtener todas las provincias
  */
 export function useProvinces(options: UseApiOptions = {}) {
-    return useApi(apiService.locations.getProvinces, [], options);
+    return useApi(apiService.locations.getProvinces, [], {
+        usePageCache: true,
+        cacheExpiration: 60 * 60 * 1000, // 1 hora
+        ...options
+    });
 }
 
 /**
  * Hook para obtener provincias por país
  */
 export function useProvincesByCountry(countryId: string, options: UseApiOptions = {}) {
-    return useApi(apiService.locations.getProvincesByCountry, [countryId], options);
+    return useApi(apiService.locations.getProvincesByCountry, [countryId], {
+        usePageCache: true,
+        cacheExpiration: 60 * 60 * 1000, // 1 hora
+        ...options
+    });
 }
 
 /**
  * Hook para obtener todos los municipios
  */
 export function useMunicipalities(options: UseApiOptions = {}) {
-    return useApi(apiService.locations.getMunicipalities, [], options);
+    return useApi(apiService.locations.getMunicipalities, [], {
+        usePageCache: true,
+        cacheExpiration: 60 * 60 * 1000, // 1 hora
+        ...options
+    });
 }
 
 /**
  * Hook para obtener municipios por provincia
  */
 export function useMunicipalitiesByProvince(provinceId: string, options: UseApiOptions = {}) {
-    return useApi(apiService.locations.getMunicipalitiesByProvince, [provinceId], options);
+    return useApi(apiService.locations.getMunicipalitiesByProvince, [provinceId], {
+        usePageCache: true,
+        cacheExpiration: 60 * 60 * 1000, // 1 hora
+        ...options
+    });
 }
 
 // Exportar hook principal y funciones auxiliares

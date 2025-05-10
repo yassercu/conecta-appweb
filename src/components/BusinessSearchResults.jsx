@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Star, MapPin, Filter, ArrowDownUp, LocateFixed, Map, List, Grid, Menu, AlertCircle, Navigation, Search } from 'lucide-react';
-import { categories, allBusinesses } from '@/lib/data';
+import { useCategories, useBusinesses, useBusinessSearch } from '@/hooks/useApi';
 import { useToast } from "@/components/ui/use-toast";
 import {
   Tooltip,
@@ -99,109 +99,15 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 // Simulate API call with filters
 async function fetchBusinesses(filters) {
-
-  // Simulating API delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-
-  // Primero aplicamos todos los filtros excepto el de distancia
-  let filtered = allBusinesses.filter(b =>
-    (b.name.toLowerCase().includes(filters.query.toLowerCase()) ||
-      b.category.toLowerCase().includes(filters.query.toLowerCase()) ||
-      b.description.toLowerCase().includes(filters.query.toLowerCase())) &&
-    (filters.category === 'Todas' || b.category === filters.category) &&
-    (filters.rating === '0' || b.rating >= parseInt(filters.rating))
-  );
-
-  // Aplicar filtro de distancia si están disponibles las coordenadas del usuario
-  if (filters.distance !== '0' && filters.userLocation?.latitude && filters.userLocation?.longitude) {
-    const maxDistance = parseInt(filters.distance);
-    console.log(`Filtrando por distancia: máximo ${maxDistance}km desde [${filters.userLocation.latitude}, ${filters.userLocation.longitude}]`);
-
-    // Guardar la cantidad de negocios antes del filtro de distancia
-    const beforeFilterCount = filtered.length;
-
-    filtered = filtered.filter(business => {
-      // Primero verificamos que las coordenadas de negocio existan
-      if (!business.coordinates?.latitude || !business.coordinates?.longitude) {
-        return false;
-      }
-
-      // Asegurar que las coordenadas son numéricas
-      const lat1 = parseFloat(filters.userLocation.latitude);
-      const lon1 = parseFloat(filters.userLocation.longitude);
-      const lat2 = parseFloat(business.coordinates.latitude);
-      const lon2 = parseFloat(business.coordinates.longitude);
-
-      // Verificar que las coordenadas sean válidas
-      if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) {
-        console.warn("Coordenadas inválidas para:", business.name);
-        return false;
-      }
-
-      // Calcular distancia entre el usuario y el negocio
-      const distance = calculateDistance(lat1, lon1, lat2, lon2);
-
-      // Para depuración
-      if (distance <= maxDistance) {
-        console.log(`Negocio "${business.name}" dentro del rango (${distance.toFixed(2)}km)`);
-      }
-
-      return distance <= maxDistance;
-    });
-
-    const afterFilterCount = filtered.length;
-    console.log(`Se filtraron por distancia: ${beforeFilterCount} negocios -> ${afterFilterCount} negocios dentro del rango de ${maxDistance}km`);
-
-    // Si no hay resultados después del filtro, mostramos un mensaje o simplemente devolvemos todos
-    if (filtered.length === 0) {
-      console.warn("No se encontraron negocios dentro del rango especificado");
-    }
+  try {
+    setIsLoading(true);
+    // Usar useBusinessSearch hook para obtener los datos filtrados
+    const result = await apiService.businesses.search(filters);
+    return result.businesses || [];
+  } catch (error) {
+    console.error("Error al buscar negocios:", error);
+    return [];
   }
-
-  // Sorting logic - prioritize promoted businesses first
-  if (filters.sortBy === 'rating') {
-    filtered.sort((a, b) => {
-      if (a.promoted !== b.promoted) return a.promoted ? -1 : 1;
-      return b.rating - a.rating || a.name.localeCompare(b.name);
-    });
-  } else if (filters.sortBy === 'name') {
-    filtered.sort((a, b) => {
-      if (a.promoted !== b.promoted) return a.promoted ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    });
-  } else if (filters.sortBy === 'distance' && filters.userLocation) {
-    filtered.sort((a, b) => {
-      if (a.promoted !== b.promoted) return a.promoted ? -1 : 1;
-
-      // Si algún negocio no tiene coordenadas, ponerlo al final
-      if (!a.coordinates && !b.coordinates) return 0;
-      if (!a.coordinates) return 1;
-      if (!b.coordinates) return -1;
-
-      const distanceA = calculateDistance(
-        filters.userLocation.latitude,
-        filters.userLocation.longitude,
-        a.coordinates.latitude,
-        a.coordinates.longitude
-      );
-
-      const distanceB = calculateDistance(
-        filters.userLocation.latitude,
-        filters.userLocation.longitude,
-        b.coordinates.latitude,
-        b.coordinates.longitude
-      );
-
-      return distanceA - distanceB;
-    });
-  } else {
-    filtered.sort((a, b) => {
-      if (a.promoted !== b.promoted) return a.promoted ? -1 : 1;
-      return 0;
-    });
-  }
-
-  return filtered;
 }
 
 // Card de negocio para vista en cuadrícula
@@ -507,6 +413,18 @@ export default function BusinessSearchResults() {
   const [ipLocation, setIpLocation] = useState(null);
   const [isLoadingIpLocation, setIsLoadingIpLocation] = useState(false);
 
+  // Obtener categorías de la API
+  const { data: categories = ['Todas'] } = useCategories({
+    useCache: true,
+    cacheKey: 'categories:all'
+  });
+
+  // Importar API Service para búsquedas
+  const { apiService } = useBusinessSearch();
+  
+  // Estado para rastrear si apiService está inicializado
+  const [isApiReady, setIsApiReady] = useState(false);
+
   const { toast } = useToast();
 
   // Mapeo de valores del slider a distancias en km
@@ -615,6 +533,13 @@ export default function BusinessSearchResults() {
       setDistanceValue([0]);
     }
   }, []);
+
+  // Verificar que apiService esté disponible
+  useEffect(() => {
+    if (apiService && apiService.businesses && typeof apiService.businesses.search === 'function') {
+      setIsApiReady(true);
+    }
+  }, [apiService]);
 
   // Función para solicitar la ubicación del usuario
   const requestUserLocation = () => {
@@ -748,27 +673,55 @@ export default function BusinessSearchResults() {
 
   // Fetch businesses when filters change
   useEffect(() => {
+    // No hacer nada si el servicio API no está listo
+    if (!isApiReady) {
+      console.log("Esperando a que el servicio API esté listo...");
+      return;
+    }
+    
     async function loadBusinesses() {
       try {
         setIsLoading(true);
+        
+        // Construir objeto de filtros con valores por defecto seguros
         const filters = {
-          query: query,
-          category: category,
-          rating: rating,
-          sortBy: sortBy,
-          distance: distance,
-          userLocation: userLocation
+          query: query || '',
+          category: category || 'Todas',
+          rating: rating || '0',
+          sortBy: sortBy || 'rating',
+          distance: distance || '0',
+          userLocation: userLocation || null
         };
-        const fetchedBusinesses = await fetchBusinesses(filters);
-        setBusinesses(fetchedBusinesses);
+        
+        console.log("Buscando negocios con filtros:", filters);
+        
+        // Usar try-catch específico para la llamada a la API
+        try {
+          const result = await apiService.businesses.search(filters);
+          
+          // Verificar si result existe y tiene la propiedad businesses
+          if (result && typeof result === 'object' && 'businesses' in result) {
+            setBusinesses(result.businesses || []);
+            console.log(`Se encontraron ${result.businesses ? result.businesses.length : 0} negocios`);
+          } else {
+            // Si el resultado no tiene el formato esperado
+            console.error("Formato de respuesta inesperado:", result);
+            setBusinesses([]);
+          }
+        } catch (apiError) {
+          console.error("Error en la llamada a la API:", apiError);
+          setBusinesses([]);
+        }
       } catch (error) {
+        console.error("Error al cargar negocios:", error);
         setBusinesses([]);
       } finally {
         setIsLoading(false);
       }
     }
+    
     loadBusinesses();
-  }, [query, category, rating, sortBy, distance, userLocation]);
+  }, [query, category, rating, sortBy, distance, userLocation, apiService, isApiReady]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -841,9 +794,9 @@ export default function BusinessSearchResults() {
                 <SelectValue placeholder="Categoría" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map(cat => (
+                {Array.isArray(categories) ? categories.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
+                )) : <SelectItem value="Todas">Todas</SelectItem>}
               </SelectContent>
             </Select>
           </div>
@@ -1030,9 +983,9 @@ export default function BusinessSearchResults() {
                 <SelectValue placeholder="Categoría" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map(cat => (
+                {Array.isArray(categories) ? categories.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
+                )) : <SelectItem value="Todas">Todas</SelectItem>}
               </SelectContent>
             </Select>
 

@@ -1,6 +1,5 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { allBusinesses } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { BusinessCard } from "@/components/business/BusinessCard";
 import { ReviewCard, type Review } from "@/components/business/ReviewCard";
 import { ProductPaymentForm } from "@/components/business/ProductPaymentForm";
 import MapView from "@/components/map-view";
+import apiService from "@/services/apiService";
 
 // Import the Business type from types folder
 import type { Business } from "@/types/business";
@@ -18,15 +18,30 @@ const { id: businessId } = Astro.params;
 const selectedProductId = Astro.url.searchParams.get("product");
 
 // Función requerida para rutas dinámicas en modo estático
-export function getStaticPaths() {
-  return allBusinesses.map((business) => ({
+export async function getStaticPaths() {
+  // Obtener todos los negocios para las rutas estáticas en SSG
+  const allBusinesses = await apiService.businesses.getAll();
+  
+  return allBusinesses.map((business: Business) => ({
     params: { id: business.id },
     props: { business },
   }));
 }
 
-// Obtener la propiedad 'business' de las props
-const { business } = Astro.props;
+// Obtener la propiedad 'business' de las props para SSG o intentar obtenerlo por ID
+let business: Business;
+if (Astro.props.business) {
+  business = Astro.props.business;
+} else if (businessId) {
+  try {
+    business = await apiService.businesses.getById(businessId);
+  } catch (error) {
+    console.error("Error al obtener el negocio:", error);
+    return Astro.redirect("/404");
+  }
+} else {
+  return Astro.redirect("/404");
+}
 
 // Get the selected product if there's an ID
 const selectedProduct = selectedProductId ? business.products?.find((p: Product) => p.id.toString() === selectedProductId) : null;

@@ -722,24 +722,24 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                 // Asignar colores diferentes según el tipo de negocio
                 const getBusinessColor = () => {
                     if (business.promoted) return 'bg-amber-500';
-
+                    return 'bg-primary';
                     // Determinar color según la categoría
-                    switch (business.category) {
-                        case 'Restaurante':
-                            return 'bg-red-500';
-                        case 'Salud y Belleza':
-                            return 'bg-pink-500';
-                        case 'Tecnología':
-                            return 'bg-blue-500';
-                        case 'Hogar y Decoración':
-                            return 'bg-green-500';
-                        case 'Moda':
-                            return 'bg-purple-500';
-                        case 'Alimentos':
-                            return 'bg-orange-500';
-                        default:
-                            return 'bg-primary';
-                    }
+                    // switch (business.category) {
+                    //     case 'Restaurante':
+                    //         return 'bg-red-500';
+                    //     case 'Salud y Belleza':
+                    //         return 'bg-pink-500';
+                    //     case 'Tecnología':
+                    //         return 'bg-blue-500';
+                    //     case 'Hogar y Decoración':
+                    //         return 'bg-green-500';
+                    //     case 'Moda':
+                    //         return 'bg-purple-500';
+                    //     case 'Alimentos':
+                    //         return 'bg-orange-500';
+                    //     default:
+                    //         return 'bg-primary';
+                    // }
                 };
 
                 return (
@@ -786,7 +786,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                     }}
                 >
                     <div className="relative flex flex-col items-center">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-blue-500 shadow-md animate-pulse">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-500 shadow-md animate-pulse">
                             <Navigation className="w-5 h-5 text-white" />
                         </div>
                         <div className="w-3 h-3 bg-black opacity-30 rounded-full mt-1" />
@@ -799,7 +799,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                 <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
                     <div className="absolute inset-0 bg-black/40" onClick={() => setShowPopup(null)} style={{ cursor: 'pointer', pointerEvents: 'all' }} />
                     <div className="relative max-w-md w-full mx-4 pointer-events-auto">
-                        <div className="bg-white rounded-lg shadow-xl p-4">
+                        <div className="bg-secondary rounded-lg shadow-xl p-4">
                             <BusinessPopup
                                 business={validBusinesses.find(b => b.id === showPopup)!}
                             />

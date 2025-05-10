@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Carousel,
   CarouselContent,
@@ -12,22 +12,31 @@ import { usePromotedBusinesses } from '@/hooks/useApi';
 
 export default function PromotedBusinessesCarousel() {
   const [isClient, setIsClient] = useState(false);
+  const dataFetchedRef = useRef(false);
 
-  // Usar hook para obtener negocios promocionados desde la API con caché
+  // Usar hook para obtener negocios promocionados desde la API con opciones de caché optimizadas
   const { data: businesses, loading, error } = usePromotedBusinesses({
     useCache: true,
-    cacheKey: 'businesses:promoted'
+    cacheKey: 'businesses:promoted',
+    // Solo omitir peticiones después de la primera carga exitosa
+    skip: dataFetchedRef.current
   });
 
+  // Controlar el estado del cliente y actualizar la referencia de carga de datos
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    
+    // Si tenemos datos de negocios, marcar como cargados para evitar nuevas peticiones
+    if (businesses && businesses.length > 0 && !dataFetchedRef.current) {
+      dataFetchedRef.current = true;
+    }
+  }, [businesses]);
 
-  // Mostrar un estado de carga
-  if (loading) {
+  // Mostrar un estado de carga solo durante la carga inicial
+  if (loading && !dataFetchedRef.current) {
     return (
-      <div className="py-20 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="py-12 flex justify-center items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -93,19 +102,10 @@ export default function PromotedBusinessesCarousel() {
                       src={business.image || '/assets/businesses/default.svg'}
                       alt={business.name}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      loading="lazy"
                     />
                     {/* Orbital Glow Effect */}
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-primary/20 via-transparent to-transparent"></div>
-
-                    {/* Destacado Badge with orbit animation - Cambiado a dorado */}
-                    {/* <div className="absolute top-1 right-1 animate-orbit-small">
-                      <Badge
-                        className="bg-amber-300/90 hover:bg-amber-300 text-black text-[8px] md:text-[10px] px-1.5 py-0.5 rounded-full 
-                          shadow-md shadow-amber-500/20 border border-amber-300/80 backdrop-blur-sm font-semibold"
-                      >
-                        ★ DESTACADO
-                      </Badge>
-                    </div> */}
                   </div>
                   <h3 className="font-medium text-xs text-foreground truncate group-hover:text-primary transition-colors">
                     {business.name}

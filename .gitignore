@@ -60,3 +60,4 @@ next-env.d.ts
 # sistema operativo
 .DS_Store
 desktop.ini
+mock-api/node_modules
