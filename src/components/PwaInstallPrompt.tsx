@@ -6,6 +6,7 @@ const PwaInstallPrompt: React.FC = () => {
     const [animation, setAnimation] = useState("slide-in-down");
     const [isButtonPulsing, setIsButtonPulsing] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const hasBeenShownInSessionKey = "pwaInstallPromptShownInSession";
 
     // Definición de animaciones para usar en el estilo
     const animations = {
@@ -77,8 +78,16 @@ const PwaInstallPrompt: React.FC = () => {
     useEffect(() => {
         const handler = (e: any) => {
             e.preventDefault();
+
+            // Verificar si ya se mostró en esta sesión
+            if (sessionStorage.getItem(hasBeenShownInSessionKey) === "true") {
+                console.log("PWA install prompt already shown in this session.");
+                return;
+            }
+
             setDeferredPrompt(e);
             setShowPrompt(true);
+            sessionStorage.setItem(hasBeenShownInSessionKey, "true");
 
             // Iniciar pulsación del botón después de 3 segundos
             setTimeout(() => {

@@ -2,12 +2,21 @@
  * Hook para utilizar el servicio API en componentes React
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import apiService from '@/services/apiService';
 import { ApiError } from '@/services/api/httpClient';
+import type { ApiRequestOptions, BusinessFilters, Business, BusinessSearchResult } from '@/services/apiService'; // Asumiendo que estos tipos existen y son exportados
+
+// Definiciones de tipo placeholder si no se pueden importar (idealmente deben importarse)
+type ApiRequestOptions = any; 
+type BusinessFilters = any;
+// type Business = any; // BusinessSearchResult lo define
 
 // Cache de tiempo de vida de página para reducir peticiones entre navegaciones
 const PAGE_LIFETIME_CACHE = new Map();
+
+// Referencia estable para un array vacío tipado, para funciones API sin argumentos explícitos
+const EMPTY_PARAMS: readonly [] = [] as const;
 
 /**
  * Tipo para el estado de la solicitud API
@@ -261,14 +270,16 @@ export function useBusinesses(options: UseApiOptions = {}) {
  * Hook para obtener un negocio por ID
  */
 export function useBusiness(id: string, options: UseApiOptions = {}) {
-    return useApi(apiService.businesses.getById, [id], options);
+    const params = useMemo(() => [id, undefined] as [string, ApiRequestOptions?], [id]);
+    return useApi(apiService.businesses.getById, params, options);
 }
 
 /**
  * Hook para obtener negocios destacados
  */
 export function useFeaturedBusinesses(options: UseApiOptions = {}) {
-    return useApi(apiService.businesses.getFeatured, [], {
+    const params = useMemo(() => [undefined] as [ApiRequestOptions?], []);
+    return useApi(apiService.businesses.getFeatured, params, {
         usePageCache: true,
         cacheExpiration: 10 * 60 * 1000, // 10 minutos
         ...options
@@ -279,7 +290,8 @@ export function useFeaturedBusinesses(options: UseApiOptions = {}) {
  * Hook para obtener negocios promocionados
  */
 export function usePromotedBusinesses(options: UseApiOptions = {}) {
-    return useApi(apiService.businesses.getPromoted, [], {
+    const params = useMemo(() => [undefined] as [ApiRequestOptions?], []);
+    return useApi(apiService.businesses.getPromoted, params, {
         usePageCache: true,
         cacheExpiration: 10 * 60 * 1000, // 10 minutos
         ...options
@@ -289,30 +301,19 @@ export function usePromotedBusinesses(options: UseApiOptions = {}) {
 /**
  * Hook para buscar negocios con filtros
  */
-export function useBusinessSearch(filters?: any, options: UseApiOptions = {}) {
-    // Proporcionar un objeto vacío por defecto si filters es undefined
-    const safeFilters = filters || {};
+export function useBusinessSearch(filters?: BusinessFilters, options: UseApiOptions = {}) {
+    const safeFilters = useMemo(() => filters || { query: '', category: 'Todas', rating: '0', sortBy: 'rating' }, [filters]);
     
-    // Crear un objeto para el filtro que asegure que tiene valores por defecto
-    const normalizedFilters = {
-        query: '',
-        category: 'Todas',
-        rating: '0',
-        sortBy: 'rating',
-        ...(typeof safeFilters === 'object' ? safeFilters : {})
-    };
-    
-    // Verificar si el filtro está vacío (todos los valores son default)
-    const isEmptyFilter = !normalizedFilters.query && 
-                         normalizedFilters.category === 'Todas' && 
-                         normalizedFilters.rating === '0';
-    
-    // Si el filtro está vacío, podríamos optimizar para no realizar la búsqueda
+    const apiCallParams = useMemo(() => [safeFilters, undefined] as [BusinessFilters, ApiRequestOptions?], [safeFilters]);
+
+    const isEmptyFilter = !safeFilters.query && 
+                         safeFilters.category === 'Todas' && 
+                         safeFilters.rating === '0';
     const shouldSkip = options.skip || isEmptyFilter;
     
-    const apiCall = useApi(
+    const apiCall = useApi<BusinessSearchResult, [BusinessFilters, ApiRequestOptions?] >(
         apiService.businesses.search, 
-        [normalizedFilters], 
+        apiCallParams, 
         {
         ...options,
             skip: shouldSkip,
@@ -338,7 +339,8 @@ export function useBusinessSearch(filters?: any, options: UseApiOptions = {}) {
  * Hook para utilizar el servicio de categorías
  */
 export function useCategories(options: UseApiOptions = {}) {
-    const result = useApi(apiService.categories.getAll, [], {
+    const params = useMemo(() => [undefined] as [ApiRequestOptions?], []);
+    const result = useApi(apiService.categories.getAll, params, {
         usePageCache: true,
         cacheExpiration: 30 * 60 * 1000, // 30 minutos para categorías (cambian poco)
         ...options
@@ -364,14 +366,16 @@ export function useCategories(options: UseApiOptions = {}) {
  * Hook para obtener una categoría por ID
  */
 export function useCategory(id: string, options: UseApiOptions = {}) {
-    return useApi(apiService.categories.getById, [id], options);
+    const params = useMemo(() => [id, undefined] as [string, ApiRequestOptions?], [id]);
+    return useApi(apiService.categories.getById, params, options);
 }
 
 /**
  * Hook para obtener todos los países
  */
 export function useCountries(options: UseApiOptions = {}) {
-    return useApi(apiService.locations.getCountries, [], {
+    const params = useMemo(() => [undefined] as [ApiRequestOptions?], []);
+    return useApi(apiService.locations.getCountries, params, {
         usePageCache: true,
         cacheExpiration: 60 * 60 * 1000, // 1 hora para datos geográficos
         ...options
@@ -382,7 +386,8 @@ export function useCountries(options: UseApiOptions = {}) {
  * Hook para obtener todas las provincias
  */
 export function useProvinces(options: UseApiOptions = {}) {
-    return useApi(apiService.locations.getProvinces, [], {
+    const params = useMemo(() => [undefined] as [ApiRequestOptions?], []);
+    return useApi(apiService.locations.getProvinces, params, {
         usePageCache: true,
         cacheExpiration: 60 * 60 * 1000, // 1 hora
         ...options
@@ -393,7 +398,8 @@ export function useProvinces(options: UseApiOptions = {}) {
  * Hook para obtener provincias por país
  */
 export function useProvincesByCountry(countryId: string, options: UseApiOptions = {}) {
-    return useApi(apiService.locations.getProvincesByCountry, [countryId], {
+    const params = useMemo(() => [countryId, undefined] as [string, ApiRequestOptions?], [countryId]);
+    return useApi(apiService.locations.getProvincesByCountry, params, {
         usePageCache: true,
         cacheExpiration: 60 * 60 * 1000, // 1 hora
         ...options
@@ -404,7 +410,8 @@ export function useProvincesByCountry(countryId: string, options: UseApiOptions 
  * Hook para obtener todos los municipios
  */
 export function useMunicipalities(options: UseApiOptions = {}) {
-    return useApi(apiService.locations.getMunicipalities, [], {
+    const params = useMemo(() => [undefined] as [ApiRequestOptions?], []);
+    return useApi(apiService.locations.getMunicipalities, params, {
         usePageCache: true,
         cacheExpiration: 60 * 60 * 1000, // 1 hora
         ...options
@@ -415,7 +422,8 @@ export function useMunicipalities(options: UseApiOptions = {}) {
  * Hook para obtener municipios por provincia
  */
 export function useMunicipalitiesByProvince(provinceId: string, options: UseApiOptions = {}) {
-    return useApi(apiService.locations.getMunicipalitiesByProvince, [provinceId], {
+    const params = useMemo(() => [provinceId, undefined] as [string, ApiRequestOptions?], [provinceId]);
+    return useApi(apiService.locations.getMunicipalitiesByProvince, params, {
         usePageCache: true,
         cacheExpiration: 60 * 60 * 1000, // 1 hora
         ...options

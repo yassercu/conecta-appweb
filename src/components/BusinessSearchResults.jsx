@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Star, MapPin, Filter, ArrowDownUp, LocateFixed, Map, List, Grid, Menu, AlertCircle, Navigation, Search, Info } from 'lucide-react';
-import { useCategories, useBusinesses, useBusinessSearch } from '@/hooks/useApi';
+import { useCategories, useBusinesses, useBusinessSearch, useCountries, useProvincesByCountry, useMunicipalitiesByProvince } from '@/hooks/useApi';
 import { useToast } from "@/components/ui/use-toast";
 import {
   Tooltip,
@@ -236,13 +236,35 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
   const [manualAddress, setManualAddress] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
-  const [selectedCoordinates, setSelectedCoordinates] = useState(ipLocation ? {
-    latitude: ipLocation.latitude,
-    longitude: ipLocation.longitude,
-    display: `${ipLocation.city}, ${ipLocation.region}, ${ipLocation.country}`
-  } : null);
+  const [selectedCoordinates, setSelectedCoordinates] = useState(null);
 
-  // Efecto para actualizar selectedCoordinates cuando cambia la opción o ipLocation
+  // Estados para los selectores geográficos
+  const [selectedCountryId, setSelectedCountryId] = useState('cu'); // Default Cuba
+  const [selectedProvinceId, setSelectedProvinceId] = useState('');
+  const [selectedMunicipalityId, setSelectedMunicipalityId] = useState('');
+
+  // Obtener datos geográficos
+  const { data: countries, loading: loadingCountries } = useCountries();
+  const { data: provinces, loading: loadingProvinces } = useProvincesByCountry(selectedCountryId, { skip: !selectedCountryId });
+  const { data: municipalities, loading: loadingMunicipalities } = useMunicipalitiesByProvince(selectedProvinceId, { skip: !selectedProvinceId });
+
+  // Efecto para inicializar selectedCoordinates y locationOption basado en ipLocation
+  useEffect(() => {
+    if (ipLocation) {
+      setSelectedCoordinates({
+        latitude: ipLocation.latitude,
+        longitude: ipLocation.longitude,
+        display: `${ipLocation.city}, ${ipLocation.region}, ${ipLocation.country}`
+      });
+      // Si tenemos ipLocation, podríamos intentar preseleccionar país/provincia si coinciden
+      // Esto es más complejo y lo dejaremos para una mejora futura si es necesario
+    } else {
+      setLocationOption('manual');
+      setSelectedCoordinates(null);
+    }
+  }, [ipLocation]);
+
+  // Efecto para actualizar selectedCoordinates cuando cambia la opción de radio
   useEffect(() => {
     if (locationOption === 'ip' && ipLocation) {
       setSelectedCoordinates({
@@ -250,119 +272,303 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
         longitude: ipLocation.longitude,
         display: `${ipLocation.city}, ${ipLocation.region}, ${ipLocation.country}`
       });
+      // Limpiar selecciones manuales si se cambia a IP
+      setSelectedCountryId('cu');
+      setSelectedProvinceId('');
+      setSelectedMunicipalityId('');
+      setManualAddress('');
+      setSearchResults([]);
     }
-    // Si la opción es 'manual', selectedCoordinates se gestiona a través de la búsqueda
-    // y selección manual, por lo que no lo modificamos aquí para no perder
-    // una selección manual si el usuario cambia entre opciones.
   }, [locationOption, ipLocation]);
+
+  // Efecto para resetear provincia y municipio cuando cambia el país
+  useEffect(() => {
+    setSelectedProvinceId('');
+    setSelectedMunicipalityId('');
+  }, [selectedCountryId]);
+
+  // Efecto para resetear municipio cuando cambia la provincia
+  useEffect(() => {
+    setSelectedMunicipalityId('');
+  }, [selectedProvinceId]);
 
   // Búsqueda de dirección usando OpenStreetMap Nominatim
   const searchAddress = async () => {
-    if (!manualAddress.trim()) return;
+    if (locationOption === 'manual') {
+      const missingFields = [];
+      if (!selectedCountryId) missingFields.push("País");
+      
+      // Solo requerir provincia si hay provincias disponibles para el país seleccionado O si no se ha ingresado dirección manual
+      const countryHasProvinces = provinces?.length > 0;
+      if (!selectedProvinceId && countryHasProvinces && !manualAddress.trim()) missingFields.push("Provincia");
+      
+      // Solo requerir municipio si hay municipios disponibles para la provincia seleccionada O si no se ha ingresado dirección manual
+      const provinceHasMunicipalities = municipalities?.length > 0;
+      if (!selectedMunicipalityId && provinceHasMunicipalities && !manualAddress.trim()) missingFields.push("Municipio");
+
+      if (!manualAddress.trim() && missingFields.length > 0) {
+        toast({
+            title: "Información geográfica requerida",
+            description: `Por favor, selecciona: ${missingFields.join(", ")}. O introduce una dirección específica. `,
+            variant: "warning", // Usar warning para campos faltantes
+            duration: 4000
+        });
+        return;
+      }
+    }
 
     try {
       setIsSearching(true);
-      // Usamos el servicio gratuito de Nominatim para geocodificación
+      
+      let queryParts = [];
+      if (manualAddress.trim()) queryParts.push(manualAddress.trim());
+      
+      const selectedMunicipality = municipalities?.find(m => m.id === selectedMunicipalityId);
+      if (selectedMunicipality) queryParts.push(selectedMunicipality.name);
+      
+      const selectedProvince = provinces?.find(p => p.id === selectedProvinceId);
+      if (selectedProvince) queryParts.push(selectedProvince.name);
+      
+      const selectedCountry = countries?.find(c => c.id === selectedCountryId);
+      if (selectedCountry) queryParts.push(selectedCountry.name);
+
+      const searchQuery = queryParts.join(', ');
+      
+      if (!searchQuery) {
+          toast({ title: "Nada que buscar", description: "Introduce algún dato de ubicación.", variant: "info" });
+          setIsSearching(false);
+          return;
+      }
+
+      console.log("Buscando dirección con Nominatim:", searchQuery);
+
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(manualAddress)}&limit=5`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5&addressdetails=1`
       );
 
-      if (!response.ok) throw new Error('Error en la búsqueda');
+      if (!response.ok) throw new Error('Error en la búsqueda de dirección');
 
       const data = await response.json();
       setSearchResults(data.map(item => ({
         latitude: parseFloat(item.lat),
         longitude: parseFloat(item.lon),
-        display: item.display_name
+        display: item.display_name,
+        // Podríamos guardar item.address aquí para una mejor reconstrucción del país/prov/mun
       })));
 
-      // Si hay resultados, seleccionamos el primero automáticamente
       if (data.length > 0) {
         setSelectedCoordinates({
           latitude: parseFloat(data[0].lat),
           longitude: parseFloat(data[0].lon),
           display: data[0].display_name
         });
+      } else {
+        toast({ title: "Sin resultados", description: "No se encontraron ubicaciones para tu búsqueda.", variant: "info" });
       }
     } catch (error) {
       console.error("Error al buscar dirección:", error);
+      toast({ title: "Error de búsqueda", description: error.message, variant: "destructive" });
     } finally {
       setIsSearching(false);
     }
   };
 
-  // Manejar la confirmación
   const handleConfirm = () => {
     if (selectedCoordinates) {
       onConfirm(selectedCoordinates);
     }
   };
 
+  const TutorialTooltipContent = () => (
+    <div className="space-y-2 text-sm p-1">
+      <p className="font-semibold">Cómo indicar tu ubicación:</p>
+      <ol className="list-decimal list-inside space-y-1">
+        <li><strong>Opción Rápida (IP):</strong> Usaremos tu conexión para una ubicación aproximada (si está disponible).</li>
+        <li><strong>Opción Manual Precisa:</strong></li>
+        <ul className="list-disc list-inside pl-4 space-y-0.5 text-xs">
+            <li>Selecciona País, Provincia y Municipio.</li>
+            <li>En "Dirección específica", escribe calle, número, o un lugar conocido.</li>
+            <li><strong>Ejemplo (Plaza de la Revolución):</strong></li>
+            <ul className="list-disc list-inside pl-5">
+                <li>País: Cuba</li>
+                <li>Provincia: La Habana</li>
+                <li>Municipio: Plaza de la Revolución</li>
+                <li>Dirección: Plaza de la Revolución <em>(o dejar en blanco si el municipio es suficiente para una búsqueda general en esa área)</em></li>
+            </ul>
+            <li>Haz clic en el botón de búsqueda (lupa).</li>
+            <li>Selecciona el resultado correcto de la lista.</li>
+        </ul>
+        <li>Verifica la ubicación en el mini-mapa.</li>
+        <li>¡Confirma!</li>
+      </ol>
+      <p className="text-xs italic mt-1">Mientras más detalles proporciones, más precisa será la búsqueda.</p>
+    </div>
+  );
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh] p-4 sm:p-6">
+        <DialogHeader className="relative pr-8">
           <DialogTitle>Configura tu ubicación</DialogTitle>
           <DialogDescription>
-            Necesitamos tu ubicación para mostrarte negocios cercanos. Selecciona una opción:
+            Elige cómo quieres establecer tu ubicación para encontrar negocios cercanos.
           </DialogDescription>
+          <div className="absolute top-0 right-0">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Info className="h-5 w-5 text-primary" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs z-[1000] bg-background text-foreground border p-3"> 
+                  <TutorialTooltipContent />
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-3 py-2 overflow-y-auto flex-grow pr-1 sm:pr-2">
           <RadioGroup
             value={locationOption}
             onValueChange={setLocationOption}
             className="grid gap-3"
           >
             {ipLocation && (
-              <div className="flex items-start space-x-3 space-y-0">
+              <div className="flex items-start space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
                 <RadioGroupItem value="ip" id="r1" />
-                <div className="grid gap-1.5">
-                  <Label htmlFor="r1" className="font-medium">
-                    Usar ubicación aproximada basada en tu conexión
+                <div className="grid gap-1">
+                  <Label htmlFor="r1" className="font-medium cursor-pointer">
+                    Usar ubicación por IP (aproximada)
                   </Label>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {ipLocation.city}, {ipLocation.region}, {ipLocation.country}
                   </p>
                 </div>
               </div>
             )}
 
-            <div className="flex items-start space-x-3 space-y-0">
-              <RadioGroupItem value="manual" id="r2" />
-              <div className="grid gap-1.5 w-full">
-                <Label htmlFor="r2" className="font-medium">
-                  Indicar una ubicación manualmente
+            <div className={cn(
+                "p-3 border rounded-md",
+                locationOption === 'manual' && "ring-1 ring-primary"
+            )}>
+              <div className="flex items-start space-x-3 space-y-0">
+                <RadioGroupItem value="manual" id="r2" />
+                <Label htmlFor="r2" className="font-medium cursor-pointer w-full">
+                    Indicar una ubicación manualmente
                 </Label>
-                <div className="flex w-full items-center space-x-2">
-                  <Input
-                    value={manualAddress}
-                    onChange={(e) => setManualAddress(e.target.value)}
-                    placeholder="Escribe una dirección o lugar"
-                    disabled={locationOption !== 'manual'}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={searchAddress}
-                    disabled={locationOption !== 'manual' || !manualAddress.trim() || isSearching}
-                  >
-                    {isSearching ? "..." : <Search className="h-4 w-4" />}
-                  </Button>
-                </div>
               </div>
+              {locationOption === 'manual' && (
+                <div className="grid gap-3 mt-2.5 pl-1">
+                  {/* Selectores geográficos: en línea en desktop, apilados en móvil */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {/* Selector de País */}
+                    <div className="grid gap-1">
+                      <Label htmlFor="country" className="text-xs">País</Label>
+                      <Select 
+                          value={selectedCountryId} 
+                          onValueChange={setSelectedCountryId}
+                          disabled={loadingCountries}
+                      >
+                        <SelectTrigger id="country">
+                          <SelectValue placeholder={loadingCountries ? "Cargando..." : "Selecciona un país"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {countries?.map(country => (
+                            <SelectItem key={country.id} value={country.id}>{country.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Selector de Provincia */}
+                    <div className="grid gap-1">
+                      <Label htmlFor="province" className="text-xs">Provincia</Label>
+                      <Select 
+                          value={selectedProvinceId} 
+                          onValueChange={setSelectedProvinceId}
+                          disabled={!selectedCountryId || loadingProvinces || provinces?.length === 0}
+                      >
+                        <SelectTrigger id="province">
+                          <SelectValue placeholder={
+                              loadingProvinces ? "Cargando..." : 
+                              !selectedCountryId ? "País primero" :
+                              provinces?.length === 0 && !loadingProvinces ? "No hay provincias" :
+                              "Selecciona provincia"
+                          } />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {provinces?.map(province => (
+                            <SelectItem key={province.id} value={province.id}>{province.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Selector de Municipio */}
+                    <div className="grid gap-1">
+                      <Label htmlFor="municipality" className="text-xs">Municipio</Label>
+                      <Select 
+                          value={selectedMunicipalityId} 
+                          onValueChange={setSelectedMunicipalityId}
+                          disabled={!selectedProvinceId || loadingMunicipalities || municipalities?.length === 0}
+                      >
+                        <SelectTrigger id="municipality">
+                          <SelectValue placeholder={
+                              loadingMunicipalities ? "Cargando..." :
+                              !selectedProvinceId ? "Provincia primero" :
+                              municipalities?.length === 0 && !loadingMunicipalities ? "No hay municipios" :
+                              "Selecciona municipio"
+                          } />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {municipalities?.map(municipality => (
+                            <SelectItem key={municipality.id} value={municipality.id}>{municipality.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                
+                  <div className="grid gap-1 mt-0.5"> {/* Reducido mt aquí */}
+                    <Label htmlFor="manual-address-detail" className="text-xs">Dirección específica (opcional)</Label>
+                    <div className="flex w-full items-center space-x-2">
+                        <Input
+                            id="manual-address-detail"
+                            value={manualAddress}
+                            onChange={(e) => setManualAddress(e.target.value)}
+                            placeholder="Calle, número, punto de referencia..."
+                            disabled={locationOption !== 'manual'}
+                            className="h-9"
+                        />
+                        <Button
+                            type="button"
+                            size="icon"
+                            onClick={searchAddress}
+                            disabled={locationOption !== 'manual' || isSearching}
+                            aria-label="Buscar dirección"
+                            className="h-9 w-9 shrink-0"
+                        >
+                            {isSearching ? <span className="animate-spin text-xs">↻</span> : <Search className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </RadioGroup>
 
           {/* Resultados de búsqueda */}
           {locationOption === 'manual' && searchResults.length > 0 && (
-            <div className="mt-2 max-h-32 overflow-y-auto border rounded-md">
+            <div className="mt-2 max-h-60 overflow-y-auto border rounded-md bg-background p-1"> {/* Aumentado max-h y añadido p-1 */}
               {searchResults.map((result, idx) => (
                 <div
                   key={idx}
                   className={cn(
-                    "px-2 py-1.5 text-xs cursor-pointer hover:bg-muted",
-                    selectedCoordinates?.display === result.display && "bg-muted"
+                    "px-2.5 py-1.5 text-xs cursor-pointer hover:bg-muted rounded", // Añadido rounded
+                    selectedCoordinates?.display === result.display && "bg-muted font-semibold"
                   )}
                   onClick={() => setSelectedCoordinates(result)}
                 >
@@ -373,29 +579,42 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
           )}
 
           {selectedCoordinates && (
-            <div className="mt-2 px-3 py-2 text-xs bg-muted rounded-md">
-              <p className="font-medium">Ubicación seleccionada:</p>
-              <p className="text-muted-foreground mt-1">{selectedCoordinates.display}</p>
-              <p className="text-xs mt-1">
-                Lat: {selectedCoordinates.latitude.toFixed(5)}, Lon: {selectedCoordinates.longitude.toFixed(5)}
-              </p>
+            <div className="mt-2.5 space-y-1.5">
+              <div className="px-2.5 py-2 text-xs bg-muted rounded-md">
+                <p className="font-medium">Ubicación seleccionada:</p>
+                <p className="text-muted-foreground mt-0.5 truncate">{selectedCoordinates.display}</p>
+                {selectedCoordinates.latitude && selectedCoordinates.longitude && (
+                    <p className="text-xs mt-0.5">
+                    Lat: {selectedCoordinates.latitude?.toFixed(5)}, Lon: {selectedCoordinates.longitude?.toFixed(5)}
+                    </p>
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={!selectedCoordinates}
-          >
-            Confirmar ubicación
-          </Button>
+        <DialogFooter className="sm:justify-between pt-3 mt-auto"> {/* Añadido mt-auto para empujar al fondo */}
+          {locationOption === 'manual' && ipLocation && (
+             <Button variant="ghost" size="sm" onClick={() => setLocationOption('ip')} className="text-xs mr-auto"> {/* mr-auto para empujar a la izq */}
+                Restablecer a ubicación por IP
+            </Button>
+          )}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              size="sm" // Consistencia de tamaño
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={!selectedCoordinates || (!selectedCoordinates.latitude || !selectedCoordinates.longitude)}
+              size="sm" // Consistencia de tamaño
+            >
+              Confirmar ubicación
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -671,7 +890,7 @@ export default function BusinessSearchResults() {
     setDistanceValue([0]);
 
     toast({
-      variant: "destructive",
+      variant: "destructive" ,
       title: "Error de ubicación",
       description: "No se pudo obtener tu ubicación automáticamente. Por favor, ingresa tu ubicación manualmente.",
     });
@@ -871,26 +1090,13 @@ export default function BusinessSearchResults() {
           {/* Tercera fila en móvil: Distancia */}
           <div className={cn(
             "flex flex-col gap-2 bg-background p-3 rounded-md border",
-            locationError && "border-destructive/50"
+            locationError && "border-destructive"
           )}>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">Distancia</span>
                 {isLoadingLocation && <span className="ml-1 animate-spin text-xs">↻</span>}
-                {locationError && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-blue-500 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-[250px] bg-background border text-foreground">
-                        <p className="font-medium text-blue-600">Información de Ubicación</p>
-                        {locationError}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
               </div>
               <div>
                 <Badge variant={distance === '0' ? "outline" : "default"} className="text-xs">
@@ -898,6 +1104,15 @@ export default function BusinessSearchResults() {
                 </Badge>
               </div>
             </div>
+
+            {locationError && !isLoadingLocation && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  {locationError}
+                </AlertDescription>
+              </Alert>
+            )}
 
             <div className="px-2 py-3">
               <Slider
@@ -1052,7 +1267,10 @@ export default function BusinessSearchResults() {
             </Select>
 
             {/* Distance Compact */}
-            <div className="flex-1 min-w-[180px] md:min-w-[240px] max-w-[280px] flex items-center gap-2 p-2 bg-background rounded-md border">
+            <div className={cn(
+              "flex-1 min-w-[180px] md:min-w-[240px] max-w-[280px] flex items-center gap-2 p-2 bg-background rounded-md border",
+              locationError && "border-destructive"
+            )}>
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4 text-primary shrink-0" />
                 <span className="text-xs whitespace-nowrap">Distancia:</span>
@@ -1079,27 +1297,26 @@ export default function BusinessSearchResults() {
                 </Badge>
               </div>
 
-              {locationError ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0"
-                  onClick={() => setShowManualLocationDialog(true)}
-                >
-                  <TooltipProvider>
+              {locationError && !isLoadingLocation ? (
+                 <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-blue-500" />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 shrink-0"
+                          onClick={() => setShowManualLocationDialog(true)}
+                        >
+                          <AlertCircle className="h-4 w-4 text-destructive" />
+                        </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="max-w-[250px] bg-background border text-foreground">
-                        <p className="font-medium text-blue-600">Información de Ubicación</p>
-                        {locationError}
-                        <br />
-                        Haz clic para configurar tu ubicación manualmente.
+                        <p className="font-medium text-destructive-foreground bg-destructive px-2 py-1 rounded-sm">Error de Ubicación</p>
+                        <p className="mt-1">{locationError}</p>
+                        <p className="mt-1 text-xs">Haz clic para configurar tu ubicación manualmente.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                </Button>
               ) : null}
             </div>
           </div>
