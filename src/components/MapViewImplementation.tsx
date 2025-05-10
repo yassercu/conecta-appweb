@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Phone, Mail, ZoomIn, ZoomOut, Home, X, Navigation, AlertCircle, Loader2, Globe } from 'lucide-react';
+import { MapPin, Phone, Mail, ZoomIn, ZoomOut, Home, X, Navigation, AlertCircle, Loader2, Globe, FilterX, RotateCcw, Info } from 'lucide-react';
 
 // Coordenadas por defecto (Cuba)
 const DEFAULT_CENTER: [number, number] = [21.5218, -77.7812];
@@ -16,18 +16,30 @@ const BUSINESS_ZOOM = 15;
 // URL base para las imágenes de los mosaicos de OpenStreetMap
 const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
+// Keyframes para la animación de carga del mapa
+const loadingAnimation = `
+  @keyframes mapMarkerPulse {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.7; }
+  }
+  @keyframes mapSurfaceAppear {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+`;
+
 // Reemplazos para los subdominios de OpenStreetMap
 const SUBDOMAINS = ['a', 'b', 'c'];
 
 // Función de debounce para evitar demasiadas actualizaciones
-function debounce(func: Function, wait: number) {
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
     let timeout: number | null = null;
-    return function (...args: any[]) {
-        const context = this;
+    return function (...args: Parameters<T>) {
         if (timeout) window.clearTimeout(timeout);
         timeout = window.setTimeout(() => {
             timeout = null;
-            func.apply(context, args);
+            func(...args);
         }, wait);
     };
 }
@@ -40,6 +52,7 @@ interface MapViewProps {
     forceFitBounds?: boolean;
     userLocation?: { latitude: number, longitude: number } | null;
     distance?: string; // Distancia en km para mostrar el radio
+    onResetFilters?: () => void; // Nueva prop para resetear filtros
 }
 
 // Tipo para los tiles del mapa
@@ -65,6 +78,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
     forceFitBounds = true,
     userLocation = null,
     distance = '0',
+    onResetFilters,
 }: MapViewProps) => {
     const mapRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -412,10 +426,10 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             setCurrentZoom(initialZoom);
         } else {
             // Si no hay negocios ni ubicación inicial, usamos la ubicación del usuario o el centro predeterminado
-            if (userLocation) {
-                currentCenterRef.current = userLocation;
+            if (userLocationCoords) {
+                currentCenterRef.current = userLocationCoords;
                 currentZoomRef.current = 13;
-                setCurrentCenter(userLocation);
+                setCurrentCenter(userLocationCoords);
                 setCurrentZoom(13);
             } else {
                 currentCenterRef.current = DEFAULT_CENTER;
@@ -471,6 +485,12 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             });
         }, 150);
 
+        // Añadir estilos de animación al head
+        const styleSheet = document.createElement("style");
+        styleSheet.type = "text/css";
+        styleSheet.innerText = loadingAnimation;
+        document.head.appendChild(styleSheet);
+
         const timer = setTimeout(() => {
             clearInterval(progressInterval);
             setLoadingProgress(100);
@@ -480,6 +500,8 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         return () => {
             clearTimeout(timer);
             clearInterval(progressInterval);
+            // Limpiar stylesheet al desmontar
+            document.head.removeChild(styleSheet);
         };
     }, []);
 
@@ -631,11 +653,11 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
     const handleLocateUser = useCallback(() => {
         if (isLocating) return; // Evitar múltiples solicitudes
 
-        if (userLocation) {
+        if (userLocationCoords) {
             // Si ya tenemos la ubicación, centramos el mapa en ella
-            currentCenterRef.current = userLocation;
+            currentCenterRef.current = userLocationCoords;
             currentZoomRef.current = 13;
-            setCurrentCenter(userLocation);
+            setCurrentCenter(userLocationCoords);
             setCurrentZoom(13);
 
             if (updateRequestRef.current) {
@@ -646,7 +668,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             // Si no tenemos la ubicación, intentamos obtenerla
             getUserLocation();
         }
-    }, [calculateVisibleTiles, getUserLocation, isLocating, userLocation]);
+    }, [calculateVisibleTiles, getUserLocation, isLocating, userLocationCoords]);
 
     const handleBusinessClick = useCallback((businessId: string) => {
         setShowPopup((prev: string | null) => prev === businessId ? null : businessId);
@@ -818,39 +840,53 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
 
             {/* Controles del mapa */}
             <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-20">
-                <Button variant="outline" size="icon" className="bg-white/90" onClick={handleZoomIn}>
-                    <ZoomIn className="h-4 w-4" />
+                <Button variant="default" size="icon" className="bg-slate-700 text-sky-300 hover:bg-slate-600 shadow-md" onClick={handleZoomIn}>
+                    <ZoomIn className="h-5 w-5" />
                 </Button>
-                <Button variant="outline" size="icon" className="bg-white/90" onClick={handleZoomOut}>
-                    <ZoomOut className="h-4 w-4" />
+                <Button variant="default" size="icon" className="bg-slate-700 text-sky-300 hover:bg-slate-600 shadow-md" onClick={handleZoomOut}>
+                    <ZoomOut className="h-5 w-5" />
                 </Button>
-                <Button variant="outline" size="icon" className="bg-white/90" onClick={handleResetView}>
-                    <Home className="h-4 w-4" />
+                <Button variant="default" size="icon" className="bg-slate-700 text-sky-300 hover:bg-slate-600 shadow-md" onClick={handleResetView}>
+                    <Home className="h-5 w-5" />
                 </Button>
+                {/* Botón para resetear filtros */}
+                {onResetFilters && (
+                    <Button variant="default" size="icon" className="bg-slate-700 text-sky-300 hover:bg-slate-600 shadow-md" onClick={onResetFilters} title="Limpiar filtros">
+                        <FilterX className="h-5 w-5" />
+                    </Button>
+                )}
             </div>
 
-            {/* Indicador de carga */}
+            {/* Indicador de carga rediseñado */}
             {isLoading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-50">
-                    <Skeleton className="h-[250px] w-[90%] rounded-lg" />
-                    <div className="mt-4">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div 
+                    className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-sky-900 z-50 select-none"
+                    style={{ animation: 'mapSurfaceAppear 0.5s ease-out' }}
+                >
+                    <div style={{ animation: 'mapMarkerPulse 1.5s infinite ease-in-out' }}>
+                        <MapPin className="h-16 w-16 text-sky-400 drop-shadow-lg" />
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2">Cargando mapa...</p>
-                    <div className="w-48 h-2 bg-muted rounded-full mt-2 overflow-hidden">
+                    <p className="text-lg font-medium text-sky-200 mt-6 mb-2 tracking-wide">
+                        Explorando el universo de negocios...
+                    </p>
+                    <div className="w-56 h-2 bg-sky-200/30 rounded-full mt-2 overflow-hidden">
                         <div
-                            className="h-full bg-primary transition-all duration-300"
+                            className="h-full bg-sky-400 transition-all duration-300 rounded-full shadow-inner shadow-sky-200/50"
                             style={{ width: `${loadingProgress}%` }}
                         />
                     </div>
+                    <p className="text-xs text-sky-300/70 mt-3">Cargando mosaicos y ubicaciones</p>
                 </div>
             )}
 
             {/* Error de ubicación */}
             {locationError && isLocating && (
-                <div className="absolute top-4 left-4 right-4 bg-destructive/90 text-white p-3 rounded-md shadow-lg z-50 flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 shrink-0" />
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-blue-100 border border-blue-300 text-blue-700 p-3 rounded-md shadow-lg z-50 flex items-center gap-2 max-w-md w-[90%]">
+                    <Info className="h-5 w-5 shrink-0" />
                     <p className="text-sm">{locationError}</p>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 ml-auto" onClick={() => setLocationError(null)}>
+                        <X className="h-4 w-4" />
+                    </Button>
                 </div>
             )}
 

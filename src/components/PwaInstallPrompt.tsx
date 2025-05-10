@@ -3,32 +3,32 @@ import React, { useEffect, useState, useRef } from "react";
 const PwaInstallPrompt: React.FC = () => {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [showPrompt, setShowPrompt] = useState(false);
-    const [animation, setAnimation] = useState("slide-in");
+    const [animation, setAnimation] = useState("slide-in-down");
     const [isButtonPulsing, setIsButtonPulsing] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Definición de animaciones para usar en el estilo
     const animations = {
-        slideInRight: `
-            @keyframes slideInRight {
+        slideInDown: `
+            @keyframes slideInDown {
                 from {
-                    transform: translateX(100%);
+                    transform: translate(-50%, -100%);
                     opacity: 0;
                 }
                 to {
-                    transform: translateX(0);
+                    transform: translate(-50%, 0);
                     opacity: 1;
                 }
             }
         `,
-        slideOutRight: `
-            @keyframes slideOutRight {
+        slideOutUp: `
+            @keyframes slideOutUp {
                 from {
-                    transform: translateX(0);
+                    transform: translate(-50%, 0);
                     opacity: 1;
                 }
                 to {
-                    transform: translateX(100%);
+                    transform: translate(-50%, -100%);
                     opacity: 0;
                 }
             }
@@ -64,7 +64,7 @@ const PwaInstallPrompt: React.FC = () => {
     useEffect(() => {
         // Agregar estilos de animación al documento
         const styleEl = document.createElement('style');
-        styleEl.textContent = animations.slideInRight + animations.slideOutRight +
+        styleEl.textContent = animations.slideInDown + animations.slideOutUp +
             animations.pulse + animations.fadeIn;
         document.head.appendChild(styleEl);
 
@@ -110,10 +110,11 @@ const PwaInstallPrompt: React.FC = () => {
 
     const handleClose = () => {
         if (timerRef.current) clearTimeout(timerRef.current);
-        setAnimation("slide-out");
+        setAnimation("slide-out-up");
         setTimeout(() => {
             setShowPrompt(false);
-        }, 300); // Esperar a que termine la animación
+            setAnimation("slide-in-down");
+        }, 500);
     };
 
     if (!showPrompt) return null;
@@ -122,16 +123,17 @@ const PwaInstallPrompt: React.FC = () => {
         <div
             style={{
                 position: "fixed",
-                bottom: 24,
-                right: 24,
-                maxWidth: 340,
+                top: 20,
+                left: "50%",
+                transform: "translateX(-50%)",
+                maxWidth: 400,
                 background: "linear-gradient(135deg, #1e293b, #111927)",
                 color: "#fff",
                 borderRadius: 12,
                 boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
                 padding: 0,
                 zIndex: 1000,
-                animation: `${animation === "slide-in" ? "slideInRight 0.3s forwards" : "slideOutRight 0.3s forwards"}`,
+                animation: `${animation === "slide-in-down" ? "slideInDown 0.5s forwards" : "slideOutUp 0.5s forwards"}`,
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",

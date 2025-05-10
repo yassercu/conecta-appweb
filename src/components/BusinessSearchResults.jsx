@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense, useRef } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useRef, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Star, MapPin, Filter, ArrowDownUp, LocateFixed, Map, List, Grid, Menu, AlertCircle, Navigation, Search } from 'lucide-react';
+import { Star, MapPin, Filter, ArrowDownUp, LocateFixed, Map, List, Grid, Menu, AlertCircle, Navigation, Search, Info } from 'lucide-react';
 import { useCategories, useBusinesses, useBusinessSearch } from '@/hooks/useApi';
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -242,6 +242,20 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
     display: `${ipLocation.city}, ${ipLocation.region}, ${ipLocation.country}`
   } : null);
 
+  // Efecto para actualizar selectedCoordinates cuando cambia la opción o ipLocation
+  useEffect(() => {
+    if (locationOption === 'ip' && ipLocation) {
+      setSelectedCoordinates({
+        latitude: ipLocation.latitude,
+        longitude: ipLocation.longitude,
+        display: `${ipLocation.city}, ${ipLocation.region}, ${ipLocation.country}`
+      });
+    }
+    // Si la opción es 'manual', selectedCoordinates se gestiona a través de la búsqueda
+    // y selección manual, por lo que no lo modificamos aquí para no perder
+    // una selección manual si el usuario cambia entre opciones.
+  }, [locationOption, ipLocation]);
+
   // Búsqueda de dirección usando OpenStreetMap Nominatim
   const searchAddress = async () => {
     if (!manualAddress.trim()) return;
@@ -433,10 +447,25 @@ export default function BusinessSearchResults() {
     1: '1 km',
     5: '5 km',
     10: '10 km',
-    20: '20 km'
+    20: '20 km',
+    200: '200 km'
   };
 
-  const distanceSteps = [0, 1, 5, 10, 20]; // Valores posibles en el slider
+  const distanceSteps = [0, 1, 5, 10, 20, 200]; // Valores posibles en el slider
+
+  const displayCategories = useMemo(() => {
+    const allCatsOption = { value: 'Todas', label: 'Todas las categorías' };
+    // categories ya tiene ['Todas'] por defecto si la API no devuelve nada o devuelve null/undefined.
+    // Si categories es ['Todas'], uniqueApiCategories será un array vacío.
+    const uniqueApiCategories = Array.isArray(categories)
+        ? categories.filter(cat => cat !== 'Todas')
+        : [];
+
+    return [
+        allCatsOption,
+        ...uniqueApiCategories.map(cat => ({ value: cat, label: cat }))
+    ];
+  }, [categories]);
 
   // Check if running in browser
   useEffect(() => {
@@ -693,7 +722,10 @@ export default function BusinessSearchResults() {
           userLocation: userLocation || null
         };
         
-        console.log("Buscando negocios con filtros:", filters);
+        console.log("Buscando negocios con filtros (BusinessSearchResults.jsx):", JSON.stringify(filters, null, 2));
+        if (filters.distance !== '0' && !filters.userLocation) {
+            console.warn("ADVERTENCIA (BusinessSearchResults.jsx): Intentando filtrar por distancia SIN userLocation. El backend podría no manejar esto como se espera, o devolver resultados vacíos.");
+        }
         
         // Usar try-catch específico para la llamada a la API
         try {
@@ -794,9 +826,9 @@ export default function BusinessSearchResults() {
                 <SelectValue placeholder="Categoría" />
               </SelectTrigger>
               <SelectContent>
-                {Array.isArray(categories) ? categories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                )) : <SelectItem value="Todas">Todas</SelectItem>}
+                {displayCategories.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -850,9 +882,10 @@ export default function BusinessSearchResults() {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <AlertCircle className="h-4 w-4 text-destructive cursor-help" />
+                        <Info className="h-4 w-4 text-blue-500 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-[250px]">
+                      <TooltipContent side="right" className="max-w-[250px] bg-background border text-foreground">
+                        <p className="font-medium text-blue-600">Información de Ubicación</p>
                         {locationError}
                       </TooltipContent>
                     </Tooltip>
@@ -884,6 +917,7 @@ export default function BusinessSearchResults() {
                 <span>5 km</span>
                 <span>10 km</span>
                 <span>20 km</span>
+                <span>200 km</span>
               </div>
             </div>
 
@@ -941,11 +975,11 @@ export default function BusinessSearchResults() {
               </Button>
             )}
             <Button
-              variant={!isMapView ? "default" : "outline"}
+              variant={"outline"}
               onClick={() => handleMapViewToggle(false)}
               className={`flex-1 ${!isMapView ? "hidden" : ""}`}
             >
-              <List className="mr-2 h-4 w-4" /> Resultados
+              <List className="mr-2 h-4 w-4" /> Resultados {isMapView && businesses.length > 0 && `(${businesses.length})`}
             </Button>
             <Button
               variant={isMapView ? "default" : "outline"}
@@ -983,9 +1017,9 @@ export default function BusinessSearchResults() {
                 <SelectValue placeholder="Categoría" />
               </SelectTrigger>
               <SelectContent>
-                {Array.isArray(categories) ? categories.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                )) : <SelectItem value="Todas">Todas</SelectItem>}
+                {displayCategories.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -1055,9 +1089,10 @@ export default function BusinessSearchResults() {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <AlertCircle className="h-4 w-4 text-destructive" />
+                        <Info className="h-4 w-4 text-blue-500" />
                       </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-[250px]">
+                      <TooltipContent side="bottom" className="max-w-[250px] bg-background border text-foreground">
+                        <p className="font-medium text-blue-600">Información de Ubicación</p>
                         {locationError}
                         <br />
                         Haz clic para configurar tu ubicación manualmente.
@@ -1089,12 +1124,12 @@ export default function BusinessSearchResults() {
               </Button>
             )}
             <Button
-              variant={!isMapView ? "default" : "outline"}
+              variant={"outline"}
               onClick={() => handleMapViewToggle(false)}
               className={!isMapView ? "hidden" : ""}
               size="sm"
             >
-              <List className="mr-2 h-4 w-4" /> Resultados
+              <List className="mr-2 h-4 w-4" /> Resultados {isMapView && businesses.length > 0 && `(${businesses.length})`}
             </Button>
             <Button
               variant={isMapView ? "default" : "outline"}
@@ -1154,6 +1189,21 @@ export default function BusinessSearchResults() {
                     businesses={businesses}
                     userLocation={userLocation}
                     distance={distance}
+                    onResetFilters={() => {
+                      setQuery('');
+                      setCategory('Todas');
+                      setRating('0');
+                      setSortBy('rating');
+                      setDistance('0');
+                      setDistanceValue([0]);
+                      // Considerar si también se debe limpiar userLocation o si debe persistir
+                      // setUserLocation(null);
+                      // setUserAddress(null);
+                      toast({
+                        title: "Filtros limpiados",
+                        description: "Se han restablecido los valores por defecto.",
+                      });
+                    }}
                   />
                 </div>
               </Suspense>
