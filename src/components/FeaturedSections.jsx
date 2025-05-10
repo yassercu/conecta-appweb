@@ -7,15 +7,17 @@ export default function FeaturedSections() {
   // Usar un flag para evitar múltiples reconstrucciones
   const [hasFetchedData, setHasFetchedData] = useState(false);
 
+  console.log('[FeaturedSections] Estado inicial: hasFetchedData =', hasFetchedData);
+
   // Usar opciones de caché más agresivas para reducir peticiones
-  const { data: categories, loading: loadingCategories } = useCategories({
+  const { data: categories, loading: loadingCategories, error: errorCategories } = useCategories({
     useCache: true,
     cacheKey: 'categories:all',
     skip: hasFetchedData // Evitar peticiones adicionales si ya tenemos datos
   });
 
   // Obtener todos los negocios desde la API con la misma estrategia
-  const { data: allBusinesses, loading: loadingBusinesses } = useBusinesses({
+  const { data: allBusinesses, loading: loadingBusinesses, error: errorBusinesses } = useBusinesses({
     useCache: true,
     cacheKey: 'businesses:all',
     skip: hasFetchedData // Evitar peticiones adicionales si ya tenemos datos
@@ -30,25 +32,35 @@ export default function FeaturedSections() {
     totalBusinesses: 0
   });
 
+  console.log('[FeaturedSections] Datos recibidos de hooks:', { categories, loadingCategories, errorCategories, allBusinesses, loadingBusinesses, errorBusinesses });
+
+  // Efecto para actualizar debugInfo cuando allBusinesses cambie
+  useEffect(() => {
+    if (allBusinesses) {
+      const promotedBusinesses = allBusinesses.filter(b => b.promoted === true);
+      setDebugInfo({
+        promotedCount: promotedBusinesses.length,
+        totalBusinesses: allBusinesses.length
+      });
+      console.log('[FeaturedSections DebugEffect] Negocios promocionados:', promotedBusinesses.length, "de", allBusinesses.length);
+      if (promotedBusinesses.length > 0) {
+        console.log('[FeaturedSections DebugEffect] Ejemplo de negocio promocionado:', promotedBusinesses[0]);
+      }
+    }
+  }, [allBusinesses]);
+
   // Usar useMemo para calcular las secciones solo cuando los datos cambien
   // y evitar recreaciones en cada renderizado
   const memoizedSections = useMemo(() => {
-    if (!categories || !allBusinesses) return [];
-    
-    console.log("Generando secciones (memoizadas)");
-    
-    // Verificar cuántos negocios tienen la propiedad promoted=true
-    const promotedBusinesses = allBusinesses.filter(b => b.promoted === true);
-    setDebugInfo({
-      promotedCount: promotedBusinesses.length,
-      totalBusinesses: allBusinesses.length
-    });
-    
-    console.log("Negocios promocionados:", promotedBusinesses.length, "de", allBusinesses.length);
-    // Si hay negocios promocionados, mostrar el primero para depuración
-    if (promotedBusinesses.length > 0) {
-      console.log("Ejemplo de negocio promocionado:", promotedBusinesses[0]);
+    console.log('[FeaturedSections useMemo] Calculando memoizedSections. Datos de entrada:', { categories, allBusinesses });
+    if (!categories || !allBusinesses || categories.length === 0 || allBusinesses.length === 0) {
+      console.log('[FeaturedSections useMemo] Datos insuficientes para generar secciones, devolviendo [].');
+      return [];
     }
+    
+    console.log("[FeaturedSections useMemo] Generando secciones (memoizadas)");
+    
+    // Ya no se llama a setDebugInfo aquí
     
     // Elegir categorías populares de manera determinista
     // Usamos un array de índices fijos en lugar de orden aleatorio
@@ -83,19 +95,30 @@ export default function FeaturedSections() {
 
   // Generar secciones solo cuando los datos estén disponibles y no se hayan procesado antes
   useEffect(() => {
-    if (!categories || !allBusinesses || hasFetchedData) return;
+    console.log('[FeaturedSections useEffect setSections] Verificando condiciones:', { categories, allBusinesses, memoizedSections, hasFetchedData });
+    if (!categories || !allBusinesses || hasFetchedData) {
+      if (hasFetchedData) console.log('[FeaturedSections useEffect setSections] Saltando porque hasFetchedData es true.');
+      else console.log('[FeaturedSections useEffect setSections] Saltando porque categories o allBusinesses no están listos.');
+      return;
+    }
     
-    console.log("Actualizando secciones desde efectos");
+    console.log("[FeaturedSections useEffect setSections] Actualizando secciones desde efectos. memoizedSections:", memoizedSections);
     setSections(memoizedSections);
     
     // Marcar que ya hemos procesado los datos para evitar reprocesamiento
     if (memoizedSections.length > 0) {
+      console.log('[FeaturedSections useEffect setSections] Estableciendo hasFetchedData = true');
       setHasFetchedData(true);
+    } else {
+      console.log('[FeaturedSections useEffect setSections] memoizedSections está vacío, hasFetchedData no se actualiza.');
     }
   }, [categories, allBusinesses, memoizedSections, hasFetchedData]);
 
+  console.log('[FeaturedSections Render] Estado antes de renderizar:', { loadingCategories, loadingBusinesses, hasFetchedData, sections, memoizedSections });
+
   // Mostrar un estado de carga solo durante la carga inicial
   if ((loadingCategories || loadingBusinesses) && !hasFetchedData) {
+    console.log('[FeaturedSections Render] Mostrando Spinner de carga inicial.');
     return (
       <div className="py-20 flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -105,11 +128,13 @@ export default function FeaturedSections() {
 
   // Si no hay datos, no mostramos nada
   if (sections.length === 0 && memoizedSections.length === 0) {
+    console.log('[FeaturedSections Render] No hay secciones para mostrar, devolviendo null.');
     return null;
   }
 
   // Usar las secciones calculadas o memorizadas, lo que esté disponible
   const displaySections = sections.length > 0 ? sections : memoizedSections;
+  console.log('[FeaturedSections Render] displaySections:', displaySections);
 
   return (
     <div className="max-w-6xl mx-auto">

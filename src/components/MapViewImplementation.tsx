@@ -284,8 +284,6 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             const watchId = navigator.geolocation.watchPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    setUserLocation({ latitude, longitude });
-
                     // Actualizar centro del mapa a la ubicación del usuario
                     currentCenterRef.current = [latitude, longitude];
                     setCurrentCenter([latitude, longitude]);
@@ -314,7 +312,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
                             const { latitude, longitude } = position.coords;
-                            setUserLocation({ latitude, longitude });
+                            // Actualizar centro del mapa a la ubicación del usuario
                             currentCenterRef.current = [latitude, longitude];
                             setCurrentCenter([latitude, longitude]);
                             currentZoomRef.current = 13;
@@ -346,7 +344,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    setUserLocation({ latitude, longitude });
+                    // Actualizar centro del mapa a la ubicación del usuario
                     currentCenterRef.current = [latitude, longitude];
                     setCurrentCenter([latitude, longitude]);
                     currentZoomRef.current = 13;
@@ -565,18 +563,40 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
     }, [userLocation, userLocationCoords, calculateVisibleTiles, distance, initialZoom]);
 
     // Manejadores de eventos
-    const handleMouseDown = useCallback((e: React.MouseEvent) => {
-        if (e.button === 0) { // Solo botón izquierdo
-            isDraggingRef.current = true;
-            startPosRef.current = [e.clientX, e.clientY];
+    const handleMouseDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+        let clientX, clientY;
+        let isMouseEvent = false;
+
+        if ('touches' in e) { // TouchEvent
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else { // MouseEvent
+            isMouseEvent = true;
+            clientX = e.clientX;
+            clientY = e.clientY;
         }
+        
+        if (isMouseEvent && (e as React.MouseEvent).button !== 0) return; // Solo botón izquierdo para ratón
+
+        isDraggingRef.current = true;
+        startPosRef.current = [clientX, clientY];
     }, []);
 
-    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const handleMouseMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         if (!isDraggingRef.current) return;
 
-        const dx = e.clientX - startPosRef.current[0];
-        const dy = e.clientY - startPosRef.current[1];
+        let clientX, clientY;
+
+        if ('touches' in e) { // TouchEvent
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else { // MouseEvent
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+
+        const dx = clientX - startPosRef.current[0];
+        const dy = clientY - startPosRef.current[1];
 
         // Mover el mapa en tiempo real
         const scale = Math.pow(2, currentZoomRef.current);
@@ -598,7 +618,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         setCurrentCenter(newCenter);
 
         // Preparar para el próximo movimiento
-        startPosRef.current = [e.clientX, e.clientY];
+        startPosRef.current = [clientX, clientY];
 
         // Solicitar actualización de tiles
         if (updateRequestRef.current) {
@@ -703,7 +723,13 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onMouseMove={handleMouseMove}
-            onWheel={handleZoomIn}
+            onWheel={(e) => { // Adaptar onWheel para que no cause error de tipo si handleZoomIn espera un evento específico
+                // Podrías querer una lógica de zoom más específica para la rueda aquí.
+                // Por ahora, llamamos a handleZoomIn si es un evento de rueda.
+                // Opcionalmente, podrías verificar e.deltaY para controlar la dirección del zoom.
+                if (e.deltaY < 0) handleZoomIn();
+                else if (e.deltaY > 0) handleZoomOut();
+            }}
             onTouchStart={handleMouseDown}
             onTouchEnd={handleMouseUp}
             onTouchMove={handleMouseMove}
