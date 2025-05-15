@@ -5,7 +5,7 @@ Esta es una API mock (simulada) diseñada para proveer datos de ejemplo para el 
 ## Características
 
 *   Endpoints para negocios, categorías, ubicaciones (países, provincias, municipios).
-*   Búsqueda de negocios con filtros por nombre, categoría, rating, distancia.
+*   Búsqueda de negocios con filtros por nombre, categoría, rating y distancia.
 *   Paginación y ordenamiento de resultados.
 *   Generación de datos de ejemplo al iniciar.
 
@@ -44,123 +44,6 @@ Para iniciar el servidor para un entorno de producción:
 npm start
 ```
 
-### Despliegue en Ubuntu Server con PM2
-
-PM2 es un gestor de procesos para aplicaciones Node.js en producción. Ayuda a mantener viva la aplicación, facilita la gestión de logs, reinicios y escalado.
-
-1.  **Conéctate a tu servidor Ubuntu.**
-
-2.  **Asegúrate de tener Node.js y npm instalados.**
-    Puedes seguir [esta guía de DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04-es) o la documentación oficial de Node.js.
-
-3.  **Instala PM2 globalmente:**
-    ```bash
-    sudo npm install pm2 -g
-    ```
-
-4.  **Sube los archivos de tu aplicación al servidor.**
-    Puedes usar `scp`, `rsync`, `git clone`, o cualquier método de tu preferencia. Por ejemplo, si tienes tu código en `/srv/my-app`:
-    ```bash
-    cd /srv/my-app/mock-api 
-    ```
-    (Asegúrate de que esta sea la ruta a la carpeta que contiene `package.json` y `server.js`).
-
-5.  **Instala las dependencias de la aplicación:**
-    ```bash
-    npm install --production 
-    ```
-    (El flag `--production` evita instalar `devDependencies`).
-
-6.  **Inicia la aplicación con PM2:**
-    ```bash
-    pm2 start server.js --name "orbita-y-mock-api"
-    ```
-    *   `--name "orbita-y-mock-api"`: Asigna un nombre al proceso para facilitar su gestión.
-
-7.  **Verifica que la aplicación está corriendo:**
-    ```bash
-    pm2 list
-    ```
-    o
-    ```bash
-    pm2 logs orbita-y-mock-api
-    ```
-
-8.  **Configura PM2 para que se inicie automáticamente al arrancar el servidor:**
-    ```bash
-    pm2 startup systemd
-    ```
-    PM2 te dará un comando para ejecutar con `sudo`. Cópialo y ejecútalo.
-
-9.  **Guarda la configuración de PM2:**
-    ```bash
-    pm2 save
-    ```
-
-Ahora tu API debería estar corriendo y gestionada por PM2.
-
-### Consideraciones para Producción
-
-*   **Base de Datos en Memoria:** Esta API utiliza una base de datos en memoria. Cualquier dato creado, modificado o eliminado (vía POST, PUT, DELETE) se perderá cuando el servidor se reinicie. Para persistencia de datos, necesitarías integrar una base de datos real (MongoDB, PostgreSQL, etc.).
-*   **Puerto:** La aplicación corre en el puerto `3001` por defecto, o el puerto especificado en la variable de entorno `PORT`.
-*   **Seguridad:** Para una API pública, considera añadir medidas de seguridad como:
-    *   **HTTPS:** Configura un certificado SSL/TLS (por ejemplo, con Let's Encrypt a través de un reverse proxy como Nginx).
-    *   **Helmet:** Middleware para Express que ayuda a securizar la app estableciendo varias cabeceras HTTP. (`npm install helmet`)
-    *   **Rate Limiting:** Para prevenir abuso (`npm install express-rate-limit`).
-*   **Logging:** Para un logging más avanzado y configurable, considera librerías como Winston o Pino.
-
-### (Opcional) Configurar Nginx como Reverse Proxy
-
-Nginx puede actuar como un reverse proxy, lo que te permite:
-*   Servir tu aplicación Node.js en el puerto 80 (HTTP) o 443 (HTTPS) sin necesidad de correr Node.js como root.
-*   Gestionar SSL/TLS.
-*   Servir archivos estáticos eficientemente.
-*   Balancear carga (si tienes múltiples instancias de tu app).
-
-1.  **Instala Nginx:**
-    ```bash
-    sudo apt update
-    sudo apt install nginx
-    ```
-
-2.  **Configura Nginx.** Crea un nuevo archivo de configuración en `/etc/nginx/sites-available/your-app-name` (ej. `orbita-y-mock-api`):
-    ```bash
-    sudo nano /etc/nginx/sites-available/orbita-y-mock-api
-    ```
-    Pega la siguiente configuración (ajusta `server_name` y `proxy_pass` si es necesario):
-    ```nginx
-    server {
-        listen 80;
-        server_name tu_dominio_o_ip; # Reemplaza con tu dominio o IP pública
-
-        location / {
-            proxy_pass http://localhost:3001; # Asume que tu app Node.js corre en el puerto 3001
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host $host;
-            proxy_cache_bypass $http_upgrade;
-        }
-    }
-    ```
-
-3.  **Habilita el sitio creando un enlace simbólico:**
-    ```bash
-    sudo ln -s /etc/nginx/sites-available/orbita-y-mock-api /etc/nginx/sites-enabled/
-    ```
-
-4.  **Prueba la configuración de Nginx:**
-    ```bash
-    sudo nginx -t
-    ```
-
-5.  **Reinicia Nginx:**
-    ```bash
-    sudo systemctl restart nginx
-    ```
-
-Ahora tu API debería ser accesible a través del puerto 80 (o el dominio que hayas configurado).
-
 ## Endpoints Disponibles
 
 ### Negocios
@@ -176,16 +59,12 @@ Ahora tu API debería ser accesible a través del puerto 80 (o el dominio que ha
 | PUT    | `/api/v1/businesses/:id` | Actualizar un negocio existente |
 | DELETE | `/api/v1/businesses/:id` | Eliminar un negocio |
 
-Ejemplo: `http://localhost:3001/api/v1/businesses`
-
 ### Categorías
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
 | GET    | `/api/v1/categories` | Obtener todas las categorías |
 | GET    | `/api/v1/categories/:id` | Obtener una categoría por ID |
-
-Ejemplo: `http://localhost:3001/api/v1/categories`
 
 ### Ubicaciones
 
@@ -196,8 +75,6 @@ Ejemplo: `http://localhost:3001/api/v1/categories`
 | GET    | `/api/v1/locations/countries/:countryId/provinces` | Obtener provincias por país |
 | GET    | `/api/v1/locations/municipalities` | Obtener todos los municipios |
 | GET    | `/api/v1/locations/provinces/:provinceId/municipalities` | Obtener municipios por provincia |
-
-Ejemplo: `http://localhost:3001/api/v1/locations/countries`
 
 ## Parámetros de Búsqueda
 
@@ -214,8 +91,6 @@ La ruta `/api/v1/search` acepta los siguientes parámetros de consulta:
 | sortBy    | string | Ordenar por: 'rating', 'name', 'distance'             |
 | page      | number | Número de página (por defecto: 1)                       |
 | limit     | number | Resultados por página (por defecto: 10)                  |
-
-Ejemplo: `http://localhost:3001/api/v1/search?category=Restaurante&rating=4&sortBy=rating&page=1&limit=5`
 
 ## Estructura de Datos
 
@@ -282,9 +157,9 @@ Ejemplo: `http://localhost:3001/api/v1/search?category=Restaurante&rating=4&sort
 
 ```json
 {
-  "id": "1",
-  "name": "Restaurante",
-  "description": "Restaurantes y cafeterías",
+  "id": "restaurantes",
+  "name": "Restaurantes",
+  "description": "Establecimientos gastronómicos que ofrecen comidas y bebidas para consumo en el local",
   "icon": "utensils"
 }
 ```

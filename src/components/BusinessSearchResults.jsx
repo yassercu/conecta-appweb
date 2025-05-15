@@ -16,7 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Star, MapPin, Filter, ArrowDownUp, LocateFixed, Map, List, Grid, Menu, AlertCircle, Navigation, Search, Info } from 'lucide-react';
+import { Star, MapPin, Filter, ArrowDownUp, LocateFixed, Map, List, Grid, Menu, AlertCircle, Navigation, Search, Info, HelpCircle, X } from 'lucide-react';
 import { useCategories, useBusinesses, useBusinessSearch, useCountries, useProvincesByCountry, useMunicipalitiesByProvince } from '@/hooks/useApi';
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -121,6 +121,8 @@ function BusinessGridCard({ business }) {
           <img
             src={business.image}
             alt={business.name}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = '/assets/businesses/default.svg'; }}
           />
@@ -162,6 +164,8 @@ function BusinessListCard({ business }) {
             <img
               src={business.image}
               alt={business.name}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = '/assets/businesses/default.svg'; }}
             />
@@ -237,6 +241,8 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [selectedCoordinates, setSelectedCoordinates] = useState(null);
+  const [showTutorial, setShowTutorial] = useState(false); // Estado para el diálogo de tutorial
+  const [showSavedLocationOption, setShowSavedLocationOption] = useState(false); // Para mostrar opción de ubicación guardada
 
   // Estados para los selectores geográficos
   const [selectedCountryId, setSelectedCountryId] = useState('cu'); // Default Cuba
@@ -248,9 +254,40 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
   const { data: provinces, loading: loadingProvinces } = useProvincesByCountry(selectedCountryId, { skip: !selectedCountryId });
   const { data: municipalities, loading: loadingMunicipalities } = useMunicipalitiesByProvince(selectedProvinceId, { skip: !selectedProvinceId });
 
+  // Verificar si hay una ubicación guardada en localStorage cuando se abre el diálogo
+  useEffect(() => {
+    if (open) {
+      try {
+        const savedLocationString = localStorage.getItem('userLocation');
+        const savedAddressString = localStorage.getItem('userAddress');
+
+        if (savedLocationString) {
+          const savedLocation = JSON.parse(savedLocationString);
+          if (savedLocation && savedLocation.latitude && savedLocation.longitude) {
+            console.log("Mostrando opción de ubicación guardada:", savedLocation);
+            setShowSavedLocationOption(true);
+            
+            // Si no hay ubicación IP o si el usuario ya había elegido la ubicación guardada antes,
+            // usar la ubicación guardada como opción por defecto
+            if (!ipLocation || locationOption === 'saved') {
+              setLocationOption('saved');
+              setSelectedCoordinates({
+                latitude: savedLocation.latitude,
+                longitude: savedLocation.longitude,
+                display: savedAddressString || `${savedLocation.latitude.toFixed(5)}, ${savedLocation.longitude.toFixed(5)}`
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error al verificar la ubicación guardada:", error);
+      }
+    }
+  }, [open, ipLocation]);
+
   // Efecto para inicializar selectedCoordinates y locationOption basado en ipLocation
   useEffect(() => {
-    if (ipLocation) {
+    if (ipLocation && locationOption === 'ip') {
       setSelectedCoordinates({
         latitude: ipLocation.latitude,
         longitude: ipLocation.longitude,
@@ -258,11 +295,13 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
       });
       // Si tenemos ipLocation, podríamos intentar preseleccionar país/provincia si coinciden
       // Esto es más complejo y lo dejaremos para una mejora futura si es necesario
-    } else {
-      setLocationOption('manual');
-      setSelectedCoordinates(null);
+    } else if (locationOption === 'manual') {
+      // Si se selecciona manual y no hay coordenadas seleccionadas, limpiar
+      if (!selectedCoordinates || locationOption !== 'manual') {
+        setSelectedCoordinates(null);
+      }
     }
-  }, [ipLocation]);
+  }, [ipLocation, locationOption]);
 
   // Efecto para actualizar selectedCoordinates cuando cambia la opción de radio
   useEffect(() => {
@@ -278,6 +317,24 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
       setSelectedMunicipalityId('');
       setManualAddress('');
       setSearchResults([]);
+    } else if (locationOption === 'saved') {
+      try {
+        const savedLocationString = localStorage.getItem('userLocation');
+        const savedAddressString = localStorage.getItem('userAddress');
+        
+        if (savedLocationString) {
+          const savedLocation = JSON.parse(savedLocationString);
+          if (savedLocation && savedLocation.latitude && savedLocation.longitude) {
+            setSelectedCoordinates({
+              latitude: savedLocation.latitude,
+              longitude: savedLocation.longitude,
+              display: savedAddressString || `${savedLocation.latitude.toFixed(5)}, ${savedLocation.longitude.toFixed(5)}`
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error al cargar ubicación guardada:", error);
+      }
     }
   }, [locationOption, ipLocation]);
 
@@ -379,55 +436,61 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
     }
   };
 
-  const TutorialTooltipContent = () => (
-    <div className="space-y-2 text-sm p-1">
-      <p className="font-semibold">Cómo indicar tu ubicación:</p>
-      <ol className="list-decimal list-inside space-y-1">
-        <li><strong>Opción Rápida (IP):</strong> Usaremos tu conexión para una ubicación aproximada (si está disponible).</li>
-        <li><strong>Opción Manual Precisa:</strong></li>
-        <ul className="list-disc list-inside pl-4 space-y-0.5 text-xs">
-            <li>Selecciona País, Provincia y Municipio.</li>
-            <li>En "Dirección específica", escribe calle, número, o un lugar conocido.</li>
-            <li><strong>Ejemplo (Plaza de la Revolución):</strong></li>
-            <ul className="list-disc list-inside pl-5">
-                <li>País: Cuba</li>
-                <li>Provincia: La Habana</li>
-                <li>Municipio: Plaza de la Revolución</li>
-                <li>Dirección: Plaza de la Revolución <em>(o dejar en blanco si el municipio es suficiente para una búsqueda general en esa área)</em></li>
-            </ul>
-            <li>Haz clic en el botón de búsqueda (lupa).</li>
+  // Contenido del tutorial mejorado
+  const TutorialContent = () => (
+    <div className="space-y-3 text-sm p-4">
+      <div className="px-3 py-2 bg-primary text-primary-foreground rounded-md">
+        <h3 className="font-bold text-base text-center">Cómo indicar tu ubicación</h3>
+      </div>
+      
+      <div className="px-3 py-2 bg-background rounded-md border">
+        <h4 className="font-semibold text-sm border-b pb-1 mb-2">1. Opción Rápida (IP)</h4>
+        <p className="text-sm">Usaremos tu conexión para una ubicación aproximada (si está disponible).</p>
+      </div>
+      
+      <div className="px-3 py-2 bg-background rounded-md border">
+        <h4 className="font-semibold text-sm border-b pb-1 mb-2">2. Opción Manual Precisa</h4>
+        <ul className="list-disc list-inside space-y-2 text-sm">
+          <li>Selecciona <span className="font-medium">País, Provincia y Municipio</span> en orden.</li>
+          <li>En "Dirección específica", escribe calle, número o lugar conocido (opcional).</li>
+          <li>Haz clic en el botón de búsqueda <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-muted align-middle"><Search className="h-3 w-3" /></span></li>
             <li>Selecciona el resultado correcto de la lista.</li>
+          <li>Confirma tu selección.</li>
         </ul>
-        <li>Verifica la ubicación en el mini-mapa.</li>
-        <li>¡Confirma!</li>
-      </ol>
-      <p className="text-xs italic mt-1">Mientras más detalles proporciones, más precisa será la búsqueda.</p>
+      </div>
+      
+      <div className="px-3 py-2 bg-muted rounded-md">
+        <h4 className="font-semibold text-sm mb-1">Ejemplo: Plaza de la Revolución</h4>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <p><span className="font-medium">País:</span> Cuba</p>
+            <p><span className="font-medium">Provincia:</span> La Habana</p>
+          </div>
+          <div>
+            <p><span className="font-medium">Municipio:</span> Plaza de la Revolución</p>
+            <p><span className="font-medium">Dirección:</span> Plaza de la Revolución</p>
+          </div>
+        </div>
+      </div>
+      
+      <p className="text-xs italic text-muted-foreground px-3">Mientras más detalles proporciones, más precisa será la búsqueda.</p>
     </div>
   );
 
+  // Toggle del tutorial - simplemente invierte el estado actual
+  const toggleTutorial = () => {
+    setShowTutorial(!showTutorial);
+  };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh] p-4 sm:p-6">
-        <DialogHeader className="relative pr-8">
+        <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh] p-4 sm:p-6 w-[calc(100%-2rem)] max-w-full sm:w-auto">
+          <DialogHeader>
           <DialogTitle>Configura tu ubicación</DialogTitle>
           <DialogDescription>
             Elige cómo quieres establecer tu ubicación para encontrar negocios cercanos.
           </DialogDescription>
-          <div className="absolute top-0 right-0">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <Info className="h-5 w-5 text-primary" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left" className="max-w-xs z-[1000] bg-background text-foreground border p-3"> 
-                  <TutorialTooltipContent />
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
         </DialogHeader>
 
         <div className="grid gap-3 py-2 overflow-y-auto flex-grow pr-1 sm:pr-2">
@@ -449,16 +512,47 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
                 </div>
               </div>
             )}
+            
+            {/* Opción para usar ubicación guardada si está disponible */}
+            {showSavedLocationOption && (
+              <div className="flex items-start space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                <RadioGroupItem value="saved" id="r2" />
+                <div className="grid gap-1">
+                  <Label htmlFor="r2" className="font-medium cursor-pointer">
+                    Usar tu ubicación guardada
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedCoordinates && locationOption === 'saved' ? selectedCoordinates.display : 
+                    "Tu ubicación guardada anteriormente"}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className={cn(
                 "p-3 border rounded-md",
                 locationOption === 'manual' && "ring-1 ring-primary"
             )}>
               <div className="flex items-start space-x-3 space-y-0">
-                <RadioGroupItem value="manual" id="r2" />
-                <Label htmlFor="r2" className="font-medium cursor-pointer w-full">
+                <RadioGroupItem value="manual" id="r3" />
+                  <div className="w-full">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="r3" className="font-medium cursor-pointer">
                     Indicar una ubicación manualmente
                 </Label>
+                      {/* Botón de ayuda que ahora solo maneja toggleTutorial */}
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-7 w-7 ml-2" 
+                        onClick={toggleTutorial}
+                        type="button"
+                        aria-label="Mostrar ayuda"
+                      >
+                        <HelpCircle className="h-4 w-4 text-primary" />
+                      </Button>
+                    </div>
+                  </div>
               </div>
               {locationOption === 'manual' && (
                 <div className="grid gap-3 mt-2.5 pl-1">
@@ -541,7 +635,7 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
                             onChange={(e) => setManualAddress(e.target.value)}
                             placeholder="Calle, número, punto de referencia..."
                             disabled={locationOption !== 'manual'}
-                            className="h-9"
+                              className="h-9 flex-1 min-w-0" // Añadir flex-1 y min-width para asegurar que no crezca demasiado
                         />
                         <Button
                             type="button"
@@ -560,32 +654,37 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
             </div>
           </RadioGroup>
 
-          {/* Resultados de búsqueda */}
+            {/* Resultados de búsqueda - con altura mínima para mejor visualización */}
           {locationOption === 'manual' && searchResults.length > 0 && (
-            <div className="mt-2 max-h-60 overflow-y-auto border rounded-md bg-background p-1"> {/* Aumentado max-h y añadido p-1 */}
+              <div className="mt-2 min-h-[120px] max-h-[200px] overflow-y-auto border rounded-md bg-background p-1 w-full">
               {searchResults.map((result, idx) => (
                 <div
                   key={idx}
                   className={cn(
-                    "px-2.5 py-1.5 text-xs cursor-pointer hover:bg-muted rounded", // Añadido rounded
+                      "px-2.5 py-2 text-xs cursor-pointer hover:bg-muted rounded mb-1 w-full overflow-hidden",
                     selectedCoordinates?.display === result.display && "bg-muted font-semibold"
                   )}
                   onClick={() => setSelectedCoordinates(result)}
                 >
+                    <div className="truncate" title={result.display}>
                   {result.display}
+                    </div>
                 </div>
               ))}
             </div>
           )}
 
           {selectedCoordinates && (
-            <div className="mt-2.5 space-y-1.5">
-              <div className="px-2.5 py-2 text-xs bg-muted rounded-md">
+              <div className="mt-2.5 space-y-1.5 w-full">
+                <div className="px-2.5 py-2 text-xs bg-muted rounded-md w-full">
                 <p className="font-medium">Ubicación seleccionada:</p>
-                <p className="text-muted-foreground mt-0.5 truncate">{selectedCoordinates.display}</p>
+                  <p className="text-muted-foreground mt-0.5 truncate" title={selectedCoordinates.display}>
+                    {selectedCoordinates.display}
+                  </p>
                 {selectedCoordinates.latitude && selectedCoordinates.longitude && (
-                    <p className="text-xs mt-0.5">
-                    Lat: {selectedCoordinates.latitude?.toFixed(5)}, Lon: {selectedCoordinates.longitude?.toFixed(5)}
+                    <p className="text-xs mt-0.5 flex flex-wrap">
+                      <span className="mr-2">Lat: {selectedCoordinates.latitude?.toFixed(5)},</span> 
+                      <span>Lon: {selectedCoordinates.longitude?.toFixed(5)}</span>
                     </p>
                 )}
               </div>
@@ -593,24 +692,19 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
           )}
         </div>
 
-        <DialogFooter className="sm:justify-between pt-3 mt-auto"> {/* Añadido mt-auto para empujar al fondo */}
-          {locationOption === 'manual' && ipLocation && (
-             <Button variant="ghost" size="sm" onClick={() => setLocationOption('ip')} className="text-xs mr-auto"> {/* mr-auto para empujar a la izq */}
-                Restablecer a ubicación por IP
-            </Button>
-          )}
+          <DialogFooter className="sm:justify-between pt-3 mt-auto">
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              size="sm" // Consistencia de tamaño
+                size="sm"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleConfirm}
               disabled={!selectedCoordinates || (!selectedCoordinates.latitude || !selectedCoordinates.longitude)}
-              size="sm" // Consistencia de tamaño
+                size="sm"
             >
               Confirmar ubicación
             </Button>
@@ -618,8 +712,170 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+      {/* Tutorial en un diálogo modal separado */}
+      <Dialog open={showTutorial} onOpenChange={setShowTutorial}>
+        <DialogContent className="sm:max-w-md p-0 w-[calc(100%-2rem)] sm:w-auto overflow-hidden">
+          <div className="relative overflow-y-auto max-h-[80vh]">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute right-2 top-2 z-10" 
+              onClick={() => setShowTutorial(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <TutorialContent />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
+
+// Función para comprobar el estado del permiso de geolocalización
+async function checkGeolocationPermission() {
+  try {
+    // Verificar si la Permissions API está disponible
+    if (navigator.permissions && typeof navigator.permissions.query === 'function') {
+      const permissionStatus = await navigator.permissions.query({ name: 'geolocation' });
+      console.log("Estado del permiso de geolocalización:", permissionStatus.state);
+      return permissionStatus.state; // 'granted', 'prompt' o 'denied'
+    }
+    // Si Permissions API no está disponible, devolvemos 'unknown'
+    return 'unknown';
+  } catch (error) {
+    console.error("Error al consultar permisos:", error);
+    return 'unknown';
+  }
+}
+
+// Componente para mostrar un mensaje guía sobre cómo desbloquear permisos
+function PermissionGuide({ browserName }) {
+  // Determinar instrucciones específicas según el navegador
+  const getBrowserInstructions = () => {
+    switch (browserName.toLowerCase()) {
+      case 'chrome':
+        return (
+          <>
+            <p className="font-semibold mb-1">Chrome:</p>
+            <ol className="list-decimal list-inside ml-2 text-xs space-y-1">
+              <li>Haz clic en el icono 🔒 en la barra de direcciones</li>
+              <li>Selecciona "Configuración de sitio"</li>
+              <li>Busca "Ubicación" en los permisos</li>
+              <li>Cambia de "Bloqueado" a "Permitir"</li>
+              <li>Recarga la página</li>
+            </ol>
+          </>
+        );
+      case 'firefox':
+        return (
+          <>
+            <p className="font-semibold mb-1">Firefox:</p>
+            <ol className="list-decimal list-inside ml-2 text-xs space-y-1">
+              <li>Haz clic en el icono 🔒 en la barra de direcciones</li>
+              <li>Haz clic en "Conexión segura" &gt; "Más información"</li>
+              <li>Selecciona "Permisos"</li>
+              <li>Busca "Acceder a tu ubicación"</li>
+              <li>Desmarca "Usar configuración predeterminada"</li>
+              <li>Selecciona "Permitir"</li>
+              <li>Recarga la página</li>
+            </ol>
+          </>
+        );
+      case 'safari':
+        return (
+          <>
+            <p className="font-semibold mb-1">Safari:</p>
+            <ol className="list-decimal list-inside ml-2 text-xs space-y-1">
+              <li>Abre Preferencias (⌘ + ,)</li>
+              <li>Ve a "Sitios web" &gt; "Ubicación"</li>
+              <li>Busca este sitio en la lista</li>
+              <li>Selecciona "Permitir"</li>
+              <li>Recarga la página</li>
+            </ol>
+          </>
+        );
+      case 'edge':
+        return (
+          <>
+            <p className="font-semibold mb-1">Edge:</p>
+            <ol className="list-decimal list-inside ml-2 text-xs space-y-1">
+              <li>Haz clic en el icono 🔒 en la barra de direcciones</li>
+              <li>Selecciona "Permisos del sitio"</li>
+              <li>Busca "Ubicación"</li>
+              <li>Cambia de "Bloqueado" a "Permitir"</li>
+              <li>Recarga la página</li>
+            </ol>
+          </>
+        );
+      default:
+        return (
+          <>
+            <p className="font-semibold mb-1">Para desbloquear tu ubicación:</p>
+            <ol className="list-decimal list-inside ml-2 text-xs space-y-1">
+              <li>Busca el icono de candado o configuración en la barra de direcciones</li>
+              <li>Encuentra las opciones de "Permisos del sitio"</li>
+              <li>Busca los permisos de "Ubicación" o "Geolocalización"</li>
+              <li>Cambia la configuración a "Permitir"</li>
+              <li>Recarga la página</li>
+            </ol>
+          </>
+        );
+    }
+  };
+
+  return (
+    <div className="text-xs space-y-2 p-3 bg-primary/10 rounded-md border border-primary/20">
+      <p className="font-bold text-sm text-primary">Tu navegador está bloqueando el acceso a la ubicación</p>
+      {getBrowserInstructions()}
+      <p className="text-muted-foreground mt-2">También puedes establecer tu ubicación manualmente usando la opción abajo.</p>
+    </div>
+  );
+}
+
+// Función para detectar el navegador del usuario
+function detectBrowser() {
+  const userAgent = navigator.userAgent;
+  
+  if (userAgent.indexOf("Chrome") > -1 && userAgent.indexOf("Edge") === -1) {
+    return "Chrome";
+  } else if (userAgent.indexOf("Safari") > -1 && userAgent.indexOf("Chrome") === -1) {
+    return "Safari";
+  } else if (userAgent.indexOf("Firefox") > -1) {
+    return "Firefox";
+  } else if (userAgent.indexOf("Edge") > -1) {
+    return "Edge";
+  } else {
+    return "Desconocido";
+  }
+}
+
+// Después de la importación de hooks y componentes, agregar una función para calcular el nivel de zoom
+// basado en la distancia seleccionada (en km)
+const calculateZoomFromDistance = (distance) => {
+  // Si no hay distancia especificada o es "Sin límite", usar un zoom predeterminado
+  if (!distance || distance === "0") {
+    return 12; // Valor predeterminado de zoom (ciudad/municipio)
+  }
+  
+  // Fórmula logarítmica para calcular un nivel de zoom aproximado basado en la distancia en km
+  // A menor valor de zoom, más alejado está el mapa. Típicos valores:
+  // 18: nivel edificio, 15: nivel calle, 13: nivel barrio, 10: nivel ciudad, 6: nivel país
+  const distanceNumber = parseFloat(distance);
+  
+  // Tabla de relaciones aproximadas distancia-zoom
+  if (distanceNumber <= 0.5) return 16;       // 500m - muy cerca
+  else if (distanceNumber <= 1) return 15;    // 1km - nivel calle/barrio pequeño
+  else if (distanceNumber <= 2) return 14;    // 2km - nivel barrio
+  else if (distanceNumber <= 5) return 13;    // 5km - nivel zona urbana
+  else if (distanceNumber <= 10) return 12;   // 10km - nivel municipio pequeño
+  else if (distanceNumber <= 20) return 11;   // 20km - nivel municipio/ciudad
+  else if (distanceNumber <= 50) return 10;   // 50km - nivel ciudad grande/comarca
+  else if (distanceNumber <= 100) return 9;   // 100km - nivel provincia pequeña
+  else if (distanceNumber <= 200) return 8;   // 200km - nivel provincia
+  else return 7;                              // +200km - nivel región
+};
 
 export default function BusinessSearchResults() {
   const [query, setQuery] = useState('');
@@ -789,20 +1045,39 @@ export default function BusinessSearchResults() {
     }
   }, [apiService]);
 
-  // Función para solicitar la ubicación del usuario
-  const requestUserLocation = () => {
+  // Modificar la función requestUserLocation con la comprobación de permisos
+  const requestUserLocation = async () => {
     if (!navigator.geolocation) {
       // Si no hay soporte para geolocalización, verificar si ya tenemos ubicación guardada
       if (userLocation) {
         toast({
-          title: "Usando ubicación guardada",
-          description: "Se está utilizando tu ubicación guardada anteriormente.",
+          title: "Usando ubicación guardada temporalmente",
+          description: "Tu navegador no soporta geolocalización. Se utilizará tu ubicación guardada mientras decides si actualizarla.",
+          variant: "warning",
         });
-        return;
       }
 
-      // Si no hay ubicación guardada, iniciar proceso alternativo
+      // Siempre mostrar el diálogo de ubicación manual
       handleGeolocationFailure('Tu navegador no soporta geolocalización');
+      return;
+    }
+
+    // Verificar el estado del permiso antes de solicitar la ubicación
+    const permissionState = await checkGeolocationPermission();
+    
+    if (permissionState === 'denied') {
+      // El permiso está bloqueado persistentemente
+      setLocationError('Permiso de ubicación bloqueado');
+      const browserName = detectBrowser();
+      toast({
+        variant: "destructive",
+        title: "Permiso de ubicación bloqueado",
+        description: `Has bloqueado el acceso a tu ubicación en ${browserName}. Consulta las instrucciones para desbloquearlo.`,
+        duration: 8000, // Aumentado para dar tiempo a leer las instrucciones
+      });
+      
+      // Continuar con flujo alternativo
+      await handleGeolocationFailure('Permiso de ubicación bloqueado en tu navegador');
       return;
     }
 
@@ -840,33 +1115,40 @@ export default function BusinessSearchResults() {
       async (error) => {
         console.error("Error de geolocalización:", error);
 
-        // Verificar si ya tenemos una ubicación guardada
+        // Personalizar mensaje de error según el código
+        let errorMessage = 'No se pudo obtener tu ubicación. ';
+        if (error.code === 1) {
+          errorMessage += 'Has denegado el permiso para acceder a tu ubicación.';
+          // Si el error es de permiso, verificar el estado nuevamente para detectar bloqueo persistente
+          const currentState = await checkGeolocationPermission();
+          if (currentState === 'denied') {
+            errorMessage = 'El acceso a tu ubicación está bloqueado en la configuración de tu navegador.';
+          }
+        } else if (error.code === 2) {
+          errorMessage += 'Ubicación no disponible. Verifica tu conexión GPS o de red.';
+        } else if (error.code === 3) {
+          errorMessage += 'Tiempo de espera agotado. Inténtalo de nuevo.';
+        }
+        
+        // Verificar si ya tenemos una ubicación guardada y mostrarla en toast
         if (userLocation) {
-          console.log("Usando ubicación guardada previamente:", userLocation);
-          setIsLoadingLocation(false);
+          console.log("Usando ubicación guardada previamente mientras se muestra el diálogo:", userLocation);
           toast({
             variant: "warning",
-            title: "Usando ubicación guardada",
-            description: "No se pudo obtener tu ubicación actual. Se utilizará la ubicación guardada anteriormente.",
+            title: "Usando ubicación guardada temporalmente",
+            description: "Se utilizará la ubicación guardada mientras decides si actualizarla manualmente.",
           });
-          return;
         }
-
-        // Si no hay ubicación guardada, iniciar proceso alternativo
-        await handleGeolocationFailure(
-          'No se pudo obtener tu ubicación. ' +
-          (error.code === 1
-            ? 'Has denegado el permiso.'
-            : error.code === 2
-              ? 'Ubicación no disponible.'
-              : 'Tiempo de espera agotado.')
-        );
+        
+        // Siempre mostramos el diálogo de ubicación manual, independientemente de si hay ubicación guardada
+        setIsLoadingLocation(false);
+        await handleGeolocationFailure(errorMessage);
       },
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
   };
 
-  // Función para manejar el fallo de geolocalización
+  // Modificar la función handleGeolocationFailure
   const handleGeolocationFailure = async (errorMessage) => {
     setLocationError(errorMessage);
     setIsLoadingLocation(false);
@@ -881,19 +1163,24 @@ export default function BusinessSearchResults() {
       setShowManualLocationDialog(true);
     } catch (error) {
       console.error("Error al obtener ubicación por IP:", error);
+      // Si falla incluso la ubicación por IP, forzar el diálogo de ubicación manual
+      setShowManualLocationDialog(true);
     } finally {
       setIsLoadingIpLocation(false);
     }
 
-    // Por ahora, desactivamos el filtro de distancia
+    // Desactivar el filtro de distancia
     setDistance('0');
     setDistanceValue([0]);
 
+    // La notificación ya se maneja en requestUserLocation cuando es un error de permiso bloqueado
+    if (!errorMessage.includes('bloqueado')) {
     toast({
-      variant: "destructive" ,
+        variant: "destructive",
       title: "Error de ubicación",
-      description: "No se pudo obtener tu ubicación automáticamente. Por favor, ingresa tu ubicación manualmente.",
+        description: errorMessage || "No se pudo obtener tu ubicación. Por favor, ingresa tu ubicación manualmente.",
     });
+    }
   };
 
   // Función para manejar la confirmación de ubicación manual
@@ -946,7 +1233,83 @@ export default function BusinessSearchResults() {
             console.warn("ADVERTENCIA (BusinessSearchResults.jsx): Intentando filtrar por distancia SIN userLocation. El backend podría no manejar esto como se espera, o devolver resultados vacíos.");
         }
         
-        // Usar try-catch específico para la llamada a la API
+        // Crear una clave de caché basada en los filtros
+        const cacheKey = `businesses_search_${JSON.stringify(filters)}`;
+        
+        // Primero, intentar obtener datos de caché local
+        let cachedData;
+        try {
+          if (typeof localStorage !== 'undefined') {
+            const cachedItem = localStorage.getItem(cacheKey);
+            if (cachedItem) {
+              const { data, timestamp } = JSON.parse(cachedItem);
+              // Verificar si la caché es válida (menos de 1 hora)
+              const now = Date.now();
+              const cacheAge = now - timestamp;
+              const cacheMaxAge = 60 * 60 * 1000; // 1 hora en ms
+              
+              if (cacheAge < cacheMaxAge) {
+                console.log(`Usando datos en caché local para: ${cacheKey} (edad: ${Math.round(cacheAge/1000/60)} minutos)`);
+                cachedData = data;
+              } else {
+                console.log(`Caché local expirada para: ${cacheKey}`);
+                localStorage.removeItem(cacheKey);
+              }
+            }
+          }
+        } catch (cacheError) {
+          console.warn("Error al acceder a caché local:", cacheError);
+        }
+        
+        // Si tenemos datos en caché, usarlos mientras intentamos actualizar
+        if (cachedData && cachedData.businesses && cachedData.businesses.length > 0) {
+          console.log(`Mostrando ${cachedData.businesses.length} negocios desde caché mientras actualizamos`);
+          setBusinesses(cachedData.businesses);
+          setIsLoading(false); // Desactivar loading para mostrar resultados rápidamente
+          
+          // Configurar flag de carga para la actualización en segundo plano
+          let isBgUpdate = true;
+          
+          // Intentar actualizar en segundo plano
+          try {
+            const freshResult = await apiService.businesses.search(filters);
+            if (freshResult && typeof freshResult === 'object' && 'businesses' in freshResult) {
+              // Solo actualizar si hay cambios significativos
+              const currentCount = cachedData.businesses.length;
+              const newCount = freshResult.businesses ? freshResult.businesses.length : 0;
+              
+              if (Math.abs(currentCount - newCount) > 3 || newCount === 0) {
+                console.log(`Actualizando datos en caché: ${currentCount} → ${newCount} negocios`);
+                setBusinesses(freshResult.businesses || []);
+                
+                // Actualizar caché local
+                try {
+                  if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                      data: freshResult,
+                      timestamp: Date.now()
+                    }));
+                  }
+                } catch (storageError) {
+                  console.warn("Error al guardar en caché local:", storageError);
+                }
+              } else {
+                console.log("No hay cambios significativos en los datos, manteniendo caché");
+              }
+            }
+          } catch (bgError) {
+            console.warn("Error en actualización en segundo plano, usando datos en caché:", bgError);
+            // Ya mostramos datos de caché, no necesitamos hacer nada más
+          } finally {
+            if (isBgUpdate) {
+              setIsLoading(false);
+            }
+          }
+          
+          return; // Salir temprano, ya mostramos datos de caché y actualizamos en segundo plano
+        }
+        
+        // Si no hay caché o está vacía, continuar con la petición normal
         try {
           const result = await apiService.businesses.search(filters);
           
@@ -954,6 +1317,18 @@ export default function BusinessSearchResults() {
           if (result && typeof result === 'object' && 'businesses' in result) {
             setBusinesses(result.businesses || []);
             console.log(`Se encontraron ${result.businesses ? result.businesses.length : 0} negocios`);
+            
+            // Guardar en caché local
+            try {
+              if (typeof localStorage !== 'undefined') {
+                localStorage.setItem(cacheKey, JSON.stringify({
+                  data: result,
+                  timestamp: Date.now()
+                }));
+              }
+            } catch (storageError) {
+              console.warn("Error al guardar en caché local:", storageError);
+            }
           } else {
             // Si el resultado no tiene el formato esperado
             console.error("Formato de respuesta inesperado:", result);
@@ -961,7 +1336,62 @@ export default function BusinessSearchResults() {
           }
         } catch (apiError) {
           console.error("Error en la llamada a la API:", apiError);
+          
+          // Si es un error de recursos insuficientes, intentar obtener los datos de cualquier caché disponible
+          if (apiError.toString().includes('ERR_INSUFFICIENT_RESOURCES') || apiError.toString().includes('Failed to fetch')) {
+            console.log("Error de recursos insuficientes, buscando datos en cachés alternativas...");
+            
+            // Intentar obtener cualquier caché de negocios previa
+            let fallbackData = [];
+            try {
+              if (typeof localStorage !== 'undefined') {
+                // Buscar todas las claves que contienen 'businesses_search_'
+                const keys = Object.keys(localStorage).filter(k => k.startsWith('businesses_search_'));
+                
+                if (keys.length > 0) {
+                  // Ordenar por timestamp más reciente
+                  const cacheItems = keys
+                    .map(k => {
+                      try {
+                        const item = JSON.parse(localStorage.getItem(k));
+                        return { key: k, ...item };
+                      } catch (e) {
+                        return null;
+                      }
+                    })
+                    .filter(Boolean)
+                    .sort((a, b) => b.timestamp - a.timestamp);
+                  
+                  if (cacheItems.length > 0) {
+                    // Usar el caché más reciente como fallback
+                    console.log(`Usando datos de caché alternativa: ${cacheItems[0].key}`);
+                    fallbackData = cacheItems[0].data.businesses || [];
+                  }
+                }
+              }
+            } catch (fallbackError) {
+              console.warn("Error al buscar cachés alternativas:", fallbackError);
+            }
+            
+            // Si encontramos datos de fallback, usarlos
+            if (fallbackData.length > 0) {
+              toast({
+                title: "Modo offline activado",
+                description: "Estamos mostrando resultados almacenados anteriormente mientras el servidor está ocupado.",
+                variant: "warning"
+              });
+              setBusinesses(fallbackData);
+            } else {
           setBusinesses([]);
+              toast({
+                title: "Error de conexión",
+                description: "No se pudieron cargar los negocios. El servidor está ocupado, por favor intenta más tarde.",
+                variant: "destructive"
+              });
+            }
+          } else {
+            setBusinesses([]);
+          }
         }
       } catch (error) {
         console.error("Error al cargar negocios:", error);
@@ -1031,6 +1461,23 @@ export default function BusinessSearchResults() {
   const handleMapViewToggle = (newValue) => {
     setIsMapView(newValue);
   };
+
+  // Dentro del componente BusinessSearchResults, antes del return:
+  // Calcular valores útiles para el mapa
+  const mapZoomLevel = useMemo(() => calculateZoomFromDistance(distance), [distance]);
+
+  const mapViewOptions = useMemo(() => ({
+    // Si tenemos filtro de distancia, configurar para mostrar todo el círculo
+    fitBoundsOptions: distance !== "0" ? {
+      padding: 50, // Padding en píxeles alrededor del círculo
+      maxZoom: mapZoomLevel, // Limitar el zoom máximo para asegurar que se vea el círculo completo
+    } : undefined,
+    // Pasar la distancia como radio en metros
+    distanceRadius: distance !== "0" ? parseFloat(distance) * 1000 : 0,
+    // Configurar el comportamiento del mapa
+    shouldFitBounds: distance !== "0" && userLocation !== null,
+    initialZoom: mapZoomLevel
+  }), [distance, userLocation, mapZoomLevel]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 space-y-6">
@@ -1106,12 +1553,17 @@ export default function BusinessSearchResults() {
             </div>
 
             {locationError && !isLoadingLocation && (
+              <>
               <Alert variant="destructive" className="mt-2">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-xs">
                   {locationError}
                 </AlertDescription>
               </Alert>
+                {locationError.includes('bloqueado') && (
+                  <PermissionGuide browserName={detectBrowser()} />
+                )}
+              </>
             )}
 
             <div className="px-2 py-3">
@@ -1225,7 +1677,7 @@ export default function BusinessSearchResults() {
           <Filter className="h-5 w-5 text-muted-foreground hidden lg:block" />
 
           {/* Contenedor flexible para los filtros */}
-          <div className="flex flex-1 flex-wrap gap-2 items-center">
+          <div className="flex items-center gap-2 grow">
             {/* Category Filter */}
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="w-[140px] md:w-[180px] bg-background">
@@ -1266,9 +1718,9 @@ export default function BusinessSearchResults() {
               </SelectContent>
             </Select>
 
-            {/* Distance Compact */}
+            {/* Distance Compact - ahora usa flex-grow para ocupar todo el espacio disponible */}
             <div className={cn(
-              "flex-1 min-w-[180px] md:min-w-[240px] max-w-[280px] flex items-center gap-2 p-2 bg-background rounded-md border",
+              "grow flex items-center gap-2 p-2 bg-background rounded-md border",
               locationError && "border-destructive"
             )}>
               <div className="flex items-center gap-1">
@@ -1310,10 +1762,15 @@ export default function BusinessSearchResults() {
                           <AlertCircle className="h-4 w-4 text-destructive" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-[250px] bg-background border text-foreground">
+                      <TooltipContent side="bottom" className="max-w-[300px] z-[1000] bg-background text-foreground border p-3"> 
                         <p className="font-medium text-destructive-foreground bg-destructive px-2 py-1 rounded-sm">Error de Ubicación</p>
                         <p className="mt-1">{locationError}</p>
-                        <p className="mt-1 text-xs">Haz clic para configurar tu ubicación manualmente.</p>
+                        {locationError.includes('bloqueado') && (
+                          <div className="mt-2 border-t pt-2">
+                            <PermissionGuide browserName={detectBrowser()} />
+                          </div>
+                        )}
+                        <p className="mt-2 text-xs">Haz clic para configurar tu ubicación manualmente.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -1321,8 +1778,45 @@ export default function BusinessSearchResults() {
             </div>
           </div>
 
-          {/* View Toggle Buttons */}
-          <div className="flex gap-2">
+          {/* Botón Mi Ubicación (solo icono) */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={requestUserLocation}
+                  disabled={isLoadingLocation}
+                >
+                  {isLoadingLocation ? (
+                    <span className="animate-spin text-xs">↻</span>
+                  ) : (
+                    <LocateFixed className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Mi ubicación</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+
+        {/* Fila inferior reorganizada - ahora siempre visible */}
+        <div className="hidden sm:flex justify-between items-center mt-1">
+          {/* Información de ubicación ocupando todo el ancho disponible (condicional) */}
+          <div className="flex-grow text-xs items-center gap-1 text-muted-foreground">
+            {userLocation && !isLoadingLocation ? (
+              <>
+                <LocateFixed className="h-3 w-3 inline-block mr-1" />
+                <span className="truncate">Tu ubicación: {userAddress || `${userLocation.latitude.toFixed(5)}, ${userLocation.longitude.toFixed(5)}`}</span>
+              </>
+            ) : null}
+          </div>
+
+          {/* View Toggle Buttons siempre pegados a la derecha */}
+          <div className="flex gap-2 ml-auto">
             {!isMapView && (
               <Button
                 variant={viewMode === 'grid' ? "default" : "outline"}
@@ -1355,40 +1849,8 @@ export default function BusinessSearchResults() {
             >
               <Map className="mr-2 h-4 w-4" /> Mapa
             </Button>
-
-            {/* Botón Mi Ubicación (solo icono) */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={requestUserLocation}
-                    disabled={isLoadingLocation}
-                  >
-                    {isLoadingLocation ? (
-                      <span className="animate-spin text-xs">↻</span>
-                    ) : (
-                      <LocateFixed className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Mi ubicación</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </div>
         </div>
-
-        {/* Mostrar información de la ubicación en modo escritorio */}
-        {userLocation && !isLoadingLocation && (
-          <div className="hidden sm:flex text-xs items-center gap-1 mt-1 text-muted-foreground">
-            <LocateFixed className="h-3 w-3" />
-            <span className="truncate">Tu ubicación: {userAddress || `${userLocation.latitude.toFixed(5)}, ${userLocation.longitude.toFixed(5)}`}</span>
-          </div>
-        )}
       </div>
 
       {/* Results Display */}
@@ -1406,6 +1868,7 @@ export default function BusinessSearchResults() {
                     businesses={businesses}
                     userLocation={userLocation}
                     distance={distance}
+                    mapOptions={mapViewOptions}
                     onResetFilters={() => {
                       setQuery('');
                       setCategory('Todas');
@@ -1413,9 +1876,6 @@ export default function BusinessSearchResults() {
                       setSortBy('rating');
                       setDistance('0');
                       setDistanceValue([0]);
-                      // Considerar si también se debe limpiar userLocation o si debe persistir
-                      // setUserLocation(null);
-                      // setUserAddress(null);
                       toast({
                         title: "Filtros limpiados",
                         description: "Se han restablecido los valores por defecto.",

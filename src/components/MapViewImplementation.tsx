@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Phone, Mail, ZoomIn, ZoomOut, Home, X, Navigation, AlertCircle, Loader2, Globe, FilterX, RotateCcw, Info } from 'lucide-react';
+import { Store, Phone, Mail, ZoomIn, ZoomOut, Home, X, MapPinCheckInside, FilterX, Info } from 'lucide-react';
 
 // Coordenadas por defecto (Cuba)
 const DEFAULT_CENTER: [number, number] = [21.5218, -77.7812];
@@ -31,6 +31,25 @@ const loadingAnimation = `
 
 // Reemplazos para los subdominios de OpenStreetMap
 const SUBDOMAINS = ['a', 'b', 'c'];
+
+// Función para calcular el nivel de zoom basado en la distancia en kilómetros
+const calculateZoomForDistanceKm = (distanceInKm: number): number => {
+    if (distanceInKm === 0) {
+        // Para 0km (sin filtro de distancia específico), usamos un zoom de área local.
+        return 11; // Coincide con el comportamiento anterior para 0km.
+    }
+    // Niveles de zoom: mayor número = más acercamiento.
+    if (distanceInKm <= 1) return 15;    // Radio ~1km: Nivel de calle/muy cercano
+    if (distanceInKm <= 3) return 14;    // Radio ~3km: Barrio
+    if (distanceInKm <= 5) return 13;    // Radio ~5km: Pequeña localidad/distrito
+    if (distanceInKm <= 10) return 12;   // Radio ~10km: Localidad/área urbana
+    if (distanceInKm <= 20) return 11;   // Radio ~20km: Ciudad/área metropolitana pequeña
+    if (distanceInKm <= 50) return 9;    // Radio ~50km: Región pequeña
+    if (distanceInKm <= 100) return 8;   // Radio ~100km: Región/provincia pequeña
+    if (distanceInKm <= 200) return 7;   // Radio ~200km: Provincia/región grande
+    if (distanceInKm <= 500) return 6;   // Radio ~500km: Parte de un país
+    return 5;                            // Más de 500km: Escala de país/muy amplio
+};
 
 // Función de debounce para evitar demasiadas actualizaciones
 function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
@@ -287,8 +306,13 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                     // Actualizar centro del mapa a la ubicación del usuario
                     currentCenterRef.current = [latitude, longitude];
                     setCurrentCenter([latitude, longitude]);
-                    currentZoomRef.current = 13; // Zoom apropiado para ubicación de usuario
-                    setCurrentZoom(13);
+
+                    // Usar un zoom adecuado basado en la distancia del filtro actual
+                    const distanceInt = parseInt(distance || '0');
+                    const newZoom = calculateZoomForDistanceKm(distanceInt);
+
+                    currentZoomRef.current = newZoom;
+                    setCurrentZoom(newZoom);
 
                     setIsLocating(false);
 
@@ -315,8 +339,13 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                             // Actualizar centro del mapa a la ubicación del usuario
                             currentCenterRef.current = [latitude, longitude];
                             setCurrentCenter([latitude, longitude]);
-                            currentZoomRef.current = 13;
-                            setCurrentZoom(13);
+
+                            // Usar un zoom adecuado basado en la distancia del filtro actual
+                            const distanceInt = parseInt(distance || '0');
+                            const newZoom = calculateZoomForDistanceKm(distanceInt);
+
+                            currentZoomRef.current = newZoom;
+                            setCurrentZoom(newZoom);
                             setIsLocating(false);
 
                             // Actualizar mapa
@@ -347,8 +376,13 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                     // Actualizar centro del mapa a la ubicación del usuario
                     currentCenterRef.current = [latitude, longitude];
                     setCurrentCenter([latitude, longitude]);
-                    currentZoomRef.current = 13;
-                    setCurrentZoom(13);
+
+                    // Usar un zoom adecuado basado en la distancia del filtro actual
+                    const distanceInt = parseInt(distance || '0');
+                    const newZoom = calculateZoomForDistanceKm(distanceInt);
+
+                    currentZoomRef.current = newZoom;
+                    setCurrentZoom(newZoom);
                     setIsLocating(false);
 
                     // Actualizar mapa
@@ -365,7 +399,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                 }
             );
         }
-    }, [calculateVisibleTiles, handleGeolocationError]);
+    }, [calculateVisibleTiles, handleGeolocationError, distance]);
 
     // Intentar obtener la ubicación del usuario al iniciar
     useEffect(() => {
@@ -448,6 +482,44 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
     useEffect(() => {
         currentZoomRef.current = currentZoom;
     }, [currentZoom]);
+
+    // Efecto para actualizar el zoom y centrar cuando cambia la distancia del filtro o la ubicación del usuario
+    useEffect(() => {
+        if (!mapRef.current) return; // No hacer nada si el mapa no está montado
+
+        const distanceInt = parseInt(distance || '0');
+        let newZoomCalculated = calculateZoomForDistanceKm(distanceInt);
+        const previousZoom = currentZoomRef.current; // Captura el zoom actual antes del cálculo
+
+        // Aplicar el zoom y centrado solo si hay un filtro de distancia activo
+        if (distanceInt > 0) {
+            let finalNewZoom = newZoomCalculated;
+
+            // Si el cálculo del zoom basado en la distancia resulta en alejar el mapa
+            if (newZoomCalculated < previousZoom) {
+                // Alejar un paso adicional, como si se presionara el botón de zoom out
+                finalNewZoom = Math.max(3, newZoomCalculated - 1); // Min zoom 3, igual que el botón de zoom out
+            }
+
+            // Solo actualizar centro si userLocationCoords no es null
+            if (userLocationCoords) {
+                currentCenterRef.current = userLocationCoords;
+                setCurrentCenter(userLocationCoords);
+            }
+            currentZoomRef.current = finalNewZoom;
+            setCurrentZoom(finalNewZoom);
+        }
+        // Si distanceInt es 0 (sin filtro), este bloque no cambia el zoom ni el centro.
+        // La actualización de tiles (calculateVisibleTiles) se manejará después,
+        // asegurando que el mapa se redibuje si es necesario (ej. si userLocationCoords cambió).
+
+        // Solicitar actualización del mapa
+        if (updateRequestRef.current) {
+            cancelAnimationFrame(updateRequestRef.current);
+        }
+        updateRequestRef.current = requestAnimationFrame(calculateVisibleTiles);
+
+    }, [distance, userLocationCoords, calculateVisibleTiles]);
 
     // Recalcular tiles cuando cambia el centro o zoom
     useEffect(() => {
@@ -547,8 +619,17 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
 
             if (!initialZoom) {
                 // Si no hay un zoom inicial, usar uno adecuado para visualizar el radio
+                const distanceInt = parseInt(distance || '0');
                 const newZoom = distance !== '0' ?
-                    (parseInt(distance) <= 5 ? 14 : parseInt(distance) <= 10 ? 13 : 12) :
+                    (distanceInt <= 1 ? 16 :   // Nivel de barrio
+                        distanceInt <= 3 ? 15 :    // Barrio amplio
+                            distanceInt <= 5 ? 14 :    // Localidad
+                                distanceInt <= 10 ? 13 :   // Municipio
+                                    distanceInt <= 20 ? 12 :   // Provincia/Región pequeña
+                                        distanceInt <= 50 ? 11 :   // Provincia grande
+                                            distanceInt <= 100 ? 10 :  // Región
+                                                distanceInt <= 200 ? 9 :   // Región extensa
+                                                    distanceInt <= 500 ? 8 : 7) : // País
                     13;
                 currentZoomRef.current = newZoom;
                 setCurrentZoom(newZoom);
@@ -575,7 +656,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             clientX = e.clientX;
             clientY = e.clientY;
         }
-        
+
         if (isMouseEvent && (e as React.MouseEvent).button !== 0) return; // Solo botón izquierdo para ratón
 
         isDraggingRef.current = true;
@@ -633,7 +714,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         }
     }, []);
 
-    // Funciones de zoom mejoradas para evitar actualizaciones constantes
+    // Función de zoom mejoradas para evitar actualizaciones constantes
     const handleZoomIn = useCallback(() => {
         const newZoom = Math.min(18, currentZoomRef.current + 1);
         currentZoomRef.current = newZoom;
@@ -676,9 +757,24 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         if (userLocationCoords) {
             // Si ya tenemos la ubicación, centramos el mapa en ella
             currentCenterRef.current = userLocationCoords;
-            currentZoomRef.current = 13;
+
+            // Usar un zoom adecuado basado en la distancia del filtro actual
+            const distanceInt = parseInt(distance || '0');
+            const newZoom = distance !== '0' ?
+                (distanceInt <= 1 ? 16 :   // Nivel de barrio
+                    distanceInt <= 3 ? 15 :    // Barrio amplio
+                        distanceInt <= 5 ? 14 :    // Localidad
+                            distanceInt <= 10 ? 13 :   // Municipio
+                                distanceInt <= 20 ? 12 :   // Provincia/Región pequeña
+                                    distanceInt <= 50 ? 11 :   // Provincia grande
+                                        distanceInt <= 100 ? 10 :  // Región
+                                            distanceInt <= 200 ? 9 :   // Región extensa
+                                                distanceInt <= 500 ? 8 : 7) : // País
+                13;
+
+            currentZoomRef.current = newZoom;
             setCurrentCenter(userLocationCoords);
-            setCurrentZoom(13);
+            setCurrentZoom(newZoom);
 
             if (updateRequestRef.current) {
                 cancelAnimationFrame(updateRequestRef.current);
@@ -688,7 +784,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             // Si no tenemos la ubicación, intentamos obtenerla
             getUserLocation();
         }
-    }, [calculateVisibleTiles, getUserLocation, isLocating, userLocationCoords]);
+    }, [calculateVisibleTiles, getUserLocation, isLocating, userLocationCoords, distance]);
 
     const handleBusinessClick = useCallback((businessId: string) => {
         setShowPopup((prev: string | null) => prev === businessId ? null : businessId);
@@ -802,7 +898,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                     >
                         <div className="relative flex flex-col items-center">
                             <div className={`w-6 h-6 rounded-full flex items-center justify-center ${getBusinessColor()} shadow-md animate-bounce-small`}>
-                                <MapPin className="w-4 h-4 text-white" />
+                                <Store className="w-4 h-4 text-white" />
                             </div>
                             <div className="w-2 h-2 bg-black opacity-30 rounded-full mt-1" />
                         </div>
@@ -835,7 +931,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
                 >
                     <div className="relative flex flex-col items-center">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-500 shadow-md animate-pulse">
-                            <Navigation className="w-5 h-5 text-white" />
+                            <MapPinCheckInside className="w-5 h-5 text-white" />
                         </div>
                         <div className="w-3 h-3 bg-black opacity-30 rounded-full mt-1" />
                     </div>
@@ -885,12 +981,12 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
 
             {/* Indicador de carga rediseñado */}
             {isLoading && (
-                <div 
+                <div
                     className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-sky-900 z-50 select-none"
                     style={{ animation: 'mapSurfaceAppear 0.5s ease-out' }}
                 >
                     <div style={{ animation: 'mapMarkerPulse 1.5s infinite ease-in-out' }}>
-                        <MapPin className="h-16 w-16 text-sky-400 drop-shadow-lg" />
+                        <Store className="h-16 w-16 text-sky-400 drop-shadow-lg" />
                     </div>
                     <p className="text-lg font-medium text-sky-200 mt-6 mb-2 tracking-wide">
                         Explorando el universo de negocios...
@@ -924,8 +1020,8 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
     );
 };
 
-// Componente para el popup del negocio
-function BusinessPopup({ business }: { business: Business }) {
+// Optimización con React.memo para el popup de negocios
+const BusinessPopup = React.memo(({ business }: { business: Business }) => {
     return (
         <div className="w-full space-y-1.5">
             <h3 className="font-semibold text-sm">{business.name}</h3>
@@ -940,7 +1036,7 @@ function BusinessPopup({ business }: { business: Business }) {
             <Separator className="my-1" />
             <div className="space-y-0.5 text-xs">
                 <div className="flex items-start gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <Store className="h-3.5 w-3.5 mt-0.5 text-muted-foreground flex-shrink-0" />
                     <span>{business.address}</span>
                 </div>
                 {business.phone && (
@@ -961,6 +1057,6 @@ function BusinessPopup({ business }: { business: Business }) {
             </Button>
         </div>
     );
-}
+});
 
-export default MapViewImplementation; 
+export default MapViewImplementation;

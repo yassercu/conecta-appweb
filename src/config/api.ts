@@ -5,6 +5,7 @@
 // URL base de la API
 export const API_CONFIG = {
     BASE_URL: 'http://localhost:3001/api',
+    // BASE_URL: 'http://216.7.89.170:3001/api',
     VERSION: 'v1',
     TIMEOUT: 30000,
     DEFAULT_HEADERS: {
@@ -12,7 +13,20 @@ export const API_CONFIG = {
         'Accept': 'application/json'
     },
     // Tiempo de caché para respuestas (en milisegundos)
-    CACHE_TIME: 5 * 60 * 1000, // 5 minutos
+    CACHE_TIME: 15 * 60 * 1000, // Aumentado a 15 minutos para reducir solicitudes
+    // Configuración de reintentos
+    RETRY: {
+        MAX_RETRIES: 5,
+        RETRY_DELAY: 5000, // Delay inicial (ms)
+        BACKOFF_FACTOR: 1.5,  // Factor de backoff exponencial reducido
+        JITTER: 1000,        // Jitter aleatorio aumentado para mejor distribución
+        RETRY_STATUS_CODES: [408, 429, 500, 502, 503, 504, 0] // Incluir código 0 para errores de red
+    },
+    // Rate limiting
+    RATE_LIMIT: {
+        MAX_REQUESTS_PER_MINUTE: 20, // Reducido para evitar sobrecarga
+        REQUESTS_TRACKING_WINDOW: 120000 // 2 minutos en ms para mejor distribución
+    }
 };
 
 // URL completa de la API con versión
@@ -119,6 +133,59 @@ export const clearCache = (key?: string): void => {
     }
 };
 
+// Sistema de rate limiting para evitar exceder límites del servidor
+class RateLimiter {
+    private requestTimestamps: number[] = [];
+
+    /**
+     * Verifica si se puede realizar una nueva solicitud
+     * @returns true si se permite la solicitud, false si se debe limitar
+     */
+    canMakeRequest(): boolean {
+        const now = Date.now();
+        // Eliminar timestamps antiguos fuera de la ventana de seguimiento
+        this.requestTimestamps = this.requestTimestamps.filter(
+            timestamp => now - timestamp < API_CONFIG.RATE_LIMIT.REQUESTS_TRACKING_WINDOW
+        );
+
+        // Verificar si estamos dentro del límite
+        if (this.requestTimestamps.length < API_CONFIG.RATE_LIMIT.MAX_REQUESTS_PER_MINUTE) {
+            this.requestTimestamps.push(now);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Calcular tiempo de espera hasta la próxima solicitud permitida
+     * @returns Tiempo en ms hasta que se permita la próxima solicitud
+     */
+    getTimeUntilNextAllowedRequest(): number {
+        if (this.requestTimestamps.length === 0) return 0;
+
+        const now = Date.now();
+        const oldestTimestamp = this.requestTimestamps[0];
+        return Math.max(0, API_CONFIG.RATE_LIMIT.REQUESTS_TRACKING_WINDOW - (now - oldestTimestamp));
+    }
+}
+
+// Instancia única del rate limiter
+export const apiRateLimiter = new RateLimiter();
+
+/**
+ * Calcula el tiempo de espera para un reintento usando backoff exponencial con jitter
+ * @param attempt Número de intento
+ * @returns Tiempo de espera en milisegundos
+ */
+export const getRetryDelay = (attempt: number): number => {
+    const baseDelay = API_CONFIG.RETRY.RETRY_DELAY;
+    const exponentialDelay = baseDelay * Math.pow(API_CONFIG.RETRY.BACKOFF_FACTOR, attempt);
+    // Añadir jitter aleatorio para evitar "thundering herd"
+    const jitter = Math.random() * API_CONFIG.RETRY.JITTER;
+    return exponentialDelay + jitter;
+};
+
 // Estado global de carga de la API
 let isLoadingCounter = 0;
 
@@ -143,4 +210,4 @@ export const apiLoadingState = {
      * Verifica si hay operaciones de API en curso
      */
     isLoading: () => isLoadingCounter > 0
-}; 
+};
