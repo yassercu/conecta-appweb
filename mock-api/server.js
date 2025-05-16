@@ -426,7 +426,7 @@ const loadInitialData = () => {
                 longitude: longitude
             },
             address: `Calle ${10 + Math.floor(Math.random() * 50)} #${Math.floor(Math.random() * 100)}, ${municipality.name}`,
-            phone: `+53 ${5000 + Math.floor(Math.random() * 5000)}`,
+            phone: "+5350698123",
             email: `contacto@${nombre.toLowerCase().replace(/\s+/g, '')}.cu`,
             totalReviews: reviews.length,
             products: products,

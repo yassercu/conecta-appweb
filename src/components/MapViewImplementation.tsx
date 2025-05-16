@@ -12,6 +12,7 @@ import { Store, Phone, Mail, ZoomIn, ZoomOut, Home, X, MapPinCheckInside, Filter
 const DEFAULT_CENTER: [number, number] = [21.5218, -77.7812];
 const DEFAULT_ZOOM = 7;
 const BUSINESS_ZOOM = 15;
+const USER_FOCUS_ZOOM = 15; // Zoom para enfocar la ubicación del usuario
 
 // URL base para las imágenes de los mosaicos de OpenStreetMap
 const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -485,35 +486,32 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
 
     // Efecto para actualizar el zoom y centrar cuando cambia la distancia del filtro o la ubicación del usuario
     useEffect(() => {
-        if (!mapRef.current) return; // No hacer nada si el mapa no está montado
+        if (!mapRef.current) return;
 
         const distanceInt = parseInt(distance || '0');
-        let newZoomCalculated = calculateZoomForDistanceKm(distanceInt);
-        const previousZoom = currentZoomRef.current; // Captura el zoom actual antes del cálculo
+        const currentZoomLevel = currentZoomRef.current; // Este podría ser USER_FOCUS_ZOOM si se acaba de obtener la ubicación
 
-        // Aplicar el zoom y centrado solo si hay un filtro de distancia activo
-        if (distanceInt > 0) {
-            let finalNewZoom = newZoomCalculated;
-
-            // Si el cálculo del zoom basado en la distancia resulta en alejar el mapa
-            if (newZoomCalculated < previousZoom) {
-                // Alejar un paso adicional, como si se presionara el botón de zoom out
-                finalNewZoom = Math.max(3, newZoomCalculated - 1); // Min zoom 3, igual que el botón de zoom out
-            }
-
-            // Solo actualizar centro si userLocationCoords no es null
-            if (userLocationCoords) {
-                currentCenterRef.current = userLocationCoords;
-                setCurrentCenter(userLocationCoords);
-            }
-            currentZoomRef.current = finalNewZoom;
-            setCurrentZoom(finalNewZoom);
+        // Centrar en userLocation si está disponible (puede ser redundante si el efecto de userLocation ya lo hizo, pero es inofensivo)
+        if (userLocationCoords) {
+            currentCenterRef.current = userLocationCoords;
+            setCurrentCenter(userLocationCoords);
         }
-        // Si distanceInt es 0 (sin filtro), este bloque no cambia el zoom ni el centro.
-        // La actualización de tiles (calculateVisibleTiles) se manejará después,
-        // asegurando que el mapa se redibuje si es necesario (ej. si userLocationCoords cambió).
 
-        // Solicitar actualización del mapa
+        if (distanceInt > 0) { // Si hay un filtro de distancia activo
+            const zoomFiltro = calculateZoomForDistanceKm(distanceInt);
+            console.log(`MapView (Filtro Distancia): currentZoom: ${currentZoomLevel}, zoomFiltro: ${zoomFiltro}`);
+
+            // Si el zoom actual (posiblemente USER_FOCUS_ZOOM) es MÁS CERCANO (>) que el que necesita el filtro,
+            // entonces alejar el mapa al nivel del filtro.
+            if (currentZoomLevel > zoomFiltro) {
+                console.log(`MapView (Filtro Distancia): Alejando a zoomFiltro (${zoomFiltro})`);
+                currentZoomRef.current = zoomFiltro;
+                setCurrentZoom(zoomFiltro);
+            }
+            // Si el zoom actual es más alejado o igual, no hacer nada.
+        }
+
+        // Actualizar tiles
         if (updateRequestRef.current) {
             cancelAnimationFrame(updateRequestRef.current);
         }
@@ -609,31 +607,16 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         }
     }, [isLoading, calculateVisibleTiles, mapTiles.length]);
 
-    // Efecto para centrar el mapa en la ubicación del usuario cuando esté disponible
+    // Efecto para centrar el mapa y aplicar zoom de enfoque cuando la ubicación del usuario esté disponible
     useEffect(() => {
         if (userLocation && userLocationCoords) {
-            // Centrar el mapa en la ubicación del usuario
-            console.log("Centrando mapa en la ubicación del usuario:", userLocationCoords);
+            console.log("MapView (User Location): Ubicación de usuario obtenida/actualizada:", userLocationCoords);
             currentCenterRef.current = userLocationCoords;
             setCurrentCenter(userLocationCoords);
 
-            if (!initialZoom) {
-                // Si no hay un zoom inicial, usar uno adecuado para visualizar el radio
-                const distanceInt = parseInt(distance || '0');
-                const newZoom = distance !== '0' ?
-                    (distanceInt <= 1 ? 16 :   // Nivel de barrio
-                        distanceInt <= 3 ? 15 :    // Barrio amplio
-                            distanceInt <= 5 ? 14 :    // Localidad
-                                distanceInt <= 10 ? 13 :   // Municipio
-                                    distanceInt <= 20 ? 12 :   // Provincia/Región pequeña
-                                        distanceInt <= 50 ? 11 :   // Provincia grande
-                                            distanceInt <= 100 ? 10 :  // Región
-                                                distanceInt <= 200 ? 9 :   // Región extensa
-                                                    distanceInt <= 500 ? 8 : 7) : // País
-                    13;
-                currentZoomRef.current = newZoom;
-                setCurrentZoom(newZoom);
-            }
+            console.log(`MapView (User Location): Aplicando USER_FOCUS_ZOOM (${USER_FOCUS_ZOOM})`);
+            currentZoomRef.current = USER_FOCUS_ZOOM;
+            setCurrentZoom(USER_FOCUS_ZOOM);
 
             // Solicitar actualización del mapa
             if (updateRequestRef.current) {
@@ -641,7 +624,7 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             }
             updateRequestRef.current = requestAnimationFrame(calculateVisibleTiles);
         }
-    }, [userLocation, userLocationCoords, calculateVisibleTiles, distance, initialZoom]);
+    }, [userLocation, userLocationCoords, calculateVisibleTiles]); // No depende de initialZoom ni distance
 
     // Manejadores de eventos
     const handleMouseDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -755,36 +738,24 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         if (isLocating) return; // Evitar múltiples solicitudes
 
         if (userLocationCoords) {
-            // Si ya tenemos la ubicación, centramos el mapa en ella
+            // Si ya tenemos la ubicación, centramos el mapa en ella y aplicamos USER_FOCUS_ZOOM
+            console.log("MapView (handleLocateUser): Centrando y aplicando USER_FOCUS_ZOOM");
             currentCenterRef.current = userLocationCoords;
-
-            // Usar un zoom adecuado basado en la distancia del filtro actual
-            const distanceInt = parseInt(distance || '0');
-            const newZoom = distance !== '0' ?
-                (distanceInt <= 1 ? 16 :   // Nivel de barrio
-                    distanceInt <= 3 ? 15 :    // Barrio amplio
-                        distanceInt <= 5 ? 14 :    // Localidad
-                            distanceInt <= 10 ? 13 :   // Municipio
-                                distanceInt <= 20 ? 12 :   // Provincia/Región pequeña
-                                    distanceInt <= 50 ? 11 :   // Provincia grande
-                                        distanceInt <= 100 ? 10 :  // Región
-                                            distanceInt <= 200 ? 9 :   // Región extensa
-                                                distanceInt <= 500 ? 8 : 7) : // País
-                13;
-
-            currentZoomRef.current = newZoom;
             setCurrentCenter(userLocationCoords);
-            setCurrentZoom(newZoom);
+
+            currentZoomRef.current = USER_FOCUS_ZOOM;
+            setCurrentZoom(USER_FOCUS_ZOOM);
 
             if (updateRequestRef.current) {
                 cancelAnimationFrame(updateRequestRef.current);
             }
             updateRequestRef.current = requestAnimationFrame(calculateVisibleTiles);
         } else {
-            // Si no tenemos la ubicación, intentamos obtenerla
+            // Si no tenemos la ubicación, intentamos obtenerla (esto disparará el useEffect de userLocation)
+            console.log("MapView (handleLocateUser): Solicitando ubicación...");
             getUserLocation();
         }
-    }, [calculateVisibleTiles, getUserLocation, isLocating, userLocationCoords, distance]);
+    }, [calculateVisibleTiles, getUserLocation, isLocating, userLocationCoords]); // Se quita distance de las dependencias
 
     const handleBusinessClick = useCallback((businessId: string) => {
         setShowPopup((prev: string | null) => prev === businessId ? null : businessId);
@@ -810,6 +781,31 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
         [validBusinesses, latLngToPixel, currentZoom, mapSize]
     );
 
+    // Bloquear scroll de la página en móvil al interactuar con el mapa
+    useEffect(() => {
+        const mapDiv = mapRef.current;
+        if (!mapDiv) return;
+
+        // Solo aplicar en dispositivos táctiles
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        if (!isTouchDevice) return;
+
+        // Handler para prevenir el scroll de la página
+        const preventScroll = (e: TouchEvent) => {
+            // Solo si hay más de un dedo o si el usuario está arrastrando el mapa
+            // (esto evita bloquear el scroll accidentalmente en otros gestos)
+            if (e.touches.length === 1) {
+                e.preventDefault();
+            }
+        };
+
+        mapDiv.addEventListener('touchmove', preventScroll, { passive: false });
+
+        return () => {
+            mapDiv.removeEventListener('touchmove', preventScroll);
+        };
+    }, []);
+
     // Renderizar el mapa
     return (
         <div
@@ -831,6 +827,9 @@ const MapViewImplementation: React.FC<MapViewProps> = ({
             onTouchMove={handleMouseMove}
             style={{ cursor: isDraggingRef.current ? 'grabbing' : 'grab' }}
         >
+            {/* Bloquear scroll de la página en móvil al interactuar con el mapa */}
+            {/** Efecto para prevenir el scroll de la página cuando se toca el mapa en móvil **/}
+            {/** Esto debe ir dentro del componente, pero fuera del return, así que lo agrego arriba del return **/}
             {/* Contenedor para los tiles del mapa */}
             <div className="absolute inset-0">
                 {mapTiles.map(tile => (
