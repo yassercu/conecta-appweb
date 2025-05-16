@@ -209,8 +209,8 @@
   .planet-surface {
     position: relative;
     background: linear-gradient(180deg,
-        hsl(var(--background)) 0%,
-        hsl(var(--background)) 100%);
+        hsl(var(--background) / 0.5) 0%,
+        hsl(var(--background) / 0.5) 100%);
     padding-top: 2rem;
   }
 

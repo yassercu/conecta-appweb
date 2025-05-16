@@ -1,0 +1,656 @@
+---
+interface Props {
+  variant?: 'default' | 'nebula' | 'galaxy' | 'deep-space';
+}
+
+const { variant = 'default' } = Astro.props;
+
+// Generar posiciones aleatorias pero consistentes para planetas y satélites adicionales
+const generateRandomPosition = (min: number, max: number, seed: number) => {
+  const random = Math.sin(seed) * 10000;
+  return min + (random - Math.floor(random)) * (max - min);
+};
+
+// Planetas adicionales y objetos espaciales - más dispersos
+const extraPlanets = [
+  {
+    size: 140,
+    depth: 1,
+    left: generateRandomPosition(5, 20, 1),
+    top: generateRandomPosition(5, 25, 2),
+    colorA: '#a6c1ff',
+    colorB: '#3b5c9e',
+    delay: -5,
+    duration: 150, // Animación más rápida
+    scale: 1.1,
+    blur: 0.7,
+  },
+  {
+    size: 95,
+    depth: 2,
+    left: generateRandomPosition(65, 85, 3),
+    top: generateRandomPosition(15, 35, 4),
+    colorA: '#ffd989',
+    colorB: '#b67c24',
+    delay: -20,
+    duration: 120, // Animación más rápida
+    scale: 1.05,
+    blur: 1,
+  },
+  {
+    size: 180,
+    depth: 1.5,
+    left: generateRandomPosition(30, 50, 5),
+    top: generateRandomPosition(65, 80, 6),
+    colorA: '#e89e9e',
+    colorB: '#803232',
+    delay: -35,
+    duration: 170, // Animación más rápida
+    scale: 1.15,
+    blur: 0.5,
+  }
+];
+
+// Más dispersos y mayor variación en tamaños
+const extraSatellites = Array.from({ length: 8 }, (_, i) => ({
+  size: generateRandomPosition(8, 25, i * 10),
+  left: generateRandomPosition(5, 95, i * 10 + 1),
+  top: generateRandomPosition(5, 95, i * 10 + 2),
+  delay: generateRandomPosition(-40, 0, i * 10 + 3),
+  duration: generateRandomPosition(10, 35, i * 10 + 4), // Velocidades más rápidas
+  depth: generateRandomPosition(2, 5, i * 10 + 5),
+}));
+
+// Más asteroides, más dispersos
+const asteroids = Array.from({ length: 12 }, (_, i) => ({
+  size: generateRandomPosition(3, 10, i * 20),
+  left: generateRandomPosition(2, 98, i * 20 + 1),
+  top: generateRandomPosition(2, 98, i * 20 + 2),
+  duration: generateRandomPosition(8, 20, i * 20 + 3), // Más rápidos
+  delay: generateRandomPosition(-15, 0, i * 20 + 4),
+}));
+---
+
+<div class={`space-background bg-slate-900 space-variant-${variant} fixed inset-0 z-[-1]`}>
+  <!-- Estrellas distantes (fondo) -->
+  <div class="stars-layer stars-small"></div>
+  <div class="stars-layer stars-medium"></div>
+  <div class="stars-layer stars-large"></div>
+  
+  <!-- Sistema solar - planetas principales (más dispersos) -->
+  <div class="planet planet-1" aria-hidden="true"></div>
+  <div class="planet planet-2" aria-hidden="true"></div>
+  <div class="planet planet-3" aria-hidden="true"></div>
+  
+  <!-- Planeta grande con textura en la esquina -->
+  <div class="planet planet-giant" aria-hidden="true"></div>
+  
+  <!-- Planetas adicionales -->
+  {extraPlanets.map((planet, index) => (
+    <div 
+      class={`planet planet-extra planet-extra-${index + 1}`} 
+      style={`--planet-size: ${planet.size}px; --planet-left: ${planet.left}%; --planet-top: ${planet.top}%; 
+              --planet-colorA: ${planet.colorA}; --planet-colorB: ${planet.colorB};
+              --planet-delay: ${planet.delay}s; --planet-duration: ${planet.duration}s; 
+              --planet-scale: ${planet.scale}; --planet-blur: ${planet.blur}px; 
+              --planet-depth: ${planet.depth};`}
+      aria-hidden="true"
+    ></div>
+  ))}
+  
+  <!-- Satélites -->
+  <div class="satellite satellite-1" aria-hidden="true"></div>
+  <div class="satellite satellite-2" aria-hidden="true"></div>
+  
+  <!-- Satélites adicionales -->
+  {extraSatellites.map((satellite, index) => (
+    <div 
+      class={`satellite satellite-extra satellite-extra-${index + 1}`} 
+      style={`--satellite-size: ${satellite.size}px; --satellite-left: ${satellite.left}%; 
+              --satellite-top: ${satellite.top}%; --satellite-delay: ${satellite.delay}s; 
+              --satellite-duration: ${satellite.duration}s; --satellite-depth: ${satellite.depth};`}
+      aria-hidden="true"
+    ></div>
+  ))}
+  
+  <!-- Asteroides -->
+  {asteroids.map((asteroid, index) => (
+    <div 
+      class={`asteroid asteroid-${index + 1}`} 
+      style={`--asteroid-size: ${asteroid.size}px; --asteroid-left: ${asteroid.left}%; 
+              --asteroid-top: ${asteroid.top}%; --asteroid-duration: ${asteroid.duration}s; 
+              --asteroid-delay: ${asteroid.delay}s;`}
+      aria-hidden="true"
+    ></div>
+  ))}
+
+  <!-- Elementos específicos de variantes -->
+  {variant === 'deep-space' && (
+    <>
+      <div class="comet" aria-hidden="true"></div>
+      <div class="comet comet-2" aria-hidden="true"></div>
+    </>
+  )}
+  
+  {variant === 'galaxy' && (
+    <div class="galaxy-center" aria-hidden="true"></div>
+  )}
+  
+  {variant === 'nebula' && (
+    <div class="nebula-clouds" aria-hidden="true"></div>
+  )}
+</div>
+
+<style>
+  /* Estilos para el fondo espacial */
+  .space-background {
+    background: radial-gradient(ellipse at center, #0B1026 0%, #050814 100%);
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    perspective: 1000px;
+  }
+
+  /* Capas de estrellas con diferentes tamaños y velocidades */
+  .stars-layer {
+    position: absolute;
+    inset: 0;
+    opacity: 0.8;
+  }
+
+  .stars-small {
+    background-image: 
+      radial-gradient(1px 1px at 5% 5%, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 15% 25%, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 30% 40%, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 45% 15%, rgba(255, 255, 255, 0.5), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 60% 30%, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 75% 50%, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 85% 15%, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 92% 33%, rgba(255, 255, 255, 0.5), rgba(0, 0, 0, 0));
+    background-size: 200% 200%;
+    animation: stars-drift 200s linear infinite; /* Más rápido */
+  }
+
+  .stars-medium {
+    background-image: 
+      radial-gradient(1.2px 1.2px at 10% 10%, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0)),
+      radial-gradient(1.2px 1.2px at 25% 33%, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
+      radial-gradient(1.2px 1.2px at 40% 60%, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
+      radial-gradient(1.2px 1.2px at 55% 20%, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
+      radial-gradient(1.2px 1.2px at 70% 45%, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0)),
+      radial-gradient(1.2px 1.2px at 85% 65%, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0));
+    background-size: 180% 180%;
+    animation: stars-drift 150s linear infinite reverse; /* Más rápido */
+  }
+
+  .stars-large {
+    background-image: 
+      radial-gradient(1.8px 1.8px at 18% 25%, rgba(255, 255, 255, 0.95), rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 35% 50%, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 50% 25%, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
+      radial-gradient(1.8px 1.8px at 65% 65%, rgba(255, 255, 255, 0.95), rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 82% 30%, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0));
+    background-size: 150% 150%;
+    animation: stars-twinkle 10s ease-in-out infinite, stars-drift 280s linear infinite; /* Más rápido */
+  }
+
+  .space-background::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+      radial-gradient(1px 1px at 15% 15%, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 25% 35%, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 50% 60%, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 75% 45%, rgba(255, 255, 255, 0.6), rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 85% 75%, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0));
+    animation: stars-twinkle 8s ease-in-out infinite; /* Más rápido */
+  }
+
+  .space-background::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(circle at 30% 70%, rgba(90, 110, 170, 0.2) 0%, rgba(0, 0, 0, 0) 30%),
+      radial-gradient(circle at 80% 20%, rgba(170, 90, 90, 0.15) 0%, rgba(0, 0, 0, 0) 25%);
+    animation: nebula-pulse 16s ease-in-out infinite alternate; /* Más rápido */
+  }
+
+  /* Variante: Nebula */
+  .space-variant-nebula::after {
+    background: 
+      radial-gradient(circle at 30% 60%, rgba(140, 80, 200, 0.2) 0%, rgba(0, 0, 0, 0) 40%),
+      radial-gradient(circle at 75% 25%, rgba(80, 100, 200, 0.18) 0%, rgba(0, 0, 0, 0) 35%);
+  }
+
+  .nebula-clouds {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 40% 50%, rgba(140, 80, 200, 0.15) 0%, rgba(0, 0, 0, 0) 60%),
+      radial-gradient(circle at 65% 40%, rgba(100, 150, 255, 0.12) 0%, rgba(0, 0, 0, 0) 50%);
+    filter: blur(15px);
+    animation: nebula-drift 100s ease-in-out infinite alternate; /* Más rápido */
+  }
+
+  /* Variante: Galaxy */
+  .space-variant-galaxy {
+    background: radial-gradient(ellipse at center, #0c0f20 0%, #050814 100%);
+  }
+
+  .space-variant-galaxy::before {
+    background-image: 
+      radial-gradient(1px 1px at 10% 10%, rgba(255, 255, 255, 0.95), rgba(0, 0, 0, 0)),
+      radial-gradient(1.2px 1.2px at 30% 40%, rgba(255, 255, 255, 0.85), rgba(0, 0, 0, 0)),
+      radial-gradient(1px 1px at 55% 65%, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
+      radial-gradient(1.3px 1.3px at 70% 50%, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 85% 80%, rgba(255, 255, 255, 0.95), rgba(0, 0, 0, 0));
+    opacity: 0.8;
+  }
+
+  .space-variant-galaxy::after {
+    background: 
+      radial-gradient(ellipse at 40% 50%, rgba(110, 130, 255, 0.15) 0%, rgba(0, 0, 0, 0) 50%),
+      radial-gradient(ellipse at 60% 30%, rgba(255, 180, 90, 0.12) 0%, rgba(0, 0, 0, 0) 40%),
+      conic-gradient(from 0deg at 50% 50%, rgba(60, 80, 180, 0.08) 0%, rgba(150, 100, 180, 0.08) 25%, rgba(255, 100, 100, 0.08) 50%, rgba(120, 60, 180, 0.08) 75%, rgba(60, 80, 180, 0.08) 100%);
+    opacity: 0.7;
+    animation: galaxy-rotate 90s linear infinite; /* Más rápido */
+  }
+
+  .galaxy-center {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    left: calc(50% - 150px);
+    top: calc(50% - 150px);
+    background: radial-gradient(circle at center, rgba(255, 220, 150, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+    filter: blur(10px);
+    transform-style: preserve-3d;
+    animation: galaxy-center-pulse 12s ease-in-out infinite alternate; /* Más rápido */
+  }
+
+  /* Variante: Deep Space */
+  .space-variant-deep-space {
+    background: radial-gradient(ellipse at center, #02071a 0%, #010208 100%);
+  }
+
+  .space-variant-deep-space::before {
+    background-image: 
+      radial-gradient(1px 1px at 5% 5%, rgba(255, 255, 255, 0.95), rgba(0, 0, 0, 0)),
+      radial-gradient(1.4px 1.4px at 20% 30%, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0)),
+      radial-gradient(1.2px 1.2px at 40% 60%, rgba(255, 255, 255, 0.85), rgba(0, 0, 0, 0)),
+      radial-gradient(1.6px 1.6px at 65% 45%, rgba(255, 255, 255, 0.8), rgba(0, 0, 0, 0)),
+      radial-gradient(2.2px 2.2px at 80% 75%, rgba(255, 255, 255, 0.95), rgba(0, 0, 0, 0)),
+      radial-gradient(2.8px 2.8px at 92% 10%, rgba(255, 255, 255, 0.9), rgba(0, 0, 0, 0));
+    opacity: 0.9;
+  }
+
+  .space-variant-deep-space::after {
+    background: 
+      radial-gradient(ellipse at 25% 60%, rgba(50, 70, 150, 0.12) 0%, rgba(0, 0, 0, 0) 60%),
+      radial-gradient(ellipse at 75% 40%, rgba(100, 40, 120, 0.15) 0%, rgba(0, 0, 0, 0) 55%),
+      conic-gradient(from 45deg at 50% 50%, rgba(40, 60, 150, 0.06) 0%, rgba(100, 40, 150, 0.08) 25%, rgba(150, 50, 80, 0.06) 50%, rgba(70, 40, 120, 0.08) 75%, rgba(40, 60, 150, 0.06) 100%);
+    opacity: 0.8;
+    animation: deep-space-effect 150s linear infinite; /* Más rápido */
+  }
+
+  /* Planetas en órbita - principales más definidos y dispersos */
+  .planet {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.85;
+    transform-style: preserve-3d;
+    z-index: 1;
+  }
+
+  /* Planeta grande con textura realista */
+  .planet-giant {
+    width: 680px;
+    height: 680px;
+    position: absolute;
+    right: -250px;
+    bottom: -250px;
+    z-index: 8;
+    opacity: 0.97;
+    filter: blur(0.2px);
+    pointer-events: none;
+    /* Capa base: océano */
+    background: radial-gradient(circle at 40% 40%, #4b83a8 0%, #265477 60%, #173248 100%);
+    box-shadow: 0 0 60px rgba(75, 131, 168, 0.5), inset 20px -20px 120px rgba(0, 0, 0, 0.5);
+    overflow: visible;
+  }
+  .planet-giant::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    z-index: 1;
+    /* Continentes y manchas con formas más realistas */
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="680" height="680" viewBox="0 0 200 200"><path d="M60,60 Q70,40 90,55 Q110,70 120,90 Q130,110 110,120 Q90,130 80,110 Q70,90 60,60 Z" fill="%2383654b" fill-opacity="0.7"/><path d="M130,50 Q150,60 160,80 Q170,100 150,110 Q130,120 140,100 Q150,80 130,50 Z" fill="%237a886a" fill-opacity="0.6"/><path d="M50,140 Q60,130 80,135 Q100,140 110,150 Q120,160 100,165 Q80,170 70,160 Q60,150 50,140 Z" fill="%239c8060" fill-opacity="0.7"/><path d="M120,150 Q130,140 150,145 Q170,150 160,160 Q150,170 140,165 Q130,160 120,150 Z" fill="%237a7254" fill-opacity="0.55"/><ellipse cx="85" cy="80" rx="10" ry="6" fill="%23619867" fill-opacity="0.5"/><ellipse cx="150" cy="120" rx="8" ry="5" fill="%23787b58" fill-opacity="0.45"/><path d="M100,40 Q110,30 120,40 Q130,50 120,60 Q110,70 100,60 Q90,50 100,40 Z" fill="%2383654b" fill-opacity="0.5"/></svg>');
+    background-size: 100% 100%;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+  .planet-giant::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    z-index: 2;
+    /* Nubes atmosféricas y brillos */
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="680" height="680" viewBox="0 0 200 200"><ellipse cx="40" cy="30" rx="25" ry="15" fill="white" fill-opacity="0.08"/><ellipse cx="110" cy="25" rx="30" ry="12" fill="white" fill-opacity="0.07"/><ellipse cx="150" cy="60" rx="35" ry="18" fill="white" fill-opacity="0.09"/><ellipse cx="30" cy="120" rx="45" ry="20" fill="white" fill-opacity="0.06"/><ellipse cx="100" cy="180" rx="40" ry="15" fill="white" fill-opacity="0.07"/><ellipse cx="160" cy="140" rx="28" ry="13" fill="white" fill-opacity="0.08"/></svg>');
+    background-size: 100% 100%;
+    mix-blend-mode: lighten;
+    pointer-events: none;
+  }
+  /* Animación de rotación realista */
+  .planet-giant {
+    animation: planet-giant-spin 120s linear infinite;
+    transform-origin: 50% 50%;
+  }
+  @keyframes planet-giant-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .planet-1 {
+    width: 160px;
+    height: 160px;
+    background: radial-gradient(circle at 30% 30%, #5a9fd8, #1a3a62);
+    box-shadow: 0 0 30px rgba(90, 159, 216, 0.5), inset 5px -5px 20px rgba(0, 0, 0, 0.3);
+    left: 10%;
+    top: 15%;
+    filter: blur(0.5px);
+    animation: orbit-1 80s linear infinite; /* Más rápido */
+    z-index: 5;
+  }
+
+  .planet-2 {
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle at 40% 40%, #d8915a, #93481c);
+    box-shadow: 0 0 25px rgba(216, 145, 90, 0.5), inset 3px -3px 15px rgba(0, 0, 0, 0.3);
+    right: 25%;
+    bottom: 20%;
+    filter: blur(0.7px);
+    animation: orbit-2 100s linear infinite; /* Más rápido */
+    z-index: 4;
+  }
+
+  .planet-3 {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle at 35% 35%, #9a6ccf, #472b80);
+    box-shadow: 0 0 40px rgba(154, 108, 207, 0.5), inset 8px -8px 25px rgba(0, 0, 0, 0.3);
+    right: 30%;
+    top: 5%;
+    filter: blur(0.4px);
+    animation: orbit-3 130s linear infinite; /* Más rápido */
+    z-index: 6;
+  }
+
+  /* Planetas adicionales (parametrizados) */
+  .planet-extra {
+    width: var(--planet-size);
+    height: var(--planet-size);
+    background: radial-gradient(circle at 35% 35%, var(--planet-colorA), var(--planet-colorB));
+    box-shadow: 0 0 calc(var(--planet-size) / 4) rgba(255, 255, 255, 0.4);
+    left: var(--planet-left);
+    top: var(--planet-top);
+    filter: blur(var(--planet-blur));
+    animation: orbit-extra var(--planet-duration) linear infinite;
+    animation-delay: var(--planet-delay);
+    z-index: calc(10 - var(--planet-depth));
+    transform: scale(var(--planet-scale)) translateZ(calc(var(--planet-depth) * -50px));
+  }
+
+  /* Satélites - más dispersos */
+  .satellite {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.9;
+    filter: blur(0.5px);
+    z-index: 2;
+    transform-style: preserve-3d;
+  }
+
+  .satellite-1 {
+    width: 25px;
+    height: 25px;
+    background: radial-gradient(circle at 40% 40%, #e0e0e0, #909090);
+    box-shadow: 0 0 10px rgba(224, 224, 224, 0.6);
+    left: 35%;
+    top: 25%;
+    animation: orbit-satellite-1 25s linear infinite; /* Más rápido */
+  }
+
+  .satellite-2 {
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(circle at 40% 40%, #d0d0d0, #808080);
+    box-shadow: 0 0 8px rgba(208, 208, 208, 0.6);
+    right: 40%;
+    bottom: 35%;
+    animation: orbit-satellite-2 20s linear infinite; /* Más rápido */
+  }
+
+  /* Satélites adicionales (parametrizados) */
+  .satellite-extra {
+    width: var(--satellite-size);
+    height: var(--satellite-size);
+    background: radial-gradient(circle at 40% 40%, #d8d8d8, #a0a0a0);
+    box-shadow: 0 0 calc(var(--satellite-size) / 2) rgba(220, 220, 220, 0.5);
+    left: var(--satellite-left);
+    top: var(--satellite-top);
+    filter: blur(0.7px);
+    animation: orbit-satellite-extra var(--satellite-duration) linear infinite;
+    animation-delay: var(--satellite-delay);
+    z-index: calc(10 - var(--satellite-depth));
+    transform: translateZ(calc(var(--satellite-depth) * -30px));
+  }
+
+  /* Asteroides */
+  .asteroid {
+    position: absolute;
+    width: var(--asteroid-size);
+    height: calc(var(--asteroid-size) * 0.7);
+    background: radial-gradient(ellipse at center, #a0a0a0, #505050);
+    border-radius: 50%;
+    left: var(--asteroid-left);
+    top: var(--asteroid-top);
+    filter: blur(0.5px);
+    opacity: 0.7;
+    animation: asteroid-drift var(--asteroid-duration) linear infinite;
+    animation-delay: var(--asteroid-delay);
+    z-index: 2;
+  }
+
+  /* Cometas - más rápidos */
+  .comet {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    top: 15%;
+    left: -5%;
+    box-shadow: 0 0 15px 2px rgba(255, 255, 255, 0.8);
+    animation: comet-path 15s linear infinite; /* Más rápido */
+    opacity: 0.9;
+    z-index: 1;
+  }
+
+  .comet-2 {
+    width: 4px;
+    height: 4px;
+    top: 45%;
+    left: -3%;
+    animation: comet-path-2 12s linear infinite; /* Más rápido */
+    animation-delay: 5s;
+  }
+
+  .comet::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+    transform: translateX(-100%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .comet-2::after {
+    width: 60px;
+    height: 3px;
+  }
+
+  /* Animaciones básicas */
+  @keyframes stars-twinkle {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.9; }
+  }
+
+  @keyframes stars-drift {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 100%; }
+  }
+
+  @keyframes nebula-pulse {
+    0% { opacity: 0.5; transform: scale(1); }
+    100% { opacity: 0.8; transform: scale(1.05); }
+  }
+
+  @keyframes nebula-drift {
+    0% { transform: translate(-5%, -5%) scale(1.1); }
+    50% { transform: translate(2%, 3%) scale(1); }
+    100% { transform: translate(5%, -2%) scale(1.2); }
+  }
+
+  @keyframes galaxy-rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes galaxy-center-pulse {
+    0% { transform: scale(0.9) rotate(0deg); opacity: 0.1; }
+    50% { transform: scale(1.1) rotate(180deg); opacity: 0.2; }
+    100% { transform: scale(0.95) rotate(360deg); opacity: 0.15; }
+  }
+
+  @keyframes deep-space-effect {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.05); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+
+  /* Animaciones de órbita para planetas principales - más aleatorios y rápidos */
+  @keyframes orbit-1 {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    25% { transform: translate(100px, 150px) rotate(90deg) scale(0.95); }
+    50% { transform: translate(-50px, 280px) rotate(180deg) scale(0.9); }
+    75% { transform: translate(-120px, 100px) rotate(270deg) scale(0.95); }
+    100% { transform: translate(0, 0) rotate(360deg) scale(1); }
+  }
+
+  @keyframes orbit-2 {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    25% { transform: translate(-120px, -90px) rotate(90deg) scale(0.92); }
+    50% { transform: translate(-200px, 50px) rotate(180deg) scale(0.85); }
+    75% { transform: translate(-80px, 120px) rotate(270deg) scale(0.92); }
+    100% { transform: translate(0, 0) rotate(360deg) scale(1); }
+  }
+
+  @keyframes orbit-3 {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    25% { transform: translate(150px, 120px) rotate(90deg) scale(0.97); }
+    50% { transform: translate(70px, 250px) rotate(180deg) scale(0.93); }
+    75% { transform: translate(-100px, 130px) rotate(270deg) scale(0.97); }
+    100% { transform: translate(0, 0) rotate(360deg) scale(1); }
+  }
+
+  /* Animaciones de órbita para planetas adicionales - parametrizada */
+  @keyframes orbit-extra {
+    0% { transform: translate(0, 0) rotate(0deg) scale(var(--planet-scale)); }
+    25% { transform: translate(calc(var(--planet-size) * 0.7), calc(var(--planet-size) * 1.2)) rotate(90deg) scale(calc(var(--planet-scale) * 0.9)); }
+    50% { transform: translate(calc(var(--planet-size) * -0.3), calc(var(--planet-size) * 1.5)) rotate(180deg) scale(calc(var(--planet-scale) * 0.85)); }
+    75% { transform: translate(calc(var(--planet-size) * -0.8), calc(var(--planet-size) * 0.8)) rotate(270deg) scale(calc(var(--planet-scale) * 0.9)); }
+    100% { transform: translate(0, 0) rotate(360deg) scale(var(--planet-scale)); }
+  }
+
+  /* Animaciones de órbita para satélites - más aleatorios */
+  @keyframes orbit-satellite-1 {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    25% { transform: translate(220px, 80px) scale(1.1) rotate(90deg); }
+    50% { transform: translate(280px, 240px) scale(1) rotate(180deg); }
+    75% { transform: translate(40px, 280px) scale(0.9) rotate(270deg); }
+    100% { transform: translate(0, 0) scale(1) rotate(360deg); }
+  }
+
+  @keyframes orbit-satellite-2 {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    25% { transform: translate(-110px, -70px) scale(1.1) rotate(90deg); }
+    50% { transform: translate(-160px, -130px) scale(1) rotate(180deg); }
+    75% { transform: translate(-70px, -180px) scale(0.9) rotate(270deg); }
+    100% { transform: translate(0, 0) scale(1) rotate(360deg); }
+  }
+
+  /* Animación para satélites adicionales - parametrizada y más movimiento */
+  @keyframes orbit-satellite-extra {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    25% { transform: translate(calc(var(--satellite-size) * 7), calc(var(--satellite-size) * 4)) scale(1.1) rotate(90deg); }
+    50% { transform: translate(calc(var(--satellite-size) * 9), calc(var(--satellite-size) * 10)) scale(1) rotate(180deg); }
+    75% { transform: translate(calc(var(--satellite-size) * 3), calc(var(--satellite-size) * 12)) scale(0.9) rotate(270deg); }
+    100% { transform: translate(0, 0) scale(1) rotate(360deg); }
+  }
+
+  /* Animación para asteroides - más rápida */
+  @keyframes asteroid-drift {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(calc(var(--asteroid-size) * 5), calc(var(--asteroid-size) * -3)) rotate(45deg); }
+    50% { transform: translate(calc(var(--asteroid-size) * 8), calc(var(--asteroid-size) * 2)) rotate(90deg); }
+    75% { transform: translate(calc(var(--asteroid-size) * 4), calc(var(--asteroid-size) * 4)) rotate(135deg); }
+    100% { transform: translate(0, 0) rotate(180deg); }
+  }
+
+  /* Animación del cometa - más rápida */
+  @keyframes comet-path {
+    0% { 
+      transform: translateX(0) translateY(0); 
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.9;
+    }
+    90% {
+      opacity: 0.9;
+    }
+    100% { 
+      transform: translateX(calc(100vw + 100px)) translateY(60vh);
+      opacity: 0;
+    }
+  }
+
+  @keyframes comet-path-2 {
+    0% { 
+      transform: translateX(0) translateY(0); 
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.8;
+    }
+    90% {
+      opacity: 0.8;
+    }
+    100% { 
+      transform: translateX(calc(100vw + 80px)) translateY(30vh);
+      opacity: 0;
+    }
+  }
+</style> 
