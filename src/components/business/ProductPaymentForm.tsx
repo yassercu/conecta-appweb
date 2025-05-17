@@ -6,7 +6,7 @@ import type { PaymentResult } from '@/services/payment-methods';
 import { Card } from '@/components/ui/card';
 import { productPaymentMethods } from '@/services/payment-methods';
 import { useBusiness } from '@/hooks/useApi';
-import { X, ShoppingBag, Rocket, Calendar, Clock, MapPin, Phone, User, CreditCard, Mail } from 'lucide-react';
+import { X, ShoppingBag, Rocket, Calendar, Clock, MapPin, Phone, User, CreditCard, Mail, AlertCircle } from 'lucide-react';
 import { formatDate, formatTime } from '@/utils/date-utils';
 
 export interface ProductPaymentFormProps {
@@ -45,6 +45,12 @@ export function ProductPaymentForm({
     const [customerPhone, setCustomerPhone] = useState('');
     const [customerEmail, setCustomerEmail] = useState('');
     const [customerAddress, setCustomerAddress] = useState('');
+    
+    // Estado para errores de validación
+    const [nameError, setNameError] = useState('');
+    const [phoneError, setPhoneError] = useState('');
+    const [emailError, setEmailError] = useState('');
+
     const total = product.price * quantity;
     
     // Validar si hay al menos un método de contacto
@@ -79,6 +85,67 @@ export function ProductPaymentForm({
             }, 300);
         }
     }, [isOpen]);
+
+    // Validaciones de campos
+    const validateName = (name: string) => {
+        if (!name || name.trim().length < 2) {
+            setNameError('El nombre debe tener al menos 2 caracteres');
+            return false;
+        }
+        setNameError('');
+        return true;
+    };
+
+    const validatePhone = (phone: string) => {
+        if (phone && !/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im.test(phone)) {
+            setPhoneError('Ingresa un número de teléfono válido');
+            return false;
+        }
+        setPhoneError('');
+        return true;
+    };
+
+    const validateEmail = (email: string) => {
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            setEmailError('Ingresa una dirección de correo electrónico válida');
+            return false;
+        }
+        setEmailError('');
+        return true;
+    };
+
+    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setCustomerName(value);
+        validateName(value);
+    };
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setCustomerPhone(value);
+        validatePhone(value);
+    };
+
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setCustomerEmail(value);
+        validateEmail(value);
+    };
+
+    // Validación completa antes de proceder al pago
+    const validateForm = () => {
+        const isNameValid = validateName(customerName);
+        const isPhoneValid = validatePhone(customerPhone);
+        const isEmailValid = validateEmail(customerEmail);
+        
+        if (!customerPhone && !customerEmail) {
+            setPhoneError('Debes proporcionar al menos un método de contacto');
+            setEmailError('Debes proporcionar al menos un método de contacto');
+            return false;
+        }
+        
+        return isNameValid && (isPhoneValid && isEmailValid);
+    };
 
     // Mensaje para el negocio
     const generateBusinessMessage = () => {
@@ -147,6 +214,12 @@ Pronto el negocio se pondrá en contacto contigo para coordinar la entrega y el 
                 description: err.message,
             });
             onError?.(err);
+        }
+    };
+
+    const handleProceedToPayment = () => {
+        if (validateForm()) {
+            setShowPaymentForm(true);
         }
     };
 
@@ -233,17 +306,24 @@ Pronto el negocio se pondrá en contacto contigo para coordinar la entrega y el 
                             
                             <div className="grid gap-3">
                                 <div className="space-y-1">
-                                    <label className="text-xs text-muted-foreground">Nombre</label>
+                                    <label className="text-xs text-muted-foreground">
+                                        Nombre <span className="text-red-500">*</span>
+                                    </label>
                                     <div className="flex items-center border rounded-md px-3 py-1">
                                         <User className="h-4 w-4 text-muted-foreground mr-2" />
                                         <input 
                                             type="text"
                                             value={customerName}
-                                            onChange={(e) => setCustomerName(e.target.value)}
+                                            onChange={handleNameChange}
                                             placeholder="Tu nombre"
-                                            className="bg-transparent border-none w-full focus:outline-none text-sm"
+                                            className={`bg-transparent border-none w-full focus:outline-none text-sm ${nameError ? 'text-red-500' : ''}`}
                                         />
                                     </div>
+                                    {nameError && (
+                                        <p className="text-xs text-red-500 flex items-center mt-1">
+                                            <AlertCircle className="h-3 w-3 mr-1" /> {nameError}
+                                        </p>
+                                    )}
                                 </div>
                                 
                                 <div className="space-y-1">
@@ -255,11 +335,16 @@ Pronto el negocio se pondrá en contacto contigo para coordinar la entrega y el 
                                         <input 
                                             type="tel"
                                             value={customerPhone}
-                                            onChange={(e) => setCustomerPhone(e.target.value)}
-                                            placeholder="Tu número telefónico"
-                                            className="bg-transparent border-none w-full focus:outline-none text-sm"
+                                            onChange={handlePhoneChange}
+                                            placeholder="Ej: +53 55512345"
+                                            className={`bg-transparent border-none w-full focus:outline-none text-sm ${phoneError ? 'text-red-500' : ''}`}
                                         />
                                     </div>
+                                    {phoneError && (
+                                        <p className="text-xs text-red-500 flex items-center mt-1">
+                                            <AlertCircle className="h-3 w-3 mr-1" /> {phoneError}
+                                        </p>
+                                    )}
                                 </div>
                                 
                                 <div className="space-y-1">
@@ -271,11 +356,16 @@ Pronto el negocio se pondrá en contacto contigo para coordinar la entrega y el 
                                         <input 
                                             type="email"
                                             value={customerEmail}
-                                            onChange={(e) => setCustomerEmail(e.target.value)}
-                                            placeholder="Tu correo electrónico"
-                                            className="bg-transparent border-none w-full focus:outline-none text-sm"
+                                            onChange={handleEmailChange}
+                                            placeholder="Ej: ejemplo@dominio.com"
+                                            className={`bg-transparent border-none w-full focus:outline-none text-sm ${emailError ? 'text-red-500' : ''}`}
                                         />
                                     </div>
+                                    {emailError && (
+                                        <p className="text-xs text-red-500 flex items-center mt-1">
+                                            <AlertCircle className="h-3 w-3 mr-1" /> {emailError}
+                                        </p>
+                                    )}
                                 </div>
                                 
                                 <div className="space-y-1">
@@ -293,7 +383,8 @@ Pronto el negocio se pondrá en contacto contigo para coordinar la entrega y el 
                                 </div>
                                 
                                 {!hasValidContact && (
-                                    <p className="text-xs text-amber-500 mt-1">
+                                    <p className="text-xs text-amber-500 mt-1 flex items-center">
+                                        <AlertCircle className="h-3 w-3 mr-1" />
                                         Debes proporcionar al menos un teléfono o correo electrónico.
                                     </p>
                                 )}
@@ -302,7 +393,7 @@ Pronto el negocio se pondrá en contacto contigo para coordinar la entrega y el 
                         
                         <Button
                             className="w-full transition-transform duration-200 hover:scale-[1.02] mt-4"
-                            onClick={() => setShowPaymentForm(true)}
+                            onClick={handleProceedToPayment}
                             disabled={!customerName || !hasValidContact}
                         >
                             <CreditCard className="h-4 w-4 mr-2" />

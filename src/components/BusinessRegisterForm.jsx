@@ -48,15 +48,27 @@ const registerFormSchema = z.object({
   }).max(500, {
     message: "La descripción no debe exceder los 500 caracteres."
   }),
-  phone: z.string().min(7, {
-    message: "Por favor, introduce un número de teléfono válido.",
-  }),
-  email: z.string().email({
-    message: "Por favor, introduce una dirección de correo electrónico válida.",
-  }),
-  password: z.string().min(8, {
-    message: "La contraseña debe tener al menos 8 caracteres.",
-  }),
+  phone: z.string()
+    .min(7, {
+      message: "El número telefónico debe tener al menos 7 dígitos.",
+    })
+    .refine((val) => /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/im.test(val), {
+      message: "Por favor, introduce un número de teléfono válido (ejemplo: +53 55512345).",
+    }),
+  email: z.string()
+    .email({
+      message: "Por favor, introduce una dirección de correo electrónico válida.",
+    })
+    .refine((val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val), {
+      message: "El formato del correo electrónico no es válido.",
+    }),
+  password: z.string()
+    .min(8, {
+      message: "La contraseña debe tener al menos 8 caracteres.",
+    })
+    .refine((val) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(val), {
+      message: "La contraseña debe contener al menos una letra mayúscula, una minúscula, un número y un carácter especial.",
+    }),
   country: z.string({
     required_error: "Por favor, selecciona un país.",
   }),
@@ -65,7 +77,7 @@ const registerFormSchema = z.object({
   }),
   municipality: z.string().optional(), // Municipio es opcional si se provee dirección detallada
   address: z.string().min(5, {
-    message: "Por favor, introduce una dirección postal válida.",
+    message: "Por favor, introduce una dirección postal válida con al menos 5 caracteres.",
   }),
 });
 
@@ -245,9 +257,9 @@ export default function BusinessRegisterForm() {
         
         {/* ... otros campos como descripción, teléfono, email, contraseña ... */}
         <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea placeholder="Describe tu negocio..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-        <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input type="tel" placeholder="+53 5XXXXXXX" {...field} /></FormControl><FormMessage /></FormItem>)} />
-        <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Correo Electrónico (para administración)</FormLabel><FormControl><Input type="email" placeholder="tu@correo.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-        <FormField control={form.control} name="password" render={({ field }) => (<FormItem><FormLabel>Contraseña (para administrar tu negocio)</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>)} />
+        <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input type="tel" placeholder="Ej: +53 55512345" {...field} /></FormControl><FormMessage /></FormItem>)} />
+        <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Correo Electrónico (para administración)</FormLabel><FormControl><Input type="email" placeholder="Ej: ejemplo@dominio.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+        <FormField control={form.control} name="password" render={({ field }) => (<FormItem><FormLabel>Contraseña (para administrar tu negocio)</FormLabel><FormControl><Input type="password" placeholder="Ej: M1n1m0$8" {...field} /></FormControl><FormMessage /></FormItem>)} />
 
 
         <h3 className="text-lg font-medium pt-4 border-t">Ubicación del Negocio</h3>
