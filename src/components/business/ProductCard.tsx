@@ -170,21 +170,21 @@ export function ProductCard({ product, businessId }: ProductCardProps) {
       
       {/* Diálogo de confirmación con el mensaje para el cliente */}
       <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
-        <DialogContent className="sm:max-w-md border-none bg-gray-900 text-green-300 shadow-xl border border-gray-700 rounded-lg">
+        <DialogContent className="sm:max-w-md border-none bg-white text-gray-800 shadow-xl border border-gray-300 rounded-lg dark:bg-gray-800 dark:text-green-200">
           <DialogHeader>
-            <DialogTitle className="text-xl flex items-center justify-center text-center gap-2 text-green-300">
+            <DialogTitle className="text-xl flex items-center justify-center text-center gap-2 text-gray-800 dark:text-green-200">
               <span className="text-2xl">🚀</span> Misión Completada
             </DialogTitle>
           </DialogHeader>
           
           <div className="mt-3">
-            <div className="bg-gray-800 p-5 rounded-lg text-sm whitespace-pre-wrap text-green-300 border border-gray-600 shadow-inner">
+            <div className="bg-gray-100 p-5 rounded-lg text-sm whitespace-pre-wrap text-gray-800 border border-gray-300 shadow-inner dark:bg-gray-700">
               {clientMessage}
             </div>
             
             <Button 
               variant="secondary"
-              className="w-full mt-4 bg-gray-700 hover:bg-gray-600 border-gray-500" 
+              className="w-full mt-4 bg-gray-200 hover:bg-gray-300 border-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500" 
               onClick={() => setIsSuccessDialogOpen(false)}
             >
               Confirmar
