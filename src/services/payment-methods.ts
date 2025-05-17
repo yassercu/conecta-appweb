@@ -1,4 +1,4 @@
-import { MessageCircle, Send, Wallet, CreditCard, Building } from 'lucide-react';
+import { MessageCircle, Mail, Wallet, CreditCard, Building } from 'lucide-react';
 import { toast } from "@/components/ui/use-toast";
 
 export interface PaymentMethod {
@@ -32,6 +32,8 @@ export interface PaymentResult {
     status?: 'completed' | 'pending';
     transactionId?: string;
     meta?: Record<string, any>;
+    orderMessage?: string; // Mensaje del pedido generado
+    clientMessage?: string; // Mensaje para mostrar al cliente
 }
 
 // WhatsApp Payment Implementation
@@ -44,6 +46,7 @@ const processWhatsAppPayment = async (paymentInfo: PaymentInfo): Promise<Payment
     console.log("¿businessPhone está vacío?:", !paymentInfo.businessPhone);
     console.log("¿businessPhone es undefined?:", paymentInfo.businessPhone === undefined);
     console.log("¿businessPhone es cadena vacía?:", paymentInfo.businessPhone === "");
+    console.log("metadata:", paymentInfo.metadata);
     console.log("=========================");
     
     // Número de teléfono de soporte de la plataforma
@@ -76,15 +79,20 @@ const processWhatsAppPayment = async (paymentInfo: PaymentInfo): Promise<Payment
         }
     }
     
-    // Personalizar el mensaje según el contexto
+    // Usar el mensaje generado para el negocio si está disponible en los metadatos
     let message = '';
-    if (isPlanPurchase) {
+    
+    if (paymentInfo.metadata?.orderMessage) {
+        // Usar el mensaje generado por generateBusinessMessage
+        message = paymentInfo.metadata.orderMessage;
+    } else if (isPlanPurchase) {
         message = `¡Hola! Me interesa contratar el plan ${paymentInfo.concept} por un valor de ${paymentInfo.amount} ${paymentInfo.currency}. Por favor, necesito información para realizar el pago.`;
     } else {
         message = `¡Hola! Me interesa realizar un pedido de ${paymentInfo.concept} por un total de ${paymentInfo.amount} ${paymentInfo.currency}`;
     }
     
     console.log('Enviando mensaje de WhatsApp al número:', phoneToUse);
+    console.log('Mensaje:', message);
     
     // Crear la URL de WhatsApp con el número y mensaje adecuados
     const whatsappUrl = `https://wa.me/${phoneToUse}?text=${encodeURIComponent(message)}`;
@@ -119,8 +127,16 @@ const processInternalRequest = async (paymentInfo: PaymentInfo): Promise<Payment
 
 // Direct Message Payment Implementation
 const processDirectMessagePayment = async (paymentInfo: PaymentInfo): Promise<PaymentResult> => {
-    // Crear mensaje con los detalles del pedido
-    const message = `¡Hola! Me interesa realizar un pedido de ${paymentInfo.concept} por un total de ${paymentInfo.amount} ${paymentInfo.currency}`;
+    // Usar el mensaje generado para el negocio si está disponible en los metadatos
+    let message = '';
+    
+    if (paymentInfo.metadata?.orderMessage) {
+        // Usar el mensaje generado por generateBusinessMessage
+        message = paymentInfo.metadata.orderMessage;
+    } else {
+        // Mensaje genérico de respaldo
+        message = `¡Hola! Me interesa realizar un pedido de ${paymentInfo.concept} por un total de ${paymentInfo.amount} ${paymentInfo.currency}`;
+    }
     
     // Destinatario (usar el contact si existe, o indicar que se usará el predeterminado)
     const destinatario = paymentInfo.businessContact || 'soporte@plataforma.com (predeterminado)';
@@ -152,7 +168,7 @@ const processDirectMessagePayment = async (paymentInfo: PaymentInfo): Promise<Pa
     return {
         success: true,
         status: 'pending',
-        message: `Mensaje enviado exitosamente: "${message}"`,
+        message: `Mensaje enviado exitosamente: "${message.substring(0, 50)}..."`,
     };
 };
 
@@ -326,7 +342,7 @@ export const productPaymentMethods: PaymentMethod[] = [
     {
         id: 'directMessage',
         name: 'Mensaje Directo',
-        icon: Send,
+        icon: Mail,
         description: 'Coordina el pedido directamente por correo electrónico',
         processor: processDirectMessagePayment,
     }

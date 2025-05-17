@@ -7,6 +7,14 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Configuración de CORS para permitir cualquier origen
+const corsOptions = {
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+};
+
 // Función para normalizar texto (minúsculas y sin tildes)
 function normalizeText(text) {
     if (typeof text !== 'string') return '';
@@ -17,7 +25,7 @@ function normalizeText(text) {
 }
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 // Base de datos en memoria

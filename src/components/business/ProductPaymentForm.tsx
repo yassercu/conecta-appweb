@@ -6,7 +6,8 @@ import type { PaymentResult } from '@/services/payment-methods';
 import { Card } from '@/components/ui/card';
 import { productPaymentMethods } from '@/services/payment-methods';
 import { useBusiness } from '@/hooks/useApi';
-import { X, ShoppingBag } from 'lucide-react';
+import { X, ShoppingBag, Rocket, Calendar, Clock, MapPin, Phone, User, CreditCard, Mail } from 'lucide-react';
+import { formatDate, formatTime } from '@/utils/date-utils';
 
 export interface ProductPaymentFormProps {
     product: {
@@ -40,7 +41,22 @@ export function ProductPaymentForm({
     const { toast } = useToast();
     const [showPaymentForm, setShowPaymentForm] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
+    const [customerName, setCustomerName] = useState('');
+    const [customerPhone, setCustomerPhone] = useState('');
+    const [customerEmail, setCustomerEmail] = useState('');
+    const [customerAddress, setCustomerAddress] = useState('');
     const total = product.price * quantity;
+    
+    // Validar si hay al menos un método de contacto
+    const hasValidContact = !!customerPhone || !!customerEmail;
+    
+    // Generar un código de orden único con formato orbital
+    const orderCode = `OS-${Math.floor(Math.random() * 10000000).toString().padStart(7, '0')}`;
+    
+    // Obtener fecha y hora actual para el pedido
+    const currentDate = new Date();
+    const formattedDate = formatDate ? formatDate(currentDate) : currentDate.toLocaleDateString();
+    const formattedTime = formatTime ? formatTime(currentDate) : currentDate.toLocaleTimeString();
 
     // Usar el hook de API para obtener los datos del negocio
     const {
@@ -48,7 +64,7 @@ export function ProductPaymentForm({
         loading: loadingBusiness,
         error: businessError
     } = useBusiness(businessId || '', {
-        skip: !businessId, // No realizar la petición si no hay ID de negocio
+        skip: !businessId,
         useCache: true,
         cacheKey: businessId ? `businesses:${businessId}` : undefined
     });
@@ -60,33 +76,74 @@ export function ProductPaymentForm({
         } else {
             setTimeout(() => {
                 setIsVisible(false);
-            }, 300); // Tiempo de la animación de salida
+            }, 300);
         }
     }, [isOpen]);
 
-    useEffect(() => {
-        if (business) {
-            console.log('Negocio encontrado:', business);
-            console.log('Teléfono del negocio:', business.phone);
-        } else if (businessId && !loadingBusiness && !businessError) {
-            console.error('No se encontró el negocio con ID:', businessId);
-        }
-    }, [business, businessId, loadingBusiness, businessError]);
+    // Mensaje para el negocio
+    const generateBusinessMessage = () => {
+        return `🚀 Pedido desde Conecta App - Estación Orbital
+${orderCode}
+📅 ${formattedDate} ⌚ ${formattedTime}
+
+Tipo de servicio: Por definir
+
+👤 Nombre: ${customerName}
+${customerPhone ? `📱 Teléfono: ${customerPhone}` : ''}
+${customerEmail ? `📧 Email: ${customerEmail}` : ''}
+${customerAddress ? `📍 Dirección: ${customerAddress}` : '📍 Entrega: Por acordar con el cliente'}
+
+📋 Productos
+✖️${quantity} ${product.name}  💲 ${product.price.toFixed(2)}
+
+Subtotal: 💲 ${total.toFixed(2)}
+Entrega: Por definir
+Total: 💲 ${total.toFixed(2)}
+
+💰 Pago
+Estado del pago: Pendiente
+Total a pagar: 💲 ${total.toFixed(2)}`;
+    };
+
+    // Mensaje para el cliente
+    const generateClientMessage = () => {
+        return `¡Tu pedido ha sido enviado con éxito!
+
+🚀 Resumen de tu pedido orbital:
+📁 Código: ${orderCode}
+📅 Fecha: ${formattedDate}
+⌚ Hora: ${formattedTime}
+
+📦 Producto: ${product.name}
+🔢 Cantidad: ${quantity}
+💰 Total: 💲 ${total.toFixed(2)}
+
+Pronto el negocio se pondrá en contacto contigo para coordinar la entrega y el pago.
+¡Gracias por utilizar Conecta App - Estación Orbital!`;
+    };
 
     const handlePaymentComplete = async (result: PaymentResult) => {
         try {
+            // Generar mensajes
+            const businessMessage = generateBusinessMessage();
+            const clientMessage = generateClientMessage();
+            
+            console.log('Mensaje para el negocio:', businessMessage);
+            console.log('Mensaje para el cliente:', clientMessage);
+            
             toast({
-                title: "¡Pago exitoso!",
-                description: "Tu pedido ha sido procesado correctamente.",
+                title: "¡Pedido enviado con éxito!",
+                description: "Tu pedido está siendo procesado. Te contactaremos pronto.",
             });
+            
             setShowPaymentForm(false);
-            onSuccess?.(result);
+            onSuccess?.({...result, orderMessage: businessMessage, clientMessage});
             onClose();
         } catch (error) {
             const err = error as Error;
             toast({
                 variant: "destructive",
-                title: "Error en el pago",
+                title: "Error en el pedido",
                 description: err.message,
             });
             onError?.(err);
@@ -132,7 +189,7 @@ export function ProductPaymentForm({
                                     className="h-24 w-24 object-cover rounded-md shadow-md"
                                 />
                             ) : (
-                                <ShoppingBag className="h-16 w-16 text-primary/50" />
+                                <Rocket className="h-16 w-16 text-primary/50" />
                             )}
                         </div>
                         <Button
@@ -148,28 +205,107 @@ export function ProductPaymentForm({
                     {/* Contenido del pedido */}
                     <div className="p-6 space-y-4">
                         <div>
-                            <h3 className="text-xl font-semibold">{product.name}</h3>
-                            <div className="flex items-center justify-between mt-1">
-                                <p className="text-sm text-muted-foreground">
-                                    Cantidad: <span className="font-medium text-foreground">{quantity}</span>
-                                </p>
-                                <p className="text-sm">
-                                    Precio unitario: <span className="font-medium">${product.price.toFixed(2)}</span>
-                                </p>
+                            <h3 className="text-xl font-semibold">Detalles del pedido</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Código: {orderCode}</p>
+                        </div>
+                        
+                        <div className="bg-muted/30 p-3 rounded-md">
+                            <h4 className="font-medium text-sm flex items-center gap-1 mb-2">
+                                <ShoppingBag className="h-4 w-4" /> Producto:
+                            </h4>
+                            <div className="pl-5 border-l-2 border-primary/20">
+                                <p className="font-medium">{product.name}</p>
+                                <div className="flex justify-between text-sm mt-1">
+                                    <span>Cantidad: {quantity}</span>
+                                    <span>Precio unitario: ${product.price.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between items-center mt-3">
+                                    <span className="text-sm">Total:</span>
+                                    <span className="text-lg font-bold">${total.toFixed(2)}</span>
+                                </div>
                             </div>
                         </div>
                         
-                        <div className="pt-2 border-t">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">Total a pagar:</span>
-                                <span className="text-2xl font-bold">${total.toFixed(2)}</span>
+                        <div className="space-y-3">
+                            <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
+                                <User className="h-4 w-4" /> Información del cliente:
+                            </h4>
+                            
+                            <div className="grid gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-xs text-muted-foreground">Nombre</label>
+                                    <div className="flex items-center border rounded-md px-3 py-1">
+                                        <User className="h-4 w-4 text-muted-foreground mr-2" />
+                                        <input 
+                                            type="text"
+                                            value={customerName}
+                                            onChange={(e) => setCustomerName(e.target.value)}
+                                            placeholder="Tu nombre"
+                                            className="bg-transparent border-none w-full focus:outline-none text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-1">
+                                    <label className="text-xs text-muted-foreground">
+                                        Teléfono {!customerEmail && <span className="text-red-500">*</span>}
+                                    </label>
+                                    <div className="flex items-center border rounded-md px-3 py-1">
+                                        <Phone className="h-4 w-4 text-muted-foreground mr-2" />
+                                        <input 
+                                            type="tel"
+                                            value={customerPhone}
+                                            onChange={(e) => setCustomerPhone(e.target.value)}
+                                            placeholder="Tu número telefónico"
+                                            className="bg-transparent border-none w-full focus:outline-none text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-1">
+                                    <label className="text-xs text-muted-foreground">
+                                        Correo {!customerPhone && <span className="text-red-500">*</span>}
+                                    </label>
+                                    <div className="flex items-center border rounded-md px-3 py-1">
+                                        <Mail className="h-4 w-4 text-muted-foreground mr-2" />
+                                        <input 
+                                            type="email"
+                                            value={customerEmail}
+                                            onChange={(e) => setCustomerEmail(e.target.value)}
+                                            placeholder="Tu correo electrónico"
+                                            className="bg-transparent border-none w-full focus:outline-none text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="space-y-1">
+                                    <label className="text-xs text-muted-foreground">Dirección (opcional)</label>
+                                    <div className="flex items-center border rounded-md px-3 py-1">
+                                        <MapPin className="h-4 w-4 text-muted-foreground mr-2" />
+                                        <input 
+                                            type="text"
+                                            value={customerAddress}
+                                            onChange={(e) => setCustomerAddress(e.target.value)}
+                                            placeholder="Tu dirección de entrega (opcional)"
+                                            className="bg-transparent border-none w-full focus:outline-none text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                {!hasValidContact && (
+                                    <p className="text-xs text-amber-500 mt-1">
+                                        Debes proporcionar al menos un teléfono o correo electrónico.
+                                    </p>
+                                )}
                             </div>
                         </div>
                         
                         <Button
                             className="w-full transition-transform duration-200 hover:scale-[1.02] mt-4"
                             onClick={() => setShowPaymentForm(true)}
+                            disabled={!customerName || !hasValidContact}
                         >
+                            <CreditCard className="h-4 w-4 mr-2" />
                             Proceder al pago
                         </Button>
                     </div>
@@ -186,7 +322,13 @@ export function ProductPaymentForm({
                 metadata={{
                     productId: product.id,
                     quantity: quantity,
-                    type: 'product_purchase'
+                    type: 'product_purchase',
+                    customerName,
+                    customerPhone,
+                    customerEmail,
+                    customerAddress,
+                    orderCode,
+                    orderMessage: generateBusinessMessage()
                 }}
                 paymentMethods={productPaymentMethods}
                 businessPhone={businessPhone}
