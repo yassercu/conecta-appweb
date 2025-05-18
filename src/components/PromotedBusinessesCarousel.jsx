@@ -6,72 +6,59 @@ import {
   CarouselNext,
   CarouselPrevious
 } from "@/components/ui/carousel";
-import { Sparkles, ArrowRight } from 'lucide-react';
+import Autoplay from "embla-carousel-autoplay";
+import { Sparkles, ArrowRight, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { usePromotedBusinesses } from '@/hooks/useApi';
+import { usePromotedBusinesses } from '@/hooks/useApi'; // Asumiendo que este hook existe y funciona
 
 export default function PromotedBusinessesCarousel() {
   const [isClient, setIsClient] = useState(false);
   const dataFetchedRef = useRef(false);
 
-  // Usar hook para obtener negocios promocionados desde la API con opciones de caché optimizadas
   const { data: businesses, loading, error } = usePromotedBusinesses({
     useCache: true,
     cacheKey: 'businesses:promoted',
-    // Solo omitir peticiones después de la primera carga exitosa
     skip: dataFetchedRef.current
   });
 
-  // Controlar el estado del cliente y actualizar la referencia de carga de datos
   useEffect(() => {
     setIsClient(true);
-    
-    // Si tenemos datos de negocios, marcar como cargados para evitar nuevas peticiones
     if (businesses && businesses.length > 0 && !dataFetchedRef.current) {
       dataFetchedRef.current = true;
     }
   }, [businesses]);
 
-  // Mostrar un estado de carga solo durante la carga inicial
   if (loading && !dataFetchedRef.current) {
     return (
-      <div className="py-12 flex justify-center items-center">
+      <div className="py-8 flex justify-center items-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  // Manejar errores
   if (error) {
     console.error("Error cargando negocios promocionados:", error);
-    return null; // O mostrar un mensaje de error amigable
+    return null;
   }
 
-  // Comprobar si hay datos disponibles
   if (!isClient || !businesses || businesses.length === 0) {
     return null;
   }
 
   return (
-    <section className="py-4 relative overflow-hidden group/carousel">
-      {/* Fondo espacial animado */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 blur-3xl opacity-30 dark:opacity-50 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary),0.1)_0%,transparent_70%)] animate-pulse"></div>
-      </div>
-
-      <div className="container mx-auto max-w-6xl px-0 sm:px-4 relative">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 px-4 sm:px-0">
-          <h2 className="text-lg md:text-xl font-semibold text-foreground flex items-center gap-2 mb-3 md:mb-0 relative">
-            <span className="absolute -left-6 top-1/2 -translate-y-1/2 w-12 h-12 bg-primary/10 rounded-full blur-xl"></span>
-            <Sparkles className="text-amber-300 h-5 w-5 animate-pulse" />
-            Promocionados
+    <section className="py-8 relative overflow-hidden group/carousel bg-gradient-to-b from-background to-muted/30">
+      <div className="container mx-auto max-w-7xl px-4 relative">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+          <h2 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2 mb-3 md:mb-0">
+            <Sparkles className="h-6 w-6 text-amber-400" />
+            Negocios Destacados
           </h2>
           <a
-            href="/payment"
-            className="text-amber-300 inline-flex items-center justify-center rounded-full text-xs md:text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-primary/20 bg-background/80 hover:bg-primary/10 hover:border-primary h-7 md:h-9 py-1 px-3 md:px-5 group"
+            href="/payment" // Asegúrate que esta ruta exista o ajústala
+            className="text-sm font-medium text-primary hover:text-primary/80 group inline-flex items-center"
           >
             Promociona Tu Negocio
-            <ArrowRight className="ml-1 md:ml-2 h-3 w-3 md:h-4 md:w-4 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </a>
         </div>
 
@@ -81,51 +68,56 @@ export default function PromotedBusinessesCarousel() {
             loop: true,
             slidesToScroll: 1,
           }}
+          plugins={[
+            Autoplay({
+              delay: 4000,
+              stopOnInteraction: true,
+            }),
+          ]}
           className="w-full"
         >
-          <CarouselContent className="-ml-2 md:-ml-3">
-            {businesses.map((business, index) => (
+          <CarouselContent className="-ml-2 md:-ml-4">
+            {businesses.map((business) => (
               <CarouselItem
                 key={business.id}
-                className="pl-2 md:pl-3 basis-[33.33%] sm:basis-1/4 md:basis-1/5 lg:basis-[16.66%] xl:basis-[14.28%]"
+                className="pl-2 md:pl-4 basis-[48%] sm:basis-[30%] md:basis-[23%] lg:basis-[18%] xl:basis-[15.5%]" // Ajustado para más items
               >
                 <a
                   href={`/business/${business.id}`}
-                  className="block group text-center transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1"
+                  className="block group text-center transition-all duration-300 ease-out hover:shadow-lg rounded-lg overflow-hidden"
                 >
-                  <div className="overflow-hidden rounded-xl aspect-square relative shadow-md mb-1.5 
-                    border border-primary/10 group-hover:border-primary/30 
-                    bg-gradient-to-br from-background to-muted/50
-                    transition-all duration-300"
-                  >
+                  <div className="aspect-square relative bg-muted/50">
                     <img
-                      src={business.image || '/assets/businesses/default.svg'}
+                      src={business.image || `https://placehold.co/200x200.png?text=${encodeURIComponent(business.name)}`}
                       alt={business.name}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       loading="lazy"
+                      data-ai-hint={business.category?.toLowerCase() || "negocio local"}
                     />
-                    {/* Orbital Glow Effect */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-t from-primary/20 via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <Badge
+                        variant="default" // Este será el estilo dorado
+                        className="absolute top-1.5 right-1.5 text-[10px] px-1.5 py-0.5 font-semibold z-10 bg-amber-400 text-black hover:bg-amber-500 shadow-sm"
+                    >
+                        ★ DESTACADO
+                    </Badge>
                   </div>
-                  <h3 className="font-medium text-xs text-foreground truncate group-hover:text-primary transition-colors">
-                    {business.name}
-                  </h3>
-                  <div className="flex items-center justify-center text-[9px] text-muted-foreground gap-1">
-                    <div className="flex items-center gap-0.5">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 text-yellow-500 fill-current" viewBox="0 0 24 24">
-                        <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                      </svg>
-                      <span className="font-medium">{business.rating.toFixed(1)}</span>
+                  <div className="py-2 px-1 bg-card/70 backdrop-blur-sm">
+                    <h3 className="font-medium text-xs md:text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                      {business.name}
+                    </h3>
+                     {/* Opcional: mostrar categoría o rating si hay espacio y es deseable */}
+                     <div className="flex items-center justify-center text-[10px] text-muted-foreground gap-1 mt-0.5">
+                      <Star className="h-3 w-3 text-amber-400 fill-current" />
+                      <span className="font-normal">{business.rating?.toFixed(1) || "N/A"}</span>
                     </div>
-                    <span className="hidden sm:inline text-primary/40 text-[8px]">•</span>
-                    <span className="hidden sm:inline text-[9px] truncate">{business.category}</span>
                   </div>
                 </a>
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="absolute -left-3 sm:left-0 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300 bg-background/80 hover:bg-background border-primary/20 h-7 w-7" />
-          <CarouselNext className="absolute -right-3 sm:right-0 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300 bg-background/80 hover:bg-background border-primary/20 h-7 w-7" />
+          <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300 bg-background/80 hover:bg-background border-border h-8 w-8 md:h-10 md:w-10 shadow-md" />
+          <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2 z-20 opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-300 bg-background/80 hover:bg-background border-border h-8 w-8 md:h-10 md:w-10 shadow-md" />
         </Carousel>
       </div>
     </section>

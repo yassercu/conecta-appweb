@@ -10,12 +10,13 @@ El proyecto Orbita-Y es una aplicación web construida con **Astro** como framew
 ## Principios de Arquitectura
 
 1.  **Astro Primero**: Las páginas y la estructura general de la aplicación se definen con archivos `.astro`. Se prioriza el renderizado en servidor o la generación estática.
-2.  **Islas de Interactividad con React**: La interactividad del lado del cliente se encapsula en componentes React (`.tsx`, `.jsx`). Estos se importan en archivos `.astro` y se hidratan solo cuando es necesario (ej., `client:load`, `client:idle`, `client:visible`).
-3.  **Mantenimiento de Lógica del Lado del Servidor**: Siempre que sea posible, la lógica de obtención de datos y la preparación del contenido se realiza en el frontmatter de los archivos `.astro`.
-4.  **Componentes Reutilizables**:
-    -   Componentes Astro puros (`.astro`) para estructuras y UI estática.
-    -   Componentes React puros (`.tsx`, `.jsx`) para UI interactiva.
-5.  **Estructuración de Directorios**:
+2.  **Obtención de Datos en Frontmatter**: Siempre que sea posible, la lógica de obtención de datos para las páginas y componentes principales se realiza en el script del *frontmatter* de los archivos `.astro`. Estos datos se pasan como props a los componentes Astro o React.
+3.  **Islas de Interactividad con React**: La interactividad del lado del cliente se encapsula en componentes React (`.tsx`, `.jsx`). Estos se importan en archivos `.astro` y se hidratan solo cuando es necesario (ej., `client:load` para funcionalidad inmediata, `client:idle` para funcionalidad menos crítica, o `client:visible` para componentes que solo necesitan JS cuando son visibles).
+4.  **Minimizar JavaScript del Cliente**: Astro ayuda inherentemente con esto. Usar directivas `client:*` juiciosamente para hidratar solo los componentes que lo necesiten y cuando lo necesiten.
+5.  **Componentes Reutilizables**:
+    -   Componentes Astro puros (`.astro`) para estructuras y UI estática o con lógica simple del lado del servidor.
+    -   Componentes React puros (`.tsx`, `.jsx`) para UI interactiva compleja.
+6.  **Estructuración de Directorios**:
     -   `src/pages/`: Contiene las rutas de la aplicación (archivos `.astro` que definen páginas).
     -   `src/layouts/`: Define las plantillas base (`.astro`) para las páginas.
     -   `src/components/`: Almacena componentes reutilizables, tanto Astro (`.astro`) como React (`.tsx`, `.jsx`).
@@ -28,8 +29,8 @@ El proyecto Orbita-Y es una aplicación web construida con **Astro** como framew
 
 ## Flujo de Datos
 
-- **Renderizado en Servidor/Estático (Astro)**: Los datos para las páginas se obtienen en el script del frontmatter de los archivos `.astro`. Estos datos se pasan como props a los componentes Astro o React (que se renderizarán estáticamente en el servidor si no tienen directiva `client:*`).
-- **Renderizado en Cliente (React Islands)**: Los componentes React interactivos pueden realizar sus propias peticiones de datos usando hooks como `useEffect` y `fetch` (o a través de `useApi.ts`) después de la hidratación en el cliente.
+- **Renderizado en Servidor/Estático (Astro)**: Los datos para las páginas se obtienen en el script del *frontmatter* de los archivos `.astro`. Estos datos se pasan como props a los componentes Astro o React (que se renderizarán estáticamente en el servidor si no tienen directiva `client:*` o si los datos son suficientes para el renderizado inicial).
+- **Renderizado en Cliente (React Islands)**: Los componentes React interactivos pueden realizar sus propias peticiones de datos usando hooks como `useEffect` y `fetch` (o a través de `useApi.ts`) después de la hidratación en el cliente, especialmente para datos dinámicos o específicos del usuario. Sin embargo, se prefiere cargar la mayor cantidad de datos posible en el servidor.
 
 ## Estándares de Codificación
 
@@ -43,18 +44,19 @@ El proyecto Orbita-Y es una aplicación web construida con **Astro** como framew
 
 ## Consideraciones de Rendimiento
 
-- **Minimizar JavaScript del Cliente**: Astro ayuda inherentemente con esto. Usar directivas `client:*` juiciosamente para hidratar solo los componentes que lo necesiten.
-- **Optimización de Imágenes**: Utilizar el componente `<Image />` de Astro (si está instalado como integración) o `next/image` si se prefiere para componentes React, junto con scripts de optimización (como el `scripts/optimize-images.js` existente). Astro también tiene optimización de assets integrada.
+- **Optimización de Imágenes**: Utilizar el componente `<Image />` de Astro o `next/image` (si se prefiere para componentes React, aunque `<Image />` de Astro es más nativo), junto con scripts de optimización (como el `scripts/optimize-images.js` existente). Astro también tiene optimización de assets integrada.
 - **Carga Diferida (Lazy Loading)**: Para imágenes (`loading="lazy"`) y componentes (`client:visible` o `client:idle`).
+- **Evitar JavaScript innecesario**: Convertir componentes React de solo presentación a componentes `.astro` si no requieren estado o interactividad del lado del cliente.
 
 ## Próximos Pasos y Mejoras
 
--   Evaluar la migración de más lógica de obtención de datos de los componentes React al frontmatter de las páginas Astro contenedoras, si aplica.
--   Refinar el uso de las directivas `client:*` para asegurar una hidratación óptima.
--   Asegurar que todas las rutas y la navegación interna utilicen los mecanismos de Astro (principalmente etiquetas `<a>` para navegación simple o el componente `<Link>` de Astro si se usa para prefetching o transiciones de vista).
+-   **Refactorización de Componentes**: Identificar componentes React que pueden ser convertidos a componentes Astro puros para reducir el JS del cliente.
+-   **Optimización de Directivas `client:*`**: Asegurar que se usa la directiva de hidratación más eficiente para cada isla de React. Por ejemplo, `client:visible` para componentes que solo necesitan JS cuando entran en el viewport.
+-   **Navegación**: Asegurar que todas las rutas y la navegación interna utilicen los mecanismos de Astro (principalmente etiquetas `<a>` para navegación simple o el componente `<Link>` de Astro si se usa para prefetching o transiciones de vista).
 
 ## Referencias
 
 -   [Documentación oficial de Astro](https://docs.astro.build/es/)
 -   [Islas de Astro](https://docs.astro.build/es/concepts/islands/)
 -   [Integración React en Astro](https://docs.astro.build/es/guides/integrations-guide/react/)
+```

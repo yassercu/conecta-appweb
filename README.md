@@ -1,6 +1,15 @@
 # Orbita-Y
 
-Aplicación web para catálogos de productos y servicios, construida con Astro, React y Tailwind CSS.
+Aplicación web para catálogos de productos y servicios, construida con Astro, React (para islas de interactividad) y Tailwind CSS.
+
+## Principios de Diseño
+
+Este proyecto prioriza el rendimiento y la experiencia de usuario utilizando Astro para la generación de sitios estáticos/servidor y React para componentes interactivos específicos (Islas de Astro).
+
+- **Astro Primero**: Las páginas (`.astro`) y la estructura general se renderizan en el servidor o se generan estáticamente.
+- **Islas de React**: Componentes React (`.tsx`, `.jsx`) se utilizan para la interactividad del lado del cliente y se hidratan selectivamente (`client:load`, `client:visible`, `client:idle`).
+- **Obtención de Datos en Frontmatter**: Se prefiere cargar datos en el *frontmatter* de los archivos `.astro` para el renderizado del servidor.
+- **Componentes Reutilizables**: Se fomenta la creación de componentes Astro para UI estática y componentes React para UI interactiva.
 
 ## Estructura del Proyecto
 
@@ -65,8 +74,7 @@ Para configurar el entorno de desarrollo:
 
 1.  Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
     ```
-    NEXT_PUBLIC_API_URL=http://localhost:3001/api 
-    # (Nota: Aunque es un proyecto Astro, esta variable se mantiene por compatibilidad con algunos componentes existentes. Se podría renombrar a PUBLIC_API_URL o similar en el futuro)
+    PUBLIC_API_URL=http://localhost:3001/api 
     PUBLIC_ENZONA_CONSUMER_KEY=tu_consumer_key_de_enzona
     ENZONA_CONSUMER_SECRET=tu_consumer_secret_de_enzona
     PUBLIC_ENZONA_API_URL=https://api.enzona.net/payment/v1.0.0
@@ -99,4 +107,5 @@ Para configurar el entorno de desarrollo:
 
 - Los componentes Astro (`.astro`) se utilizan para la estructura de las páginas y el contenido estático.
 - Los componentes React (`.jsx`, `.tsx`) se utilizan para la interactividad y se integran en las páginas Astro como islas de Astro (ej. `<MyReactComponent client:load />`).
-- Los datos se pueden obtener en el frontmatter de los archivos `.astro` para el renderizado del lado del servidor o dentro de los componentes React para el renderizado del lado del cliente usando los hooks en `src/hooks/useApi.ts`.
+- Los datos se pueden obtener en el frontmatter de los archivos `.astro` para el renderizado del lado del servidor o dentro de los componentes React para el renderizado del lado del cliente usando los hooks en `src/hooks/useApi.ts` (aunque se prefiere la carga en *frontmatter* para mejor rendimiento).
+```
