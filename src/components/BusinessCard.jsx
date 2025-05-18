@@ -8,11 +8,6 @@ export function BusinessCard({ business, layout }) {
   // Verificar si el negocio está promocionado - forzar evaluación explícita para debugging
   const isPromoted = business.promoted === true;
   
-  // Log para depuración
-  if (isPromoted) {
-    console.log(`Negocio promocionado: ${business.name} (${business.id})`);
-  }
-  
   return (
     <Card className="overflow-hidden group relative border-primary/10 bg-card/80 backdrop-blur-sm rounded-xl 
       shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300 flex flex-col
@@ -25,6 +20,7 @@ export function BusinessCard({ business, layout }) {
             alt={business.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
+            data-ai-hint={business.dataAiHint || business.category?.toLowerCase() || "negocio local"}
           />
           {/* Efecto de brillo orbital */}
           <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -33,8 +29,8 @@ export function BusinessCard({ business, layout }) {
           {isPromoted && (
             <div className="absolute top-2 right-2 animate-orbit-small">
               <Badge
-                className="bg-amber-300/90 hover:bg-amber-300 text-black text-xs px-1.5 py-0.5 
-                rounded-full shadow-lg shadow-amber-500/20 border border-amber-300/80 backdrop-blur-sm font-semibold text-[8px] md:text-[10px]"
+                className="bg-amber-400 hover:bg-amber-500 text-black text-xs px-2 py-0.5 
+                rounded-full shadow-lg shadow-amber-500/30 border border-amber-500/80 backdrop-blur-sm font-semibold text-[9px] md:text-[11px]"
               >
                 ★ DESTACADO
               </Badge>
@@ -83,4 +79,4 @@ export function BusinessCard({ business, layout }) {
   );
 }
 
-export default BusinessCard; 
+export default BusinessCard;

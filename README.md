@@ -1,38 +1,55 @@
 # Orbita-Y
 
-Aplicación web para catalgos de productos y servicios.
+Aplicación web para catálogos de productos y servicios, construida con Astro, React y Tailwind CSS.
 
 ## Estructura del Proyecto
 
-El proyecto se ha actualizado para consumir datos dinámicos a través de una API REST. La estructura de la aplicación es la siguiente:
+El proyecto utiliza Astro para la estructura general y el renderizado del lado del servidor, con componentes React para la interactividad del lado del cliente.
 
 ```
 orbita-y/
+├── public/                # Archivos estáticos (imágenes, fuentes, manifest.webmanifest, service-worker.js)
 ├── src/
-│   ├── components/         # Componentes de la aplicación
-│   ├── lib/                # Utilidades y configuraciones
-│   ├── pages/              # Páginas de la aplicación
-│   ├── services/           # Servicios para comunicación con API
-│   │   └── api/            # Servicios específicos para la API
-│   └── types/              # Definiciones de tipos TypeScript
-├── mock-api/              # Servidor de API de prueba
-├── public/                # Archivos estáticos
-└── ...
+│   ├── components/         # Componentes Astro (.astro) y React (.tsx, .jsx)
+│   │   ├── ui/             # Componentes ShadCN UI (React)
+│   │   └── business/       # Componentes específicos para negocios (React)
+│   ├── layouts/            # Layouts Astro (.astro) para las páginas
+│   ├── pages/              # Páginas de la aplicación (principalmente .astro)
+│   ├── services/           # Lógica para consumir la API REST
+│   │   └── api/            # Clientes y servicios específicos para la API
+│   ├── styles/             # Estilos globales (globals.css)
+│   ├── hooks/              # Hooks personalizados de React
+│   ├── lib/                # Utilidades (utils.ts, core-web-vitals.ts)
+│   ├── config/             # Configuración de API (api.ts)
+│   └── types/              # Definiciones de tipos TypeScript (business.ts, etc.)
+├── mock-api/              # Servidor de API de prueba para desarrollo
+├── scripts/               # Scripts de utilidad (generación de iconos PWA, optimización de imágenes)
+├── astro.config.mjs       # Configuración de Astro
+├── tailwind.config.js     # Configuración de Tailwind CSS
+├── tsconfig.json          # Configuración de TypeScript
+└── package.json           # Dependencias y scripts del proyecto
 ```
+
+## Características Principales
+
+- **Astro**: Para un rendimiento óptimo y SEO, Astro maneja la estructura de las páginas y el contenido estático.
+- **React**: Se utiliza para componentes interactivos (islas de Astro) como formularios, carruseles y la lógica de búsqueda/filtrado del lado del cliente.
+- **Tailwind CSS**: Para un estilizado rápido y moderno.
+- **ShadCN UI**: Biblioteca de componentes React preconstruidos y personalizables.
+- **API REST Dinámica**: La aplicación consume datos de una API REST (simulada con `mock-api` para desarrollo).
+- **PWA (Progressive Web App)**: Capacidades PWA para una experiencia de usuario mejorada, incluyendo instalación y funcionamiento offline básico.
 
 ## Servicios de API
 
-Los servicios de API están organizados en una estructura modular:
+Los servicios para interactuar con la API se encuentran en `src/services/` y `src/config/api.ts`. Incluyen:
 
-- `api/config.ts` - Configuración global para la API
-- `api/httpClient.ts` - Cliente HTTP central para todas las peticiones
-- `api/businessService.ts` - Servicio para operaciones con negocios
-- `api/categoryService.ts` - Servicio para operaciones con categorías
-- `api/locationService.ts` - Servicio para operaciones con ubicaciones
+- `apiService.ts`: Orquestador central para llamadas a la API.
+- `httpClient.ts`: Cliente HTTP para realizar las peticiones.
+- Servicios específicos como `businessService.ts`, `categoryService.ts`, `locationService.ts`.
 
-## API Mock para desarrollo
+## API Mock para Desarrollo
 
-Se ha incluido un servidor de API Mock para desarrollo. Para iniciarlo:
+Se incluye un servidor de API Mock para desarrollo. Para iniciarlo:
 
 ```bash
 cd mock-api
@@ -40,132 +57,46 @@ npm install
 npm run dev
 ```
 
-El servidor se ejecutará en `http://localhost:3001`.
+El servidor se ejecutará en `http://localhost:3001`. Los endpoints disponibles están detallados en `mock-api/README.md`.
 
-## Endpoints de la API
-
-La API provee los siguientes endpoints:
-
-### Negocios
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/v1/businesses` | Obtener todos los negocios |
-| GET | `/api/v1/businesses/:id` | Obtener un negocio por ID |
-| GET | `/api/v1/businesses/featured` | Obtener negocios destacados |
-| GET | `/api/v1/businesses/promoted` | Obtener negocios promocionados |
-| GET | `/api/v1/search` | Buscar negocios con filtros |
-| POST | `/api/v1/businesses` | Crear un nuevo negocio |
-| PUT | `/api/v1/businesses/:id` | Actualizar un negocio existente |
-| DELETE | `/api/v1/businesses/:id` | Eliminar un negocio |
-
-#### Parámetros de búsqueda
-
-El endpoint `/api/v1/search` acepta los siguientes parámetros:
-
-- `query` - Texto de búsqueda (nombre, categoría, descripción)
-- `category` - ID o nombre de la categoría
-- `rating` - Valoración mínima (1-5)
-- `distance` - Distancia máxima en km
-- `latitude` - Latitud para búsqueda por ubicación
-- `longitude` - Longitud para búsqueda por ubicación
-- `sortBy` - Campo para ordenar resultados (rating, name, distance)
-- `page` - Número de página para paginación
-- `limit` - Elementos por página
-
-### Categorías
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/v1/categories` | Obtener todas las categorías |
-| GET | `/api/v1/categories/:id` | Obtener una categoría por ID |
-| POST | `/api/v1/categories` | Crear una nueva categoría |
-| PUT | `/api/v1/categories/:id` | Actualizar una categoría existente |
-| DELETE | `/api/v1/categories/:id` | Eliminar una categoría |
-
-### Ubicaciones
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/v1/locations/countries` | Obtener todos los países |
-| GET | `/api/v1/locations/provinces` | Obtener todas las provincias |
-| GET | `/api/v1/locations/countries/:countryId/provinces` | Obtener provincias por país |
-| GET | `/api/v1/locations/municipalities` | Obtener todos los municipios |
-| GET | `/api/v1/locations/provinces/:provinceId/municipalities` | Obtener municipios por provincia |
-
-### Productos
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/v1/products` | Obtener todos los productos |
-| GET | `/api/v1/products/:id` | Obtener un producto por ID |
-| GET | `/api/v1/businesses/:businessId/products` | Obtener productos de un negocio |
-
-### Reseñas
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/v1/reviews` | Obtener todas las reseñas |
-| GET | `/api/v1/businesses/:businessId/reviews` | Obtener reseñas de un negocio |
-
-## Configuración del entorno
+## Configuración del Entorno
 
 Para configurar el entorno de desarrollo:
 
-1. Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
+1.  Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
+    ```
+    NEXT_PUBLIC_API_URL=http://localhost:3001/api 
+    # (Nota: Aunque es un proyecto Astro, esta variable se mantiene por compatibilidad con algunos componentes existentes. Se podría renombrar a PUBLIC_API_URL o similar en el futuro)
+    PUBLIC_ENZONA_CONSUMER_KEY=tu_consumer_key_de_enzona
+    ENZONA_CONSUMER_SECRET=tu_consumer_secret_de_enzona
+    PUBLIC_ENZONA_API_URL=https://api.enzona.net/payment/v1.0.0
+    # Agrega otras claves API necesarias aquí
+    ```
+2.  Iniciar el servidor de API Mock (si se usa para desarrollo):
+    ```bash
+    cd mock-api
+    npm run dev
+    ```
+3.  Iniciar la aplicación Astro:
+    ```bash
+    npm run dev
+    ```
+    O para iniciar ambos servicios (API mock y app Astro) en paralelo:
+    ```bash
+    npm run start:all
+    ```
 
-```
-NEXT_PUBLIC_API_URL=http://localhost:3001/api
-```
+## Scripts Útiles
 
-2. Iniciar el servidor de API Mock:
+- `npm run dev`: Inicia el servidor de desarrollo de Astro.
+- `npm run build`: Compila la aplicación para producción. Incluye generación de iconos PWA y optimización de imágenes.
+- `npm run preview`: Previsualiza la build de producción localmente.
+- `npm run generate-pwa-icons`: Genera los iconos necesarios para la PWA.
+- `npm run optimize-images`: Optimiza las imágenes en `public/assets`.
+- `npm run start:all`: Inicia el servidor API mock y la aplicación Astro en paralelo (útil para desarrollo).
 
-```bash
-cd mock-api
-npm run dev
-```
+## Integración con Componentes
 
-3. Iniciar la aplicación web:
-
-```bash
-npm run dev
-```
-
-## Integración con componentes existentes
-
-Los componentes existentes deben ser actualizados para utilizar los servicios de API en lugar de los datos estáticos. Por ejemplo:
-
-```jsx
-// Antes
-import { allBusinesses } from '@/lib/data';
-
-// Después
-import { businessService } from '@/services/api';
-import { useEffect, useState } from 'react';
-
-function Component() {
-  const [businesses, setBusinesses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await businessService.getAllBusinesses();
-        setBusinesses(data);
-      } catch (error) {
-        console.error('Error fetching businesses:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, []);
-  
-  if (loading) return <div>Cargando...</div>;
-  
-  return (
-    // Usar los datos obtenidos de la API
-  );
-}
-```
+- Los componentes Astro (`.astro`) se utilizan para la estructura de las páginas y el contenido estático.
+- Los componentes React (`.jsx`, `.tsx`) se utilizan para la interactividad y se integran en las páginas Astro como islas de Astro (ej. `<MyReactComponent client:load />`).
+- Los datos se pueden obtener en el frontmatter de los archivos `.astro` para el renderizado del lado del servidor o dentro de los componentes React para el renderizado del lado del cliente usando los hooks en `src/hooks/useApi.ts`.
