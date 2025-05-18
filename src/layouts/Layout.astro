@@ -36,21 +36,23 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
     <!-- Script para inicializar el tema antes de la carga para evitar flash -->
     <script is:inline>
       try {
-        // Verificar si hay un tema guardado en localStorage
+        // Orden de prioridad para determinar el tema:
+        // 1. Preferencia guardada en localStorage (si existe)
+        // 2. Preferencia del sistema operativo
+        // 3. Tema claro como fallback (actual) - cambiar a oscuro si se desea
+        
         const savedTheme = localStorage.getItem("theme");
-        // Aplicar tema guardado o usar la preferencia del sistema
-        if (
-          savedTheme === "dark" ||
-          (!savedTheme &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches)
-        ) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        
+        // toggle() es más eficiente que add()/remove() separados
+        document.documentElement.classList.toggle(
+          'dark', 
+          savedTheme === 'dark' || (!savedTheme && prefersDark)
+        );
       } catch (e) {
-        // Fallback silencioso en caso de error de localStorage o matchMedia
         console.warn("Error al inicializar el tema:", e);
+        // Fallback explícito (actualmente tema claro)
+        document.documentElement.classList.remove('dark');
       }
     </script>
     <!-- Registro del Service Worker -->
