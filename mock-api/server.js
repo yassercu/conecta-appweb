@@ -392,7 +392,7 @@ const loadInitialData = () => {
                 price: 5 + (j * 2.5),
                 category: categories[categoryIndex].name,
                 description: `Descripción del producto ${j} del negocio ${nombre}.`,
-                image: '',
+                image: `https://placehold.co/200x200.png?text=Producto`,
                 inStock: Math.random() > 0.2
             });
         }
@@ -424,7 +424,7 @@ const loadInitialData = () => {
             categoryId: categories[categoryIndex].id,
             rating: 3.5 + (Math.random() * 1.5), // Rating entre 3.5 y 5
             location: `${municipality.name}, ${province.name}`,
-            image: '',
+            image: "",
             promoted: i <= 5, // Primeros 5 negocios son promocionados
             description: `${nombre} ofrece los mejores servicios de ${categories[categoryIndex].name.toLowerCase()} en ${municipality.name}, ${province.name}.`,
             latitude: latitude,
@@ -692,4 +692,4 @@ app.get('/api/v1/locations/provinces/:provinceId/municipalities', (req, res) => 
 app.listen(PORT, () => {
     console.log(`Servidor API mock ejecutándose en http://localhost:${PORT}`);
     console.log(`Ejemplo: http://localhost:${PORT}/api/v1/businesses`);
-}); 
+});

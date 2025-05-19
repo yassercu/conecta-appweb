@@ -1,6 +1,19 @@
 # Orbita-Y
 
+<<<<<<< HEAD
+Aplicación web para catálogos de productos y servicios, construida con Astro, React (para islas de interactividad) y Tailwind CSS.
+
+## Principios de Diseño
+
+Este proyecto prioriza el rendimiento y la experiencia de usuario utilizando Astro para la generación de sitios estáticos/servidor y React para componentes interactivos específicos (Islas de Astro).
+
+- **Astro Primero**: Las páginas (`.astro`) y la estructura general se renderizan en el servidor o se generan estáticamente.
+- **Islas de React**: Componentes React (`.tsx`, `.jsx`) se utilizan para la interactividad del lado del cliente y se hidratan selectivamente (`client:load`, `client:visible`, `client:idle`).
+- **Obtención de Datos en Frontmatter**: Se prefiere cargar datos en el *frontmatter* de los archivos `.astro` para el renderizado del servidor.
+- **Componentes Reutilizables**: Se fomenta la creación de componentes Astro para UI estática y componentes React para UI interactiva.
+=======
 Aplicación web para catalgos de productos y servicios.
+>>>>>>> parent of d2da8e7 (revisa el proyecto)
 
 ## Estructura del Proyecto
 
@@ -112,7 +125,31 @@ El endpoint `/api/v1/search` acepta los siguientes parámetros:
 
 Para configurar el entorno de desarrollo:
 
+<<<<<<< HEAD
+1.  Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
+    ```
+    PUBLIC_API_URL=http://localhost:3001/api 
+    PUBLIC_ENZONA_CONSUMER_KEY=tu_consumer_key_de_enzona
+    ENZONA_CONSUMER_SECRET=tu_consumer_secret_de_enzona
+    PUBLIC_ENZONA_API_URL=https://api.enzona.net/payment/v1.0.0
+    # Agrega otras claves API necesarias aquí
+    ```
+2.  Iniciar el servidor de API Mock (si se usa para desarrollo):
+    ```bash
+    cd mock-api
+    npm run dev
+    ```
+3.  Iniciar la aplicación Astro:
+    ```bash
+    npm run dev
+    ```
+    O para iniciar ambos servicios (API mock y app Astro) en paralelo:
+    ```bash
+    npm run start:all
+    ```
+=======
 1. Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
+>>>>>>> parent of d2da8e7 (revisa el proyecto)
 
 ```
 NEXT_PUBLIC_API_URL=http://localhost:3001/api
@@ -125,6 +162,11 @@ cd mock-api
 npm run dev
 ```
 
+<<<<<<< HEAD
+- Los componentes Astro (`.astro`) se utilizan para la estructura de las páginas y el contenido estático.
+- Los componentes React (`.jsx`, `.tsx`) se utilizan para la interactividad y se integran en las páginas Astro como islas de Astro (ej. `<MyReactComponent client:load />`).
+- Los datos se pueden obtener en el frontmatter de los archivos `.astro` para el renderizado del lado del servidor o dentro de los componentes React para el renderizado del lado del cliente usando los hooks en `src/hooks/useApi.ts` (aunque se prefiere la carga en *frontmatter* para mejor rendimiento).
+=======
 3. Iniciar la aplicación web:
 
 ```bash
@@ -168,4 +210,5 @@ function Component() {
     // Usar los datos obtenidos de la API
   );
 }
+>>>>>>> parent of d2da8e7 (revisa el proyecto)
 ```

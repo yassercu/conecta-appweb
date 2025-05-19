@@ -8,8 +8,8 @@ import { ApiError } from '@/services/api/httpClient';
 import type { ApiRequestOptions, BusinessFilters, Business, BusinessSearchResult } from '@/services/apiService'; // Asumiendo que estos tipos existen y son exportados
 
 // Definiciones de tipo placeholder si no se pueden importar (idealmente deben importarse)
-type ApiRequestOptions = any; 
-type BusinessFilters = any;
+// type ApiRequestOptions = any; // Ya importado
+// type BusinessFilters = any; // Ya importado
 // type Business = any; // BusinessSearchResult lo define
 
 // Cache de tiempo de vida de página para reducir peticiones entre navegaciones
@@ -263,7 +263,10 @@ function useApi<T, P extends any[]>(
  * Hook para utilizar el servicio de negocios
  */
 export function useBusinesses(options: UseApiOptions = {}) {
-    return useApi(apiService.businesses.getAll, [], options);
+    return useApi(apiService.businesses.getAll, [], {
+        cacheKey: 'businesses:all', // Añadir cacheKey por defecto
+        ...options
+    });
 }
 
 /**
@@ -282,6 +285,7 @@ export function useFeaturedBusinesses(options: UseApiOptions = {}) {
     return useApi(apiService.businesses.getFeatured, params, {
         usePageCache: true,
         cacheExpiration: 10 * 60 * 1000, // 10 minutos
+        cacheKey: 'businesses:featured', // Asegurar que el cacheKey se pasa
         ...options
     });
 }
@@ -294,6 +298,7 @@ export function usePromotedBusinesses(options: UseApiOptions = {}) {
     return useApi(apiService.businesses.getPromoted, params, {
         usePageCache: true,
         cacheExpiration: 10 * 60 * 1000, // 10 minutos
+        cacheKey: 'businesses:promoted', // Asegurar que el cacheKey se pasa
         ...options
     });
 }
@@ -343,6 +348,7 @@ export function useCategories(options: UseApiOptions = {}) {
     const result = useApi(apiService.categories.getAll, params, {
         usePageCache: true,
         cacheExpiration: 30 * 60 * 1000, // 30 minutos para categorías (cambian poco)
+        cacheKey: 'categories:all', // Asegurar que el cacheKey se pasa
         ...options
     });
     
@@ -378,6 +384,7 @@ export function useCountries(options: UseApiOptions = {}) {
     return useApi(apiService.locations.getCountries, params, {
         usePageCache: true,
         cacheExpiration: 60 * 60 * 1000, // 1 hora para datos geográficos
+        cacheKey: 'locations:countries', // Asegurar que el cacheKey se pasa
         ...options
     });
 }
@@ -390,6 +397,7 @@ export function useProvinces(options: UseApiOptions = {}) {
     return useApi(apiService.locations.getProvinces, params, {
         usePageCache: true,
         cacheExpiration: 60 * 60 * 1000, // 1 hora
+        cacheKey: 'locations:provinces', // Asegurar que el cacheKey se pasa
         ...options
     });
 }
@@ -402,6 +410,7 @@ export function useProvincesByCountry(countryId: string, options: UseApiOptions 
     return useApi(apiService.locations.getProvincesByCountry, params, {
         usePageCache: true,
         cacheExpiration: 60 * 60 * 1000, // 1 hora
+        cacheKey: `locations:provinces:${countryId}`, // Asegurar que el cacheKey se pasa
         ...options
     });
 }
@@ -414,6 +423,7 @@ export function useMunicipalities(options: UseApiOptions = {}) {
     return useApi(apiService.locations.getMunicipalities, params, {
         usePageCache: true,
         cacheExpiration: 60 * 60 * 1000, // 1 hora
+        cacheKey: 'locations:municipalities', // Asegurar que el cacheKey se pasa
         ...options
     });
 }
@@ -426,10 +436,11 @@ export function useMunicipalitiesByProvince(provinceId: string, options: UseApiO
     return useApi(apiService.locations.getMunicipalitiesByProvince, params, {
         usePageCache: true,
         cacheExpiration: 60 * 60 * 1000, // 1 hora
+        cacheKey: `locations:municipalities:${provinceId}`, // Asegurar que el cacheKey se pasa
         ...options
     });
 }
 
 // Exportar hook principal y funciones auxiliares
 export { apiService };
-export default useApi; 
+export default useApi;
