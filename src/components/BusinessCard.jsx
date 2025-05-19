@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 // Business Card Component
 export function BusinessCard({ business, layout = "elyerro" }) { // Default to elyerro layout
   const isPromoted = business.promoted === true;
+<<<<<<< HEAD
   const categoryName = typeof business.category === 'object' && business.category !== null 
     ? business.category.name 
     : typeof business.category === 'string' 
@@ -56,6 +57,14 @@ export function BusinessCard({ business, layout = "elyerro" }) { // Default to e
 
   // Fallback al layout detallado si no es 'elyerro' (aunque ahora es el default)
   // Este layout se puede simplificar o eliminar si se adopta globalmente el estilo Elyerro.
+=======
+  
+  // Log para depuración
+  if (isPromoted) {
+    console.log(`Negocio promocionado: ${business.name} (${business.id})`);
+  }
+  
+>>>>>>> parent of d2da8e7 (revisa el proyecto)
   return (
     <Card className="overflow-hidden group relative border-primary/10 bg-card/80 backdrop-blur-sm rounded-xl 
       shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300 flex flex-col
@@ -67,6 +76,7 @@ export function BusinessCard({ business, layout = "elyerro" }) { // Default to e
             alt={business.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
+<<<<<<< HEAD
             data-ai-hint={dataAiHintValue}
           />
            {isPromoted && (
@@ -77,6 +87,22 @@ export function BusinessCard({ business, layout = "elyerro" }) { // Default to e
            >
              ★ DESTACADO
            </Badge>
+=======
+          />
+          {/* Efecto de brillo orbital */}
+          <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
+          {/* Destacado Badge */}
+          {isPromoted && (
+            <div className="absolute top-2 right-2 animate-orbit-small">
+              <Badge
+                className="bg-amber-300/90 hover:bg-amber-300 text-black text-xs px-1.5 py-0.5 
+                rounded-full shadow-lg shadow-amber-500/20 border border-amber-300/80 backdrop-blur-sm font-semibold text-[8px] md:text-[10px]"
+              >
+                ★ DESTACADO
+              </Badge>
+            </div>
+>>>>>>> parent of d2da8e7 (revisa el proyecto)
           )}
         </div>
         
@@ -100,4 +126,4 @@ export function BusinessCard({ business, layout = "elyerro" }) { // Default to e
   );
 }
 
-export default BusinessCard;
+export default BusinessCard; 
