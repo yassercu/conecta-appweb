@@ -91,20 +91,16 @@
   .space-header {
     @apply relative overflow-hidden py-20 sm:py-28;
     background: var(--space-bg); /* Usar la variable CSS para el fondo */
-    /* Eliminar animaciones de fondo complejas si no encajan */
-    /* animation: space-bg 38s cubic-bezier(0.77, 0, 0.175, 1) infinite; */
     min-height: auto; /* Ajustar según necesidad o eliminar */
   }
 
   .space-header::before,
   .space-header::after,
   .space-header .stars-field {
-    /* Atenuar o eliminar estos efectos si no encajan con el estilo Elyerro */
     opacity: 0.1; /* Ejemplo de atenuación */
   }
   
   .stars-field {
-    /* Simplificar o cambiar las estrellas para un look más elegante si es necesario */
     background-image:
       radial-gradient(1px 1px at 20px 30px, hsl(var(--foreground)/0.7), transparent),
       radial-gradient(1px 1px at 120px 90px, hsl(var(--foreground)/0.5), transparent);
@@ -117,26 +113,16 @@
     0% { background-position: 0 0; }
     100% { background-position: 300px 300px; }
   }
-
-  /* Eliminamos .orbit-divider y .planet-surface ya que el diseño Elyerro es diferente */
-
-  .animate-float, .animate-float-slow, .animate-orbit-small {
-    /* Estas animaciones pueden o no ser necesarias. Evaluar su impacto en el nuevo diseño. */
-    /* Si se mantienen, asegurar que los colores y estilos encajen. */
-  }
 }
 
-/* Keyframes para animaciones (simplificadas o eliminadas si no aplican) */
-@keyframes space-bg { /* Podría eliminarse o simplificarse */
+@keyframes space-bg {
   0% { background-position: 0% 50%; }
   100% { background-position: 100% 50%; }
 }
 
-/* Asegurar que las imágenes no tengan filtro de brillo por defecto en tema oscuro si no es deseado */
 html.dark img {
   filter: none; 
 }
-html.dark .bright-img { /* Para imágenes que sí deben ser brillantes */
+html.dark .bright-img {
   filter: brightness(1.1);
 }
-```
