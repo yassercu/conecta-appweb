@@ -424,7 +424,7 @@ const loadInitialData = () => {
             categoryId: categories[categoryIndex].id,
             rating: 3.5 + (Math.random() * 1.5), // Rating entre 3.5 y 5
             location: `${municipality.name}, ${province.name}`,
-            image: `https://placehold.co/300x300.png?text=${encodeURIComponent(nombre.substring(0,15))}`,
+            image: "",
             promoted: i <= 5, // Primeros 5 negocios son promocionados
             description: `${nombre} ofrece los mejores servicios de ${categories[categoryIndex].name.toLowerCase()} en ${municipality.name}, ${province.name}.`,
             latitude: latitude,
