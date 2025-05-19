@@ -8,7 +8,7 @@ import { ApiError } from '@/services/api/httpClient';
 import type { ApiRequestOptions, BusinessFilters, Business, BusinessSearchResult } from '@/services/apiService'; // Asumiendo que estos tipos existen y son exportados
 
 // Definiciones de tipo placeholder si no se pueden importar (idealmente deben importarse)
-type ApiRequestOptions = any; 
+type ApiRequestOptions = any;
 type BusinessFilters = any;
 // type Business = any; // BusinessSearchResult lo define
 
@@ -75,7 +75,7 @@ function useApi<T, P extends any[]>(
 
     // Referencia para evitar actualizaciones de estado en componentes desmontados
     const mounted = useRef(true);
-    
+
     // Referencia para rastrear el momento de la última petición
     const lastFetchTime = useRef<number | null>(null);
 
@@ -90,11 +90,11 @@ function useApi<T, P extends any[]>(
     // Verificar caché de tiempo de vida de página primero
     useEffect(() => {
         if (skip || forceRefresh || !usePageCache || !cacheKey) return;
-        
+
         const cachedData = PAGE_LIFETIME_CACHE.get(cacheKey);
         if (cachedData) {
             const { data, timestamp } = cachedData;
-            
+
             // Verificar si el caché ha expirado
             const now = Date.now();
             if (now - timestamp < cacheExpiration) {
@@ -114,21 +114,21 @@ function useApi<T, P extends any[]>(
     const execute = useCallback(async (...args: P) => {
         // No actualizar el estado si el componente está desmontado
         if (!mounted.current) return null;
-        
+
         // Si tenemos un cacheKey, verificar si ya hemos hecho una petición reciente
         if (cacheKey && usePageCache && lastFetchTime.current) {
             const now = Date.now();
             const timeSinceLastFetch = now - lastFetchTime.current;
-            
+
             // Si han pasado menos de 2 segundos desde la última petición y tenemos datos en caché
             if (timeSinceLastFetch < 2000 && PAGE_LIFETIME_CACHE.has(cacheKey)) {
                 console.log(`Petición descartada (muy reciente): ${cacheKey}`);
                 return PAGE_LIFETIME_CACHE.get(cacheKey).data;
             }
         }
-        
+
         setState(prev => ({ ...prev, loading: true, error: null }));
-        
+
         // Registrar el momento de la petición
         lastFetchTime.current = Date.now();
 
@@ -155,9 +155,9 @@ function useApi<T, P extends any[]>(
 
                 // Guardar en caché de tiempo de vida de página
                 if (cacheKey && usePageCache) {
-                    PAGE_LIFETIME_CACHE.set(cacheKey, { 
-                        data: result, 
-                        timestamp: Date.now() 
+                    PAGE_LIFETIME_CACHE.set(cacheKey, {
+                        data: result,
+                        timestamp: Date.now()
                     });
                 }
 
@@ -190,7 +190,7 @@ function useApi<T, P extends any[]>(
 
         // No actualizar el estado si el componente está desmontado
         if (!mounted.current) return null;
-        
+
         setState({ data: null, loading: false, error: lastError });
 
         if (onError && lastError) {
@@ -218,12 +218,12 @@ function useApi<T, P extends any[]>(
     useEffect(() => {
         // Si se debe omitir la carga, no hacer nada
         if (skip) return;
-        
+
         // Si hay datos en caché de página, no hacer petición
         if (usePageCache && cacheKey && PAGE_LIFETIME_CACHE.has(cacheKey) && !forceRefresh) {
             const { data, timestamp } = PAGE_LIFETIME_CACHE.get(cacheKey);
             const now = Date.now();
-            
+
             // Si el caché aún es válido, usarlo
             if (now - timestamp < cacheExpiration) {
                 console.log(`useEffect: Usando datos en caché de página para: ${cacheKey}`);
@@ -235,16 +235,16 @@ function useApi<T, P extends any[]>(
                 PAGE_LIFETIME_CACHE.delete(cacheKey);
             }
         }
-        
-            // Envolvemos en un callback inmediato para proteger contra cambios de referencia
-            (async () => {
-                try {
-                    await execute(...params);
-                } catch (error) {
-                    // Error ya manejado por execute
-                    console.log('Error capturado en useEffect:', (error as Error).message);
-                }
-            })();
+
+        // Envolvemos en un callback inmediato para proteger contra cambios de referencia
+        (async () => {
+            try {
+                await execute(...params);
+            } catch (error) {
+                // Error ya manejado por execute
+                console.log('Error capturado en useEffect:', (error as Error).message);
+            }
+        })();
         // Dependencias estables: evitar re-ejecución cuando params no cambia realmente
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [skip, execute, forceRefresh]);
@@ -303,21 +303,21 @@ export function usePromotedBusinesses(options: UseApiOptions = {}) {
  */
 export function useBusinessSearch(filters?: BusinessFilters, options: UseApiOptions = {}) {
     const safeFilters = useMemo(() => filters || { query: '', category: 'Todas', rating: '0', sortBy: 'rating' }, [filters]);
-    
+
     const apiCallParams = useMemo(() => [safeFilters, undefined] as [BusinessFilters, ApiRequestOptions?], [safeFilters]);
 
-    const isEmptyFilter = !safeFilters.query && 
-                         safeFilters.category === 'Todas' && 
-                         safeFilters.rating === '0';
+    const isEmptyFilter = !safeFilters.query &&
+        safeFilters.category === 'Todas' &&
+        safeFilters.rating === '0';
     const shouldSkip = options.skip || isEmptyFilter;
-    
-    const apiCall = useApi<BusinessSearchResult, [BusinessFilters, ApiRequestOptions?] >(
-        apiService.businesses.search, 
-        apiCallParams, 
+
+    const apiCall = useApi<BusinessSearchResult, [BusinessFilters, ApiRequestOptions?]>(
+        apiService.businesses.search,
+        apiCallParams,
         {
-        ...options,
+            ...options,
             skip: shouldSkip,
-        // No cachear búsquedas por defecto
+            // No cachear búsquedas por defecto
             useCache: options.useCache ?? false,
             usePageCache: options.usePageCache ?? false,
             // Manejar errores específicos de búsqueda si es necesario
@@ -327,7 +327,7 @@ export function useBusinessSearch(filters?: BusinessFilters, options: UseApiOpti
             }
         }
     );
-    
+
     return {
         ...apiCall,
         // Exponer apiService para uso directo - aplanar la estructura para facilitar acceso
@@ -345,21 +345,9 @@ export function useCategories(options: UseApiOptions = {}) {
         cacheExpiration: 30 * 60 * 1000, // 30 minutos para categorías (cambian poco)
         ...options
     });
-    
-    // Procesar las categorías para devolver un formato utilizable
-    const processedData = result.data 
-        ? result.data.map((cat: any) => 
-            // Si es un objeto con propiedad name, usar esa propiedad
-            typeof cat === 'object' && cat !== null && 'name' in cat 
-                ? cat.name 
-                : cat
-          )
-        : ['Todas'];
-    
-    return {
-        ...result,
-        data: processedData
-    };
+
+    // No transformar los datos, devolver el resultado original
+    return result;
 }
 
 /**

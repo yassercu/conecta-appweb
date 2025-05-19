@@ -57,22 +57,22 @@ export default function FeaturedSections() {
       console.log('[FeaturedSections useMemo] Datos insuficientes para generar secciones, devolviendo [].');
       return [];
     }
-    
+
     console.log("[FeaturedSections useMemo] Generando secciones (memoizadas)");
-    
+
     // Ya no se llama a setDebugInfo aquí
-    
+
     // Elegir categorías populares de manera determinista
     // Usamos un array de índices fijos en lugar de orden aleatorio
     const categoryIndices = [1, 3, 5];  // Índices específicos para seleccionar categorías consistentes
     const popularCategories = categoryIndices
       .filter(index => categories[index])  // Asegurar que existan esas categorías
       .map(index => categories[index]);
-    
+
     // Si no tenemos suficientes categorías con el enfoque determinista, tomamos las primeras
-    const selectedCategories = popularCategories.length >= 3 ? 
+    const selectedCategories = popularCategories.length >= 3 ?
       popularCategories : categories.slice(0, 3);
-    
+
     // Crear secciones de manera determinista
     return [
       // "Novedades en el Barrio" - Usar los 10 negocios mejor calificados en lugar de aleatorios
@@ -101,10 +101,10 @@ export default function FeaturedSections() {
       else console.log('[FeaturedSections useEffect setSections] Saltando porque categories o allBusinesses no están listos.');
       return;
     }
-    
+
     console.log("[FeaturedSections useEffect setSections] Actualizando secciones desde efectos. memoizedSections:", memoizedSections);
     setSections(memoizedSections);
-    
+
     // Marcar que ya hemos procesado los datos para evitar reprocesamiento
     if (memoizedSections.length > 0) {
       console.log('[FeaturedSections useEffect setSections] Estableciendo hasFetchedData = true');
@@ -144,7 +144,7 @@ export default function FeaturedSections() {
           Hay {debugInfo.promotedCount} negocios promocionados de un total de {debugInfo.totalBusinesses}.
         </div>
       )}
-      
+
       {displaySections.map((section, index) => (
         <section key={index} className="space-y-4 mb-8">
           {/* Título de sección con efecto de destello */}

@@ -152,6 +152,11 @@ export default function BusinessRegisterForm() {
   // Cargar categorías usando hook de API
   const { data: businessCategoriesList, loading: loadingCategories, error: errorCategories } = useCategories();
 
+  // Depurar categorías
+  console.log('Categorías cargadas:', businessCategoriesList);
+  console.log('Cargando categorías:', loadingCategories);
+  console.log('Error de categorías:', errorCategories);
+
   // Actualizar provincia y municipio si cambia el país y el valor actual no es válido
   useEffect(() => {
     if (selectedCountryId && provincesList) {
@@ -196,13 +201,13 @@ export default function BusinessRegisterForm() {
     setIsGeocoding(true);
     const addressData = form.getValues();
     const coords = await getCoordinates({
-        countryId: addressData.country,
-        provinceId: addressData.province,
-        municipalityId: addressData.municipality,
-        address: addressData.address,
-        allCountries: countriesList, // Pasar listas cargadas para la búsqueda de nombres
-        allProvinces: provincesList,
-        allMunicipalities: municipalitiesList
+      countryId: addressData.country,
+      provinceId: addressData.province,
+      municipalityId: addressData.municipality,
+      address: addressData.address,
+      allCountries: countriesList, // Pasar listas cargadas para la búsqueda de nombres
+      allProvinces: provincesList,
+      allMunicipalities: municipalitiesList
     });
     setMapCoordinates(coords);
     setShowMap(true);
@@ -245,8 +250,10 @@ export default function BusinessRegisterForm() {
                 <FormControl><SelectTrigger><SelectValue placeholder={loadingCategories ? "Cargando categorías..." : "Selecciona una categoría"} /></SelectTrigger></FormControl>
                 <SelectContent>
                   {errorCategories && <p className="text-xs text-red-500 p-2">Error al cargar categorías</p>}
-                  {businessCategoriesList?.map(category => (
-                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                  {businessCategoriesList && Array.isArray(businessCategoriesList) && businessCategoriesList.map(category => (
+                    <SelectItem key={typeof category === 'object' ? category.id : category} value={typeof category === 'object' ? category.id : category}>
+                      {typeof category === 'object' ? category.name : category}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -254,7 +261,7 @@ export default function BusinessRegisterForm() {
             </FormItem>
           )}
         />
-        
+
         {/* ... otros campos como descripción, teléfono, email, contraseña ... */}
         <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea placeholder="Describe tu negocio..." {...field} /></FormControl><FormMessage /></FormItem>)} />
         <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input type="tel" placeholder="Ej: +53 55512345" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -298,10 +305,10 @@ export default function BusinessRegisterForm() {
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder={
-                        loadingProvinces ? "Cargando provincias..." :
+                      loadingProvinces ? "Cargando provincias..." :
                         !selectedCountryId ? "Selecciona un país primero" :
-                        provincesList?.length === 0 && !loadingProvinces ? "No hay provincias" :
-                        "Selecciona una provincia"
+                          provincesList?.length === 0 && !loadingProvinces ? "No hay provincias" :
+                            "Selecciona una provincia"
                     } />
                   </SelectTrigger>
                 </FormControl>
@@ -327,10 +334,10 @@ export default function BusinessRegisterForm() {
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder={
-                        loadingMunicipalities ? "Cargando municipios..." :
+                      loadingMunicipalities ? "Cargando municipios..." :
                         !selectedProvinceId ? "Selecciona una provincia primero" :
-                        municipalitiesList?.length === 0 && !loadingMunicipalities ? "No hay municipios" :
-                        "Selecciona un municipio"
+                          municipalitiesList?.length === 0 && !loadingMunicipalities ? "No hay municipios" :
+                            "Selecciona un municipio"
                     } />
                   </SelectTrigger>
                 </FormControl>
@@ -359,14 +366,14 @@ export default function BusinessRegisterForm() {
         />
 
         <Button type="button" variant="outline" onClick={handleGeocode} disabled={isGeocoding || !form.getValues("address")}>
-          {isGeocoding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} 
+          {isGeocoding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Verificar y Mostrar en Mapa
         </Button>
 
         {showMap && mapCoordinates && isBrowser && (
           <Card className="mt-4 h-64">
             <CardContent className="p-0 h-full">
-              <Suspense fallback={<div className="flex items-center justify-center w-full h-full"><Loader2 className="h-8 w-8 animate-spin text-primary"/> Cargando mapa...</div>}>
+              <Suspense fallback={<div className="flex items-center justify-center w-full h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /> Cargando mapa...</div>}>
                 <MapView
                   businesses={[{
                     id: 'new-business',
@@ -388,7 +395,7 @@ export default function BusinessRegisterForm() {
         )}
 
         <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} 
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Registrar Negocio
         </Button>
       </form>
