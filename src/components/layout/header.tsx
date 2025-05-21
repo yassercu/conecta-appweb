@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Sparkles, Menu, Home, Search, Store, X } from 'lucide-react';
+import { Sparkles, Menu, Home, CreditCard, Search, Store, X } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SearchBar } from '@/components/search-bar';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -34,7 +34,7 @@ export function Header({ children, isHomePage = false }: HeaderProps) {
             <SearchBar />
           </div>
 
-          <nav className="hidden md:flex items-center gap-1 ml-2">
+          <nav className="md:flex items-center gap-1 ml-2">
             <Button variant="ghost" className="text-sm" asChild>
               <a href="/payment">Precios</a>
             </Button>
@@ -73,6 +73,10 @@ export function Header({ children, isHomePage = false }: HeaderProps) {
                     <a href="/" className="flex items-center gap-3 py-4 px-6 border-b hover:bg-secondary/50 transition-colors">
                       <Home className="h-5 w-5 text-primary" />
                       <span>Inicio</span>
+                    </a>
+                    <a href="/payment" className="flex items-center gap-3 py-4 px-6 border-b hover:bg-secondary/50 transition-colors">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                      <span>Precios</span>
                     </a>
                     <a href="/search" className="flex items-center gap-3 py-4 px-6 border-b hover:bg-secondary/50 transition-colors">
                       <Search className="h-5 w-5 text-primary" />

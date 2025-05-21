@@ -122,10 +122,31 @@ const ReactComponents = {
             {/* Datos del negocio con imagen pequeña */}
             <Card>
               <div class="flex items-center p-4 border-b">
-                <img src={business.image || "/assets/businesses/default.svg"} alt={business.name} class="w-24 h-24 rounded-md object-cover mr-4" />
-                <div>
-                  <CardTitle className="text-lg">{business.name}</CardTitle>
-                  <p class="text-sm text-muted-foreground mt-1 line-clamp-2">{business.description}</p>
+                <div class="flex flex-col gap-4 items-center">
+                  <div class="flex items-center gap-4">
+                    <img src={business.image || "/assets/businesses/default.svg"} alt={business.name} class="w-24 h-24 rounded-md object-cover" />
+                    <div>
+                      <CardTitle className="text-lg">{business.name}</CardTitle>
+                      <p class="text-sm text-muted-foreground mt-1 line-clamp-2">{business.description}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <Badge client:load variant="secondary">
+                      {(business.category as any)?.name || business.category}
+                    </Badge>
+                    <div class="flex items-center gap-1 text-yellow-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.4 7.4-6-4.6-6 4.6 2.4-7.4-6-4.6h7.6z" />
+                      </svg>
+                      <span class="font-medium">{business.rating.toFixed(1)}</span>
+                      <span class="text-sm text-muted-foreground">({business.totalReviews} reseñas)</span>
+                    </div>
+                    {business.promoted && (
+                      <Badge client:load variant="default" className="bg-yellow-500 text-black">
+                        ★ DESTACADO
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
               <CardContent className="pt-4">
@@ -206,30 +227,13 @@ const ReactComponents = {
           <div class="space-y-6">
             {/* Título y descripción */}
             <div>
-              <h1 class="text-3xl font-bold">{business.name}</h1>
-              <div class="flex items-center gap-2 mt-2">
-                <Badge client:load variant="secondary">
-                  {(business.category as any)?.name || business.category}
-                </Badge>
-                <div class="flex items-center gap-1 text-yellow-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 fill-current" viewBox="0 0 24 24">
-                    <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.4 7.4-6-4.6-6 4.6 2.4-7.4-6-4.6h7.6z" />
-                  </svg>
-                  <span class="font-medium">{business.rating.toFixed(1)}</span>
-                  <span class="text-sm text-muted-foreground">({business.totalReviews} reseñas)</span>
-                </div>
-                {business.promoted && (
-                  <Badge client:load variant="default" className="bg-yellow-500 text-black">
-                    ★ DESTACADO
-                  </Badge>
-                )}
-              </div>
+              <h1 class="text-3xl font-bold">Catálogo</h1>
             </div>
 
             {/* Catálogo de productos */}
             {business.products && business.products.length > 0 && (
               <section>
-                <h2 class="text-xl font-semibold mb-4">Catálogo de Productos y Servicios</h2>
+                <h2 class="text-xl font-semibold mb-4">Productos y Servicios</h2>
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {business.products.map((product: Product) => (
                     <ProductCard client:load product={product} businessId={business.id} />
