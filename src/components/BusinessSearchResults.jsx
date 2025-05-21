@@ -110,8 +110,19 @@ async function fetchBusinesses(filters) {
   }
 }
 
+// Función utilitaria para extraer el nombre de una categoría de forma segura
+function getCategoryDisplayName(category) {
+  if (typeof category === 'object' && category !== null && 'name' in category) {
+    return category.name;
+  }
+  return category; // devuelve el valor original si es un string u otro valor
+}
+
 // Card de negocio para vista en cuadrícula
 function BusinessGridCard({ business }) {
+  // Extraer el nombre de la categoría de forma segura
+  const categoryName = getCategoryDisplayName(business.category);
+
   return (
     <Card className="overflow-hidden group relative border-primary/10 bg-card/80 backdrop-blur-sm rounded-xl 
       shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300 flex flex-col
@@ -144,7 +155,7 @@ function BusinessGridCard({ business }) {
             <Star className="h-3 w-3 text-yellow-500 fill-current" />
             <span className="font-medium">{business.rating.toFixed(1)}</span>
             <span className="text-primary/40">•</span>
-            <span className="text-muted-foreground truncate">{business.category}</span>
+            <span className="text-muted-foreground truncate">{categoryName}</span>
           </div>
         </CardContent>
       </a>
@@ -154,6 +165,9 @@ function BusinessGridCard({ business }) {
 
 // Card de negocio para vista en lista (horizontal)
 function BusinessListCard({ business }) {
+  // Extraer el nombre de la categoría de forma segura
+  const categoryName = getCategoryDisplayName(business.category);
+
   return (
     <Card className="overflow-hidden group relative border-primary/10 bg-card/80 backdrop-blur-sm rounded-xl 
       shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300
@@ -186,7 +200,7 @@ function BusinessListCard({ business }) {
             <div>
               <h3 className="font-semibold text-xs md:text-sm truncate group-hover:text-primary transition-colors">{business.name}</h3>
               <div className="flex items-center gap-1 text-[9px] md:text-xs mt-0.5">
-                <span className="text-muted-foreground truncate">{business.category}</span>
+                <span className="text-muted-foreground truncate">{categoryName}</span>
                 <span className="text-primary/40">•</span>
                 <MapPin className="h-3 w-3" /> <span className="truncate">{business.location}</span>
               </div>
@@ -266,7 +280,7 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
           if (savedLocation && savedLocation.latitude && savedLocation.longitude) {
             console.log("Mostrando opción de ubicación guardada:", savedLocation);
             setShowSavedLocationOption(true);
-            
+
             // Si no hay ubicación IP o si el usuario ya había elegido la ubicación guardada antes,
             // usar la ubicación guardada como opción por defecto
             if (!ipLocation || locationOption === 'saved') {
@@ -321,7 +335,7 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
       try {
         const savedLocationString = localStorage.getItem('userLocation');
         const savedAddressString = localStorage.getItem('userAddress');
-        
+
         if (savedLocationString) {
           const savedLocation = JSON.parse(savedLocationString);
           if (savedLocation && savedLocation.latitude && savedLocation.longitude) {
@@ -354,21 +368,21 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
     if (locationOption === 'manual') {
       const missingFields = [];
       if (!selectedCountryId) missingFields.push("País");
-      
+
       // Solo requerir provincia si hay provincias disponibles para el país seleccionado O si no se ha ingresado dirección manual
       const countryHasProvinces = provinces?.length > 0;
       if (!selectedProvinceId && countryHasProvinces && !manualAddress.trim()) missingFields.push("Provincia");
-      
+
       // Solo requerir municipio si hay municipios disponibles para la provincia seleccionada O si no se ha ingresado dirección manual
       const provinceHasMunicipalities = municipalities?.length > 0;
       if (!selectedMunicipalityId && provinceHasMunicipalities && !manualAddress.trim()) missingFields.push("Municipio");
 
       if (!manualAddress.trim() && missingFields.length > 0) {
         toast({
-            title: "Información geográfica requerida",
-            description: `Por favor, selecciona: ${missingFields.join(", ")}. O introduce una dirección específica. `,
-            variant: "warning", // Usar warning para campos faltantes
-            duration: 4000
+          title: "Información geográfica requerida",
+          description: `Por favor, selecciona: ${missingFields.join(", ")}. O introduce una dirección específica. `,
+          variant: "warning", // Usar warning para campos faltantes
+          duration: 4000
         });
         return;
       }
@@ -376,25 +390,25 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
 
     try {
       setIsSearching(true);
-      
+
       let queryParts = [];
       if (manualAddress.trim()) queryParts.push(manualAddress.trim());
-      
+
       const selectedMunicipality = municipalities?.find(m => m.id === selectedMunicipalityId);
       if (selectedMunicipality) queryParts.push(selectedMunicipality.name);
-      
+
       const selectedProvince = provinces?.find(p => p.id === selectedProvinceId);
       if (selectedProvince) queryParts.push(selectedProvince.name);
-      
+
       const selectedCountry = countries?.find(c => c.id === selectedCountryId);
       if (selectedCountry) queryParts.push(selectedCountry.name);
 
       const searchQuery = queryParts.join(', ');
-      
+
       if (!searchQuery) {
-          toast({ title: "Nada que buscar", description: "Introduce algún dato de ubicación.", variant: "info" });
-          setIsSearching(false);
-          return;
+        toast({ title: "Nada que buscar", description: "Introduce algún dato de ubicación.", variant: "info" });
+        setIsSearching(false);
+        return;
       }
 
       console.log("Buscando dirección con Nominatim:", searchQuery);
@@ -442,23 +456,23 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
       <div className="px-3 py-2 bg-primary text-primary-foreground rounded-md">
         <h3 className="font-bold text-base text-center">Cómo indicar tu ubicación</h3>
       </div>
-      
+
       <div className="px-3 py-2 bg-background rounded-md border">
         <h4 className="font-semibold text-sm border-b pb-1 mb-2">1. Opción Rápida (IP)</h4>
         <p className="text-sm">Usaremos tu conexión para una ubicación aproximada (si está disponible).</p>
       </div>
-      
+
       <div className="px-3 py-2 bg-background rounded-md border">
         <h4 className="font-semibold text-sm border-b pb-1 mb-2">2. Opción Manual Precisa</h4>
         <ul className="list-disc list-inside space-y-2 text-sm">
           <li>Selecciona <span className="font-medium">País, Provincia y Municipio</span> en orden.</li>
           <li>En "Dirección específica", escribe calle, número o lugar conocido (opcional).</li>
           <li>Haz clic en el botón de búsqueda <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-muted align-middle"><Search className="h-3 w-3" /></span></li>
-            <li>Selecciona el resultado correcto de la lista.</li>
+          <li>Selecciona el resultado correcto de la lista.</li>
           <li>Confirma tu selección.</li>
         </ul>
       </div>
-      
+
       <div className="px-3 py-2 bg-muted rounded-md">
         <h4 className="font-semibold text-sm mb-1">Ejemplo: Plaza de la Revolución</h4>
         <div className="grid grid-cols-2 gap-2 text-xs">
@@ -472,7 +486,7 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
           </div>
         </div>
       </div>
-      
+
       <p className="text-xs italic text-muted-foreground px-3">Mientras más detalles proporciones, más precisa será la búsqueda.</p>
     </div>
   );
@@ -484,67 +498,67 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh] p-4 sm:p-6 w-[calc(100%-2rem)] max-w-full sm:w-auto">
           <DialogHeader>
-          <DialogTitle>Configura tu ubicación</DialogTitle>
-          <DialogDescription>
-            Elige cómo quieres establecer tu ubicación para encontrar negocios cercanos.
-          </DialogDescription>
-        </DialogHeader>
+            <DialogTitle>Configura tu ubicación</DialogTitle>
+            <DialogDescription>
+              Elige cómo quieres establecer tu ubicación para encontrar negocios cercanos.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="grid gap-3 py-2 overflow-y-auto flex-grow pr-1 sm:pr-2">
-          <RadioGroup
-            value={locationOption}
-            onValueChange={setLocationOption}
-            className="grid gap-3"
-          >
-            {ipLocation && (
-              <div className="flex items-start space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value="ip" id="r1" />
-                <div className="grid gap-1">
-                  <Label htmlFor="r1" className="font-medium cursor-pointer">
-                    Usar ubicación por IP (aproximada)
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {ipLocation.city}, {ipLocation.region}, {ipLocation.country}
-                  </p>
+          <div className="grid gap-3 py-2 overflow-y-auto flex-grow pr-1 sm:pr-2">
+            <RadioGroup
+              value={locationOption}
+              onValueChange={setLocationOption}
+              className="grid gap-3"
+            >
+              {ipLocation && (
+                <div className="flex items-start space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                  <RadioGroupItem value="ip" id="r1" />
+                  <div className="grid gap-1">
+                    <Label htmlFor="r1" className="font-medium cursor-pointer">
+                      Usar ubicación por IP (aproximada)
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {ipLocation.city}, {ipLocation.region}, {ipLocation.country}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            {/* Opción para usar ubicación guardada si está disponible */}
-            {showSavedLocationOption && (
-              <div className="flex items-start space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                <RadioGroupItem value="saved" id="r2" />
-                <div className="grid gap-1">
-                  <Label htmlFor="r2" className="font-medium cursor-pointer">
-                    Usar tu ubicación guardada
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedCoordinates && locationOption === 'saved' ? selectedCoordinates.display : 
-                    "Tu ubicación guardada anteriormente"}
-                  </p>
-                </div>
-              </div>
-            )}
+              )}
 
-            <div className={cn(
+              {/* Opción para usar ubicación guardada si está disponible */}
+              {showSavedLocationOption && (
+                <div className="flex items-start space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                  <RadioGroupItem value="saved" id="r2" />
+                  <div className="grid gap-1">
+                    <Label htmlFor="r2" className="font-medium cursor-pointer">
+                      Usar tu ubicación guardada
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedCoordinates && locationOption === 'saved' ? selectedCoordinates.display :
+                        "Tu ubicación guardada anteriormente"}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className={cn(
                 "p-3 border rounded-md",
                 locationOption === 'manual' && "ring-1 ring-primary"
-            )}>
-              <div className="flex items-start space-x-3 space-y-0">
-                <RadioGroupItem value="manual" id="r3" />
+              )}>
+                <div className="flex items-start space-x-3 space-y-0">
+                  <RadioGroupItem value="manual" id="r3" />
                   <div className="w-full">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="r3" className="font-medium cursor-pointer">
-                    Indicar una ubicación manualmente
-                </Label>
+                        Indicar una ubicación manualmente
+                      </Label>
                       {/* Botón de ayuda que ahora solo maneja toggleTutorial */}
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-7 w-7 ml-2" 
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-7 w-7 ml-2"
                         onClick={toggleTutorial}
                         type="button"
                         aria-label="Mostrar ayuda"
@@ -553,174 +567,180 @@ function ManualLocationDialog({ open, onOpenChange, onConfirm, ipLocation }) {
                       </Button>
                     </div>
                   </div>
-              </div>
-              {locationOption === 'manual' && (
-                <div className="grid gap-3 mt-2.5 pl-1">
-                  {/* Selectores geográficos: en línea en desktop, apilados en móvil */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {/* Selector de País */}
-                    <div className="grid gap-1">
-                      <Label htmlFor="country" className="text-xs">País</Label>
-                      <Select 
-                          value={selectedCountryId} 
+                </div>
+                {locationOption === 'manual' && (
+                  <div className="grid gap-3 mt-2.5 pl-1">
+                    {/* Selectores geográficos: en línea en desktop, apilados en móvil */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {/* Selector de País */}
+                      <div className="grid gap-1">
+                        <Label htmlFor="country" className="text-xs">País</Label>
+                        <Select
+                          value={selectedCountryId}
                           onValueChange={setSelectedCountryId}
                           disabled={loadingCountries}
-                      >
-                        <SelectTrigger id="country">
-                          <SelectValue placeholder={loadingCountries ? "Cargando..." : "Selecciona un país"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {countries?.map(country => (
-                            <SelectItem key={country.id} value={country.id}>{country.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        >
+                          <SelectTrigger id="country">
+                            <SelectValue placeholder={loadingCountries ? "Cargando..." : "Selecciona un país"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countries?.map(country => (
+                              <SelectItem key={String(country.id)} value={country.id}>
+                                {country.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    {/* Selector de Provincia */}
-                    <div className="grid gap-1">
-                      <Label htmlFor="province" className="text-xs">Provincia</Label>
-                      <Select 
-                          value={selectedProvinceId} 
+                      {/* Selector de Provincia */}
+                      <div className="grid gap-1">
+                        <Label htmlFor="province" className="text-xs">Provincia</Label>
+                        <Select
+                          value={selectedProvinceId}
                           onValueChange={setSelectedProvinceId}
                           disabled={!selectedCountryId || loadingProvinces || provinces?.length === 0}
-                      >
-                        <SelectTrigger id="province">
-                          <SelectValue placeholder={
-                              loadingProvinces ? "Cargando..." : 
-                              !selectedCountryId ? "País primero" :
-                              provinces?.length === 0 && !loadingProvinces ? "No hay provincias" :
-                              "Selecciona provincia"
-                          } />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {provinces?.map(province => (
-                            <SelectItem key={province.id} value={province.id}>{province.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        >
+                          <SelectTrigger id="province">
+                            <SelectValue placeholder={
+                              loadingProvinces ? "Cargando..." :
+                                !selectedCountryId ? "País primero" :
+                                  provinces?.length === 0 && !loadingProvinces ? "No hay provincias" :
+                                    "Selecciona provincia"
+                            } />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {provinces?.map(province => (
+                              <SelectItem key={String(province.id)} value={province.id}>
+                                {province.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    {/* Selector de Municipio */}
-                    <div className="grid gap-1">
-                      <Label htmlFor="municipality" className="text-xs">Municipio</Label>
-                      <Select 
-                          value={selectedMunicipalityId} 
+                      {/* Selector de Municipio */}
+                      <div className="grid gap-1">
+                        <Label htmlFor="municipality" className="text-xs">Municipio</Label>
+                        <Select
+                          value={selectedMunicipalityId}
                           onValueChange={setSelectedMunicipalityId}
                           disabled={!selectedProvinceId || loadingMunicipalities || municipalities?.length === 0}
-                      >
-                        <SelectTrigger id="municipality">
-                          <SelectValue placeholder={
+                        >
+                          <SelectTrigger id="municipality">
+                            <SelectValue placeholder={
                               loadingMunicipalities ? "Cargando..." :
-                              !selectedProvinceId ? "Provincia primero" :
-                              municipalities?.length === 0 && !loadingMunicipalities ? "No hay municipios" :
-                              "Selecciona municipio"
-                          } />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {municipalities?.map(municipality => (
-                            <SelectItem key={municipality.id} value={municipality.id}>{municipality.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                                !selectedProvinceId ? "Provincia primero" :
+                                  municipalities?.length === 0 && !loadingMunicipalities ? "No hay municipios" :
+                                    "Selecciona municipio"
+                            } />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {municipalities?.map(municipality => (
+                              <SelectItem key={String(municipality.id)} value={municipality.id}>
+                                {municipality.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                  </div>
-                
-                  <div className="grid gap-1 mt-0.5"> {/* Reducido mt aquí */}
-                    <Label htmlFor="manual-address-detail" className="text-xs">Dirección específica (opcional)</Label>
-                    <div className="flex w-full items-center space-x-2">
+
+                    <div className="grid gap-1 mt-0.5"> {/* Reducido mt aquí */}
+                      <Label htmlFor="manual-address-detail" className="text-xs">Dirección específica (opcional)</Label>
+                      <div className="flex w-full items-center space-x-2">
                         <Input
-                            id="manual-address-detail"
-                            value={manualAddress}
-                            onChange={(e) => setManualAddress(e.target.value)}
-                            placeholder="Calle, número, punto de referencia..."
-                            disabled={locationOption !== 'manual'}
-                              className="h-9 flex-1 min-w-0" // Añadir flex-1 y min-width para asegurar que no crezca demasiado
+                          id="manual-address-detail"
+                          value={manualAddress}
+                          onChange={(e) => setManualAddress(e.target.value)}
+                          placeholder="Calle, número, punto de referencia..."
+                          disabled={locationOption !== 'manual'}
+                          className="h-9 flex-1 min-w-0" // Añadir flex-1 y min-width para asegurar que no crezca demasiado
                         />
                         <Button
-                            type="button"
-                            size="icon"
-                            onClick={searchAddress}
-                            disabled={locationOption !== 'manual' || isSearching}
-                            aria-label="Buscar dirección"
-                            className="h-9 w-9 shrink-0"
+                          type="button"
+                          size="icon"
+                          onClick={searchAddress}
+                          disabled={locationOption !== 'manual' || isSearching}
+                          aria-label="Buscar dirección"
+                          className="h-9 w-9 shrink-0"
                         >
-                            {isSearching ? <span className="animate-spin text-xs">↻</span> : <Search className="h-4 w-4" />}
+                          {isSearching ? <span className="animate-spin text-xs">↻</span> : <Search className="h-4 w-4" />}
                         </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </RadioGroup>
+                )}
+              </div>
+            </RadioGroup>
 
             {/* Resultados de búsqueda - con altura mínima para mejor visualización */}
-          {locationOption === 'manual' && searchResults.length > 0 && (
+            {locationOption === 'manual' && searchResults.length > 0 && (
               <div className="mt-2 min-h-[120px] max-h-[200px] overflow-y-auto border rounded-md bg-background p-1 w-full">
-              {searchResults.map((result, idx) => (
-                <div
-                  key={idx}
-                  className={cn(
+                {searchResults.map((result, idx) => (
+                  <div
+                    key={idx}
+                    className={cn(
                       "px-2.5 py-2 text-xs cursor-pointer hover:bg-muted rounded mb-1 w-full overflow-hidden",
-                    selectedCoordinates?.display === result.display && "bg-muted font-semibold"
-                  )}
-                  onClick={() => setSelectedCoordinates(result)}
-                >
+                      selectedCoordinates?.display === result.display && "bg-muted font-semibold"
+                    )}
+                    onClick={() => setSelectedCoordinates(result)}
+                  >
                     <div className="truncate" title={result.display}>
-                  {result.display}
+                      {result.display}
                     </div>
-                </div>
-              ))}
-            </div>
-          )}
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {selectedCoordinates && (
+            {selectedCoordinates && (
               <div className="mt-2.5 space-y-1.5 w-full">
                 <div className="px-2.5 py-2 text-xs bg-muted rounded-md w-full">
-                <p className="font-medium">Ubicación seleccionada:</p>
+                  <p className="font-medium">Ubicación seleccionada:</p>
                   <p className="text-muted-foreground mt-0.5 truncate" title={selectedCoordinates.display}>
                     {selectedCoordinates.display}
                   </p>
-                {selectedCoordinates.latitude && selectedCoordinates.longitude && (
+                  {selectedCoordinates.latitude && selectedCoordinates.longitude && (
                     <p className="text-xs mt-0.5 flex flex-wrap">
-                      <span className="mr-2">Lat: {selectedCoordinates.latitude?.toFixed(5)},</span> 
+                      <span className="mr-2">Lat: {selectedCoordinates.latitude?.toFixed(5)},</span>
                       <span>Lon: {selectedCoordinates.longitude?.toFixed(5)}</span>
                     </p>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
           <DialogFooter className="sm:justify-between pt-3 mt-auto">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
                 size="sm"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleConfirm}
-              disabled={!selectedCoordinates || (!selectedCoordinates.latitude || !selectedCoordinates.longitude)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConfirm}
+                disabled={!selectedCoordinates || (!selectedCoordinates.latitude || !selectedCoordinates.longitude)}
                 size="sm"
-            >
-              Confirmar ubicación
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              >
+                Confirmar ubicación
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Tutorial en un diálogo modal separado */}
       <Dialog open={showTutorial} onOpenChange={setShowTutorial}>
         <DialogContent className="sm:max-w-md p-0 w-[calc(100%-2rem)] sm:w-auto overflow-hidden">
           <div className="relative overflow-y-auto max-h-[80vh]">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="absolute right-2 top-2 z-10" 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 top-2 z-10"
               onClick={() => setShowTutorial(false)}
             >
               <X className="h-4 w-4" />
@@ -837,7 +857,7 @@ function PermissionGuide({ browserName }) {
 // Función para detectar el navegador del usuario
 function detectBrowser() {
   const userAgent = navigator.userAgent;
-  
+
   if (userAgent.indexOf("Chrome") > -1 && userAgent.indexOf("Edge") === -1) {
     return "Chrome";
   } else if (userAgent.indexOf("Safari") > -1 && userAgent.indexOf("Chrome") === -1) {
@@ -858,12 +878,12 @@ const calculateZoomFromDistance = (distance) => {
   if (!distance || distance === "0") {
     return 12; // Valor predeterminado de zoom (ciudad/municipio)
   }
-  
+
   // Fórmula logarítmica para calcular un nivel de zoom aproximado basado en la distancia en km
   // A menor valor de zoom, más alejado está el mapa. Típicos valores:
   // 18: nivel edificio, 15: nivel calle, 13: nivel barrio, 10: nivel ciudad, 6: nivel país
   const distanceNumber = parseFloat(distance);
-  
+
   // Tabla de relaciones aproximadas distancia-zoom
   if (distanceNumber <= 0.5) return 16;       // 500m - muy cerca
   else if (distanceNumber <= 1) return 15;    // 1km - nivel calle/barrio pequeño
@@ -910,7 +930,7 @@ export default function BusinessSearchResults() {
 
   // Importar API Service para búsquedas
   const { apiService } = useBusinessSearch();
-  
+
   // Estado para rastrear si apiService está inicializado
   const [isApiReady, setIsApiReady] = useState(false);
 
@@ -933,12 +953,22 @@ export default function BusinessSearchResults() {
     // categories ya tiene ['Todas'] por defecto si la API no devuelve nada o devuelve null/undefined.
     // Si categories es ['Todas'], uniqueApiCategories será un array vacío.
     const uniqueApiCategories = Array.isArray(categories)
-        ? categories.filter(cat => cat !== 'Todas')
-        : [];
+      ? categories.filter(cat => cat !== 'Todas').map(cat => {
+        // Si cat es un objeto de tipo Category, extraer sus propiedades correctamente
+        if (typeof cat === 'object' && cat !== null && 'id' in cat && 'name' in cat) {
+          return {
+            value: cat.id, // Usar id como valor
+            label: cat.name // Usar name para mostrar
+          };
+        }
+        // Si es un string simple (como en el mock), usarlo directamente
+        return { value: cat, label: cat };
+      })
+      : [];
 
     return [
-        allCatsOption,
-        ...uniqueApiCategories.map(cat => ({ value: cat, label: cat }))
+      allCatsOption,
+      ...uniqueApiCategories
     ];
   }, [categories]);
 
@@ -1064,7 +1094,7 @@ export default function BusinessSearchResults() {
 
     // Verificar el estado del permiso antes de solicitar la ubicación
     const permissionState = await checkGeolocationPermission();
-    
+
     if (permissionState === 'denied') {
       // El permiso está bloqueado persistentemente
       setLocationError('Permiso de ubicación bloqueado');
@@ -1075,7 +1105,7 @@ export default function BusinessSearchResults() {
         description: `Has bloqueado el acceso a tu ubicación en ${browserName}. Consulta las instrucciones para desbloquearlo.`,
         duration: 8000, // Aumentado para dar tiempo a leer las instrucciones
       });
-      
+
       // Continuar con flujo alternativo
       await handleGeolocationFailure('Permiso de ubicación bloqueado en tu navegador');
       return;
@@ -1129,7 +1159,7 @@ export default function BusinessSearchResults() {
         } else if (error.code === 3) {
           errorMessage += 'Tiempo de espera agotado. Inténtalo de nuevo.';
         }
-        
+
         // Verificar si ya tenemos una ubicación guardada y mostrarla en toast
         if (userLocation) {
           console.log("Usando ubicación guardada previamente mientras se muestra el diálogo:", userLocation);
@@ -1139,7 +1169,7 @@ export default function BusinessSearchResults() {
             description: "Se utilizará la ubicación guardada mientras decides si actualizarla manualmente.",
           });
         }
-        
+
         // Siempre mostramos el diálogo de ubicación manual, independientemente de si hay ubicación guardada
         setIsLoadingLocation(false);
         await handleGeolocationFailure(errorMessage);
@@ -1175,11 +1205,11 @@ export default function BusinessSearchResults() {
 
     // La notificación ya se maneja en requestUserLocation cuando es un error de permiso bloqueado
     if (!errorMessage.includes('bloqueado')) {
-    toast({
+      toast({
         variant: "destructive",
-      title: "Error de ubicación",
+        title: "Error de ubicación",
         description: errorMessage || "No se pudo obtener tu ubicación. Por favor, ingresa tu ubicación manualmente.",
-    });
+      });
     }
   };
 
@@ -1213,11 +1243,11 @@ export default function BusinessSearchResults() {
       console.log("Esperando a que el servicio API esté listo...");
       return;
     }
-    
+
     async function loadBusinesses() {
       try {
         setIsLoading(true);
-        
+
         // Construir objeto de filtros con valores por defecto seguros
         const filters = {
           query: query || '',
@@ -1227,15 +1257,15 @@ export default function BusinessSearchResults() {
           distance: distance || '0',
           userLocation: userLocation || null
         };
-        
+
         console.log("Buscando negocios con filtros (BusinessSearchResults.jsx):", JSON.stringify(filters, null, 2));
         if (filters.distance !== '0' && !filters.userLocation) {
-            console.warn("ADVERTENCIA (BusinessSearchResults.jsx): Intentando filtrar por distancia SIN userLocation. El backend podría no manejar esto como se espera, o devolver resultados vacíos.");
+          console.warn("ADVERTENCIA (BusinessSearchResults.jsx): Intentando filtrar por distancia SIN userLocation. El backend podría no manejar esto como se espera, o devolver resultados vacíos.");
         }
-        
+
         // Crear una clave de caché basada en los filtros
         const cacheKey = `businesses_search_${JSON.stringify(filters)}`;
-        
+
         // Primero, intentar obtener datos de caché local
         let cachedData;
         try {
@@ -1247,9 +1277,9 @@ export default function BusinessSearchResults() {
               const now = Date.now();
               const cacheAge = now - timestamp;
               const cacheMaxAge = 60 * 60 * 1000; // 1 hora en ms
-              
+
               if (cacheAge < cacheMaxAge) {
-                console.log(`Usando datos en caché local para: ${cacheKey} (edad: ${Math.round(cacheAge/1000/60)} minutos)`);
+                console.log(`Usando datos en caché local para: ${cacheKey} (edad: ${Math.round(cacheAge / 1000 / 60)} minutos)`);
                 cachedData = data;
               } else {
                 console.log(`Caché local expirada para: ${cacheKey}`);
@@ -1260,16 +1290,16 @@ export default function BusinessSearchResults() {
         } catch (cacheError) {
           console.warn("Error al acceder a caché local:", cacheError);
         }
-        
+
         // Si tenemos datos en caché, usarlos mientras intentamos actualizar
         if (cachedData && cachedData.businesses && cachedData.businesses.length > 0) {
           console.log(`Mostrando ${cachedData.businesses.length} negocios desde caché mientras actualizamos`);
           setBusinesses(cachedData.businesses);
           setIsLoading(false); // Desactivar loading para mostrar resultados rápidamente
-          
+
           // Configurar flag de carga para la actualización en segundo plano
           let isBgUpdate = true;
-          
+
           // Intentar actualizar en segundo plano
           try {
             const freshResult = await apiService.businesses.search(filters);
@@ -1277,11 +1307,11 @@ export default function BusinessSearchResults() {
               // Solo actualizar si hay cambios significativos
               const currentCount = cachedData.businesses.length;
               const newCount = freshResult.businesses ? freshResult.businesses.length : 0;
-              
+
               if (Math.abs(currentCount - newCount) > 3 || newCount === 0) {
                 console.log(`Actualizando datos en caché: ${currentCount} → ${newCount} negocios`);
                 setBusinesses(freshResult.businesses || []);
-                
+
                 // Actualizar caché local
                 try {
                   if (typeof localStorage !== 'undefined') {
@@ -1305,19 +1335,19 @@ export default function BusinessSearchResults() {
               setIsLoading(false);
             }
           }
-          
+
           return; // Salir temprano, ya mostramos datos de caché y actualizamos en segundo plano
         }
-        
+
         // Si no hay caché o está vacía, continuar con la petición normal
         try {
           const result = await apiService.businesses.search(filters);
-          
+
           // Verificar si result existe y tiene la propiedad businesses
           if (result && typeof result === 'object' && 'businesses' in result) {
             setBusinesses(result.businesses || []);
             console.log(`Se encontraron ${result.businesses ? result.businesses.length : 0} negocios`);
-            
+
             // Guardar en caché local
             try {
               if (typeof localStorage !== 'undefined') {
@@ -1336,18 +1366,18 @@ export default function BusinessSearchResults() {
           }
         } catch (apiError) {
           console.error("Error en la llamada a la API:", apiError);
-          
+
           // Si es un error de recursos insuficientes, intentar obtener los datos de cualquier caché disponible
           if (apiError.toString().includes('ERR_INSUFFICIENT_RESOURCES') || apiError.toString().includes('Failed to fetch')) {
             console.log("Error de recursos insuficientes, buscando datos en cachés alternativas...");
-            
+
             // Intentar obtener cualquier caché de negocios previa
             let fallbackData = [];
             try {
               if (typeof localStorage !== 'undefined') {
                 // Buscar todas las claves que contienen 'businesses_search_'
                 const keys = Object.keys(localStorage).filter(k => k.startsWith('businesses_search_'));
-                
+
                 if (keys.length > 0) {
                   // Ordenar por timestamp más reciente
                   const cacheItems = keys
@@ -1361,7 +1391,7 @@ export default function BusinessSearchResults() {
                     })
                     .filter(Boolean)
                     .sort((a, b) => b.timestamp - a.timestamp);
-                  
+
                   if (cacheItems.length > 0) {
                     // Usar el caché más reciente como fallback
                     console.log(`Usando datos de caché alternativa: ${cacheItems[0].key}`);
@@ -1372,7 +1402,7 @@ export default function BusinessSearchResults() {
             } catch (fallbackError) {
               console.warn("Error al buscar cachés alternativas:", fallbackError);
             }
-            
+
             // Si encontramos datos de fallback, usarlos
             if (fallbackData.length > 0) {
               toast({
@@ -1382,7 +1412,7 @@ export default function BusinessSearchResults() {
               });
               setBusinesses(fallbackData);
             } else {
-          setBusinesses([]);
+              setBusinesses([]);
               toast({
                 title: "Error de conexión",
                 description: "No se pudieron cargar los negocios. El servidor está ocupado, por favor intenta más tarde.",
@@ -1400,7 +1430,7 @@ export default function BusinessSearchResults() {
         setIsLoading(false);
       }
     }
-    
+
     loadBusinesses();
   }, [query, category, rating, sortBy, distance, userLocation, apiService, isApiReady]);
 
@@ -1493,7 +1523,9 @@ export default function BusinessSearchResults() {
               </SelectTrigger>
               <SelectContent>
                 {displayCategories.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  <SelectItem key={typeof opt.value === 'object' ? JSON.stringify(opt.value) : String(opt.value)} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -1509,11 +1541,11 @@ export default function BusinessSearchResults() {
                   <SelectValue placeholder="Valoración" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">Cualquiera</SelectItem>
-                  <SelectItem value="4">4+ Estrellas</SelectItem>
-                  <SelectItem value="3">3+ Estrellas</SelectItem>
-                  <SelectItem value="2">2+ Estrellas</SelectItem>
-                  <SelectItem value="1">1+ Estrellas</SelectItem>
+                  <SelectItem key="rating-0" value="0">Cualquiera</SelectItem>
+                  <SelectItem key="rating-4" value="4">4+ Estrellas</SelectItem>
+                  <SelectItem key="rating-3" value="3">3+ Estrellas</SelectItem>
+                  <SelectItem key="rating-2" value="2">2+ Estrellas</SelectItem>
+                  <SelectItem key="rating-1" value="1">1+ Estrellas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1526,9 +1558,9 @@ export default function BusinessSearchResults() {
                   <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="rating">Valoración</SelectItem>
-                  <SelectItem value="name">Nombre (A-Z)</SelectItem>
-                  {userLocation && <SelectItem value="distance">Más cercanos</SelectItem>}
+                  <SelectItem key="sort-rating" value="rating">Valoración</SelectItem>
+                  <SelectItem key="sort-name" value="name">Nombre (A-Z)</SelectItem>
+                  {userLocation && <SelectItem key="sort-distance" value="distance">Más cercanos</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -1554,12 +1586,12 @@ export default function BusinessSearchResults() {
 
             {locationError && !isLoadingLocation && (
               <>
-              <Alert variant="destructive" className="mt-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="text-xs">
-                  {locationError}
-                </AlertDescription>
-              </Alert>
+                <Alert variant="destructive" className="mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    {locationError}
+                  </AlertDescription>
+                </Alert>
                 {locationError.includes('bloqueado') && (
                   <PermissionGuide browserName={detectBrowser()} />
                 )}
@@ -1685,7 +1717,9 @@ export default function BusinessSearchResults() {
               </SelectTrigger>
               <SelectContent>
                 {displayCategories.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  <SelectItem key={typeof opt.value === 'object' ? JSON.stringify(opt.value) : String(opt.value)} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -1697,11 +1731,11 @@ export default function BusinessSearchResults() {
                 <SelectValue placeholder="Valoración" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0">Cualquiera</SelectItem>
-                <SelectItem value="4">4+ Estrellas</SelectItem>
-                <SelectItem value="3">3+ Estrellas</SelectItem>
-                <SelectItem value="2">2+ Estrellas</SelectItem>
-                <SelectItem value="1">1+ Estrellas</SelectItem>
+                <SelectItem key="rating-0" value="0">Cualquiera</SelectItem>
+                <SelectItem key="rating-4" value="4">4+ Estrellas</SelectItem>
+                <SelectItem key="rating-3" value="3">3+ Estrellas</SelectItem>
+                <SelectItem key="rating-2" value="2">2+ Estrellas</SelectItem>
+                <SelectItem key="rating-1" value="1">1+ Estrellas</SelectItem>
               </SelectContent>
             </Select>
 
@@ -1712,9 +1746,9 @@ export default function BusinessSearchResults() {
                 <SelectValue placeholder="Ordenar por" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="rating">Valoración</SelectItem>
-                <SelectItem value="name">Nombre (A-Z)</SelectItem>
-                {userLocation && <SelectItem value="distance">Más cercanos</SelectItem>}
+                <SelectItem key="sort-rating" value="rating">Valoración</SelectItem>
+                <SelectItem key="sort-name" value="name">Nombre (A-Z)</SelectItem>
+                {userLocation && <SelectItem key="sort-distance" value="distance">Más cercanos</SelectItem>}
               </SelectContent>
             </Select>
 
@@ -1750,30 +1784,30 @@ export default function BusinessSearchResults() {
               </div>
 
               {locationError && !isLoadingLocation ? (
-                 <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 shrink-0"
-                          onClick={() => setShowManualLocationDialog(true)}
-                        >
-                          <AlertCircle className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-[300px] z-[1000] bg-background text-foreground border p-3"> 
-                        <p className="font-medium text-destructive-foreground bg-destructive px-2 py-1 rounded-sm">Error de Ubicación</p>
-                        <p className="mt-1">{locationError}</p>
-                        {locationError.includes('bloqueado') && (
-                          <div className="mt-2 border-t pt-2">
-                            <PermissionGuide browserName={detectBrowser()} />
-                          </div>
-                        )}
-                        <p className="mt-2 text-xs">Haz clic para configurar tu ubicación manualmente.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0"
+                        onClick={() => setShowManualLocationDialog(true)}
+                      >
+                        <AlertCircle className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[300px] z-[1000] bg-background text-foreground border p-3">
+                      <p className="font-medium text-destructive-foreground bg-destructive px-2 py-1 rounded-sm">Error de Ubicación</p>
+                      <p className="mt-1">{locationError}</p>
+                      {locationError.includes('bloqueado') && (
+                        <div className="mt-2 border-t pt-2">
+                          <PermissionGuide browserName={detectBrowser()} />
+                        </div>
+                      )}
+                      <p className="mt-2 text-xs">Haz clic para configurar tu ubicación manualmente.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ) : null}
             </div>
           </div>

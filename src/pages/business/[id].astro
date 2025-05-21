@@ -21,7 +21,7 @@ const selectedProductId = Astro.url.searchParams.get("product");
 export async function getStaticPaths() {
   // Obtener todos los negocios para las rutas estáticas en SSG
   const allBusinesses = await apiService.businesses.getAll();
-  
+
   return allBusinesses.map((business: Business) => ({
     params: { id: business.id },
     props: { business },
@@ -90,7 +90,7 @@ const ReactComponents = {
                 <div>
                   <CardTitle className="text-2xl">{selectedProduct.name}</CardTitle>
                   <Badge client:load variant="secondary" className="mt-2">
-                    {selectedProduct.category}
+                    {(selectedProduct.category as any)?.name || selectedProduct.category}
                   </Badge>
                 </div>
                 <div class="text-2xl font-bold">${selectedProduct.price.toFixed(2)}</div>
@@ -209,7 +209,7 @@ const ReactComponents = {
               <h1 class="text-3xl font-bold">{business.name}</h1>
               <div class="flex items-center gap-2 mt-2">
                 <Badge client:load variant="secondary">
-                  {business.category}
+                  {(business.category as any)?.name || business.category}
                 </Badge>
                 <div class="flex items-center gap-1 text-yellow-500">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 fill-current" viewBox="0 0 24 24">
