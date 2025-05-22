@@ -61,3 +61,6 @@ next-env.d.ts
 .DS_Store
 desktop.ini
 mock-api/node_modules
+
+# Local Netlify folder
+.netlify

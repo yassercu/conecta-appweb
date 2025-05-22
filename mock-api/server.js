@@ -2,9 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { v4: uuidv4 } = require('uuid');
+const serverless = require('serverless-http');
 
-// Crear aplicación Express
+// Create Express app
 const app = express();
+
+// Server configuration
 const PORT = process.env.PORT || 3001;
 
 // Configuración de CORS para permitir cualquier origen
@@ -688,8 +691,22 @@ app.get('/api/v1/locations/provinces/:provinceId/municipalities', (req, res) => 
     res.json(municipalities);
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
+// Iniciar el servidor solo si se ejecuta localmente
+if (process.env.NETLIFY_DEV !== 'true' && process.env.NETLIFY !== 'true') {
+  app.listen(PORT, () => {
     console.log(`Servidor API mock ejecutándose en http://localhost:${PORT}`);
     console.log(`Ejemplo: http://localhost:${PORT}/api/v1/businesses`);
-}); 
+  });
+}
+
+// Export the Express app as a Netlify function
+const handler = serverless(app);
+
+// Export the handler for both local development and Netlify
+module.exports = { handler };
+
+// This is needed for Netlify Functions
+module.exports.handler = async (event, context) => {
+  // You can do any preprocessing here if needed
+  return handler(event, context);
+};

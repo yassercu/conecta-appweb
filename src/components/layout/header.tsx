@@ -34,7 +34,7 @@ export function Header({ children, isHomePage = false }: HeaderProps) {
             <SearchBar />
           </div>
 
-          <nav className="md:flex items-center gap-1 ml-2">
+          <nav className="hidden md:flex items-center gap-1 ml-2">
             <Button variant="ghost" className="text-sm" asChild>
               <a href="/payment">Precios</a>
             </Button>

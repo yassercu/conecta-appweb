@@ -5,7 +5,8 @@
 // URL base de la API
 export const API_CONFIG = {
     // BASE_URL: 'http://localhost:3001/api',
-    BASE_URL: 'http://216.7.89.170:3001/api',
+    // BASE_URL: 'http://216.7.89.170:3001/api',
+    BASE_URL: 'https://orbita-api.windsurf.build/api',
     VERSION: 'v1',
     TIMEOUT: 30000,
     DEFAULT_HEADERS: {

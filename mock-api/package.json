@@ -5,7 +5,14 @@
     "main": "server.js",
     "scripts": {
         "start": "node server.js",
-        "dev": "nodemon server.js"
+        "dev": "nodemon server.js",
+        "prod": "NODE_ENV=production node server.js",
+        "build": "echo \"Build exitoso para producción\" && exit 0",
+        "lint": "eslint .",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "engines": {
+        "node": ">=14.0.0"
     },
     "dependencies": {
         "body-parser": "^1.20.2",
@@ -13,9 +20,21 @@
         "express": "^4.18.2",
         "express-rate-limit": "^7.5.0",
         "helmet": "^8.1.0",
+        "serverless-http": "^3.2.0",
         "uuid": "^9.0.1"
     },
     "devDependencies": {
+        "eslint": "^8.56.0",
+        "eslint-config-airbnb-base": "^15.0.0",
+        "eslint-plugin-import": "^2.29.1",
         "nodemon": "^3.0.1"
-    }
+    },
+    "keywords": [
+        "api",
+        "express",
+        "mock",
+        "orbita-y"
+    ],
+    "author": "",
+    "license": "MIT"
 }

@@ -1,0 +1,21 @@
+[build]
+  command = "npm install && npm run build"
+  publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["express", "serverless-http"]
+
+[dev]
+  command = "npm run dev"
+  targetPort = 3001
+  publish = "."
+  functions = "netlify/functions"
+  port = 3001
